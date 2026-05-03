@@ -425,7 +425,7 @@
     document.addEventListener('keydown', e => { if(e.key==='Escape' && !dom.importOverlay.classList.contains('closed')) closeImportModal(); if(e.key==='Escape' && !document.getElementById('custom-dialog').classList.contains('closed')) closeDialog(false); });
     dom.backBtn.onclick = exitQuiz;
     document.getElementById('delete-set-btn').onclick = deleteActiveSet;
-    if (dom.modalCopyBtn) dom.modalCopyBtn.onclick = copyPrompt;
+    if (dom.copyPromptBtn) dom.copyPromptBtn.onclick = copyPrompt;
     document.getElementById('import-btn').onclick = showImportModal;
     document.getElementById('empty-import-btn').onclick = showImportModal;
     // 移除了 empty-copy-btn
