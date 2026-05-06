@@ -1,0 +1,106 @@
+<script setup>
+import { computed, ref, watch } from 'vue'
+import Badge from './ui/badge/Badge.vue'
+import Button from './ui/button/Button.vue'
+import Card from './ui/card/Card.vue'
+import Input from './ui/input/Input.vue'
+
+const props = defineProps({
+  entry: { type: Object, required: true },
+  index: { type: Number, required: true },
+  total: { type: Number, required: true },
+  review: { type: Boolean, default: false },
+})
+
+const emit = defineEmits(['submitted', 'next'])
+
+const answer = ref('')
+const submitted = ref(false)
+
+function escapeRegExp(text) {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
+const blankedExample = computed(() => {
+  const word = props.entry.item.word
+  const regex = new RegExp(`\\b${escapeRegExp(word)}\\b`, 'i')
+
+  if (regex.test(props.entry.item.example)) {
+    return props.entry.item.example.replace(regex, '_____')
+  }
+
+  return `${props.entry.item.example} (${word.length} letters)`
+})
+
+const normalizedAnswer = computed(() => answer.value.trim().toLowerCase())
+const normalizedWord = computed(() => props.entry.item.word.trim().toLowerCase())
+const isCorrect = computed(() => normalizedAnswer.value === normalizedWord.value)
+
+watch(
+  () => props.entry,
+  () => {
+    answer.value = ''
+    submitted.value = false
+  },
+)
+
+function submit() {
+  if (submitted.value) return
+  submitted.value = true
+  emit('submitted', {
+    userAnswer: answer.value.trim(),
+    isCorrect: isCorrect.value,
+  })
+}
+</script>
+
+<template>
+  <Card class="border-zinc-200 p-5 sm:p-6">
+    <div class="mb-5 flex items-start justify-between gap-4">
+      <div class="space-y-2">
+        <Badge variant="secondary">{{ review ? '錯題復習' : '拼字測試' }}</Badge>
+        <p class="text-sm text-zinc-500">第 {{ index + 1 }} / {{ total }} 題</p>
+      </div>
+      <div class="text-right">
+        <p class="text-xs text-zinc-400">Hint</p>
+        <p class="text-sm font-semibold text-zinc-900">{{ entry.item.meaning }}</p>
+      </div>
+    </div>
+
+    <div class="rounded-2xl bg-zinc-50 p-4">
+      <p class="text-xs font-semibold uppercase tracking-[0.16em] text-zinc-400">Example</p>
+      <p class="mt-3 text-[15px] leading-7 text-zinc-800 sm:text-base">{{ blankedExample }}</p>
+    </div>
+
+    <div class="mt-5 space-y-3">
+      <label class="text-sm font-medium text-zinc-700">請輸入完整英文單字</label>
+      <Input
+        v-model="answer"
+        placeholder="輸入單字"
+        :disabled="submitted"
+        @keydown.enter.prevent="submit"
+      />
+      <p class="text-xs text-zinc-500">判定會忽略大小寫與前後空白，其餘需完全正確。留白送出會視為跳過。</p>
+    </div>
+
+    <div v-if="submitted" class="mt-5 rounded-2xl border border-zinc-200 bg-white p-4">
+      <p class="text-sm font-semibold text-zinc-900">
+        {{ isCorrect ? '拼對了' : answer.trim() ? '拼錯了' : '這題已跳過' }}
+      </p>
+      <p class="mt-2 text-sm leading-6 text-zinc-600">
+        正解是 <span class="font-semibold text-zinc-950">{{ entry.item.word }}</span>
+        <span v-if="entry.item.pos">（{{ entry.item.pos }}）</span>，
+        {{ entry.item.meaning }}
+      </p>
+      <div class="mt-4 flex justify-end">
+        <Button @click="$emit('next')">
+          {{ index + 1 === total ? '看結果' : '下一題' }}
+        </Button>
+      </div>
+    </div>
+
+    <div v-else class="mt-5 flex justify-end">
+      <Button @click="submit">送出答案</Button>
+    </div>
+  </Card>
+</template>

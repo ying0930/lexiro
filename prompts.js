@@ -1,82 +1,90 @@
 const PROMPTS = {
-  generateQuiz: `你是一個專業的英文單字測驗出題者。請根據下方「單字列表」中的每個單字，各出一題填空選擇題。
+  generateWordSet: `你是一個英文單字學習資料產生器。請根據使用者提供的主題或單字列表，輸出可直接匯入單字學習工具的 JSON。
 
-【輸出格式】
-必須輸出「純 JSON 陣列」，不要有任何 markdown 標記（例如不要用 \`\`\`json 包裝）或說明文字。
+【輸出規則】
+- 只輸出純 JSON object。
+- 不要加 markdown code block。
+- 不要加任何說明文字。
+- 最外層必須是單一 object，不是陣列。
 
-格式：
-[
-  {
-    "q": "題號. 一句包含 _____ 的英文句子",
-    "opts": ["正確答案", "干擾選項1", "干擾選項2", "干擾選項3"],
-    "ans": 0
-  }
-]
+【JSON 格式】
+{
+  "setName": "單字集名稱",
+  "items": [
+    {
+      "id": "w-001",
+      "word": "abandon",
+      "pos": "v.",
+      "meaning": "放棄；遺棄",
+      "example": "He decided to abandon the plan after the cost doubled.",
+      "question": {
+        "prompt": "The captain had to _____ the ship during the storm.",
+        "opts": ["abandon", "delay", "gather", "repair"],
+        "ans": 0
+      }
+    }
+  ]
+}
 
-【欄位說明】
-- q：題目句子，以「題號. 」開頭，用 _____（五個底線）標示填空位置。句子要有完整情境，長度約 2-4 句。
-- opts：長度必須剛好為 4 的字串陣列。其中一個為正確答案，其餘為合理但錯誤的干擾選項。
-- ans：正確答案在 opts 中的索引，值為 0、1、2 或 3。請隨機變化正確答案的位置，不要總是放在第一個。
+【欄位要求】
+- setName：單字集名稱。
+- items：陣列，每筆代表一個單字。
+- 每筆 item 必須包含：word、meaning、example、question。
+- pos 可填常見詞性縮寫，例如 n. / v. / adj. / adv.。
+- question 只支援一題單選題，欄位固定為 prompt、opts、ans。
+- opts 長度必須剛好為 4。
+- ans 必須是 0、1、2、3 其中之一。
 
-【出題要求】
-- 每個單字各出一題，情境自然流暢，避免生硬的定義式句子。
-- 選項控制在 1-3 個英文單字（片語亦可）。
-- 難度適合台灣高中生，不要太簡單。
-- 不要照著使用者給的順序，打亂。
+【內容要求】
+- 每筆 item 只對應一個單字，不要同單字出多題。
+- example 要自然、完整，適合學生理解單字用法。
+- question.prompt 請寫成英文情境句，優先使用 _____ 作為挖空。
+- 正確答案要放在 opts 中，其他 3 個選項要是合理干擾項。
+- 題目難度適合台灣高中生，語氣直接清楚。
+- 若使用者提供多個單字，請每個單字都產出一筆 item。
 
-輸出範例：
-[
-  {
-    "q": "1. The weather during our beach vacation was absolutely _____. It rained heavily every single day, so we had to stay inside the hotel.",
-    "opts": ["frequent", "awful", "imaginative", "equal"],
-    "ans": 1
-  },
-  {
-    "q": "2. She has a strong _____ for music and practices piano for hours every day without getting tired.",
-    "opts": ["passion", "weapon", "poverty", "surgery"],
-    "ans": 0
-  }
-]
+【輸出示例】
+{
+  "setName": "核心單字 A",
+  "items": [
+    {
+      "id": "w-001",
+      "word": "abandon",
+      "pos": "v.",
+      "meaning": "放棄；遺棄",
+      "example": "He decided to abandon the plan after the cost doubled.",
+      "question": {
+        "prompt": "The captain had to _____ the ship during the storm.",
+        "opts": ["abandon", "delay", "gather", "repair"],
+        "ans": 0
+      }
+    }
+  ]
+}
 
-【單字列表】
+【使用者輸入】
 
 
 `,
 
-  analyzeMistakes: `我答錯了以下英文單字題目，請幫我詳細解析每一題的正確答案，並說明為什麼其他選項不適合：
-
----
-{{MISTAKES}}
----
-
-請用繁體中文解析，對每一題使用以下格式：
-
-第 X 題：
-題目：[將原題目完整列出]
-正確答案：[正確單字] — [解釋為什麼這個選項正確，包含字義、用法、搭配情境]
-- (A) [選項]：不適合，因為 [說明字義及其不適合本句的原因]
-- (B) [選項]：不適合，因為 [同上]
-- (C) [選項]：不適合，因為 [同上]
-- (D) [選項]：不適合，因為 [同上]
-
-請確保每一題的四個選項都有各自獨立的解釋，不要合併或省略。`
-,
-
-  analyzeQuestion: `我正在練習英文單字填空題，請幫我解析下面這一題，並用繁體中文說明正確答案與四個選項的差異。
+  explainQuestion: `請用繁體中文詳細解析這一題英文單字選擇題，幫我理解正確答案與其他選項為什麼不適合。
 
 請用以下格式回答：
-第 X 題：
 題目：[完整題目]
-選項：
-- (A) ...：...
-- (B) ...：...
-- (C) ...：...
-- (D) ...：...
-正確答案：[答案] — [為什麼正確]
+我的答案：[我選的答案；如果我沒作答請寫「未作答」]
+正確答案：[正確答案]
+解析：
+- 正確答案為什麼正確
+- 每個錯誤選項為什麼不適合這個語境
+- 補充這個單字在題目中的用法、語氣或常見搭配
 
-題號：第 {{QUESTION_NUMBER}} 題
 題目：{{QUESTION}}
 選項：
 {{OPTIONS}}
-正確答案：{{ANSWER}}`
-};
+我的答案：{{USER_ANSWER}}
+正確答案：{{CORRECT_ANSWER}}
+單字字義：{{MEANING}}
+例句：{{EXAMPLE}}`,
+}
+
+export default PROMPTS
