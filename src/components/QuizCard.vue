@@ -1,7 +1,6 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
 import Badge from './ui/badge/Badge.vue'
-import Button from './ui/button/Button.vue'
 import Card from './ui/card/Card.vue'
 import { cn } from '../lib/utils'
 
@@ -14,9 +13,9 @@ const props = defineProps({
   batchMode: { type: Boolean, default: false },
 })
 
-const emit = defineEmits(['copy-ai-prompt', 'draft-change'])
+const emit = defineEmits(['draft-change'])
 
-const labels = ['(A)', '(B)', '(C)', '(D)']
+const labels = ['1', '2', '3', '4']
 const selectedIndex = ref(null)
 const answered = ref(false)
 
@@ -72,16 +71,11 @@ function optionClass(index) {
         <Badge variant="secondary" class="rounded-full px-3 py-1 text-xs font-medium">
           {{ batchMode ? '待送出' : answered ? '已完成' : '進行中' }}
         </Badge>
-        <div v-if="review" class="flex justify-end">
-          <Button variant="outline" size="sm" @click="$emit('copy-ai-prompt', entry)">
-            複製本題 AI 提示
-          </Button>
-        </div>
       </div>
     </div>
 
     <div class="rounded-2xl bg-zinc-50 p-4">
-      <p class="text-xs font-semibold uppercase tracking-[0.16em] text-zinc-400">Prompt</p>
+      <p class="text-xs font-semibold uppercase tracking-[0.16em] text-zinc-400">題幹</p>
       <p class="mt-3 text-[15px] leading-7 text-zinc-800 sm:text-base">
         <template v-if="!answered && hasBlank">
           {{ promptParts[0] }}
@@ -114,18 +108,16 @@ function optionClass(index) {
       <p class="text-sm font-semibold text-zinc-900">
         {{
           selectedIndex === entry.item.question.ans
-            ? '答對了'
+            ? '正確'
             : selectedIndex === null
-              ? '這題已跳過'
-              : '這題答錯了'
+              ? '略過'
+              : '錯誤'
         }}
       </p>
       <p class="mt-2 text-sm leading-6 text-zinc-600">
         正解是 <span class="font-semibold text-zinc-950">{{ answerText }}</span>。
         {{ entry.item.meaning }}
       </p>
-      <div class="mt-4 flex flex-wrap justify-end gap-2">
-      </div>
     </div>
   </Card>
 </template>

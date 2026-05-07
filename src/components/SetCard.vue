@@ -1,5 +1,5 @@
 <script setup>
-import { BookOpenText, Play, SpellCheck2, Trash2 } from 'lucide-vue-next'
+import { BookOpenText, PencilLine, Play, SpellCheck2, Trash2 } from 'lucide-vue-next'
 import Badge from './ui/badge/Badge.vue'
 import Button from './ui/button/Button.vue'
 import Card from './ui/card/Card.vue'
@@ -45,8 +45,8 @@ defineEmits(['flashcards', 'quiz', 'spelling', 'delete', 'edit'])
         <Trash2 class="h-4 w-4" />
         刪除
       </Button>
-      <Button variant="outline" class="justify-start" @click="$emit('edit', set.id)">
-        編輯單字集
+      <Button variant="outline" size="icon" @click="$emit('edit', set.id)">
+        <PencilLine class="h-4 w-4" />
       </Button>
     </div>
   </Card>

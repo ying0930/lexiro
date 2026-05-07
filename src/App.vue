@@ -6,6 +6,7 @@ import {
   ClipboardCopy,
   FileQuestion,
   Plus,
+  PencilLine,
   RotateCcw,
   SpellCheck2,
   Trash2,
@@ -46,8 +47,8 @@ const setEditorOpen = ref(false)
 const setEditorMode = ref('create')
 const setEditorId = ref(null)
 const setEditorName = ref('')
-const setEditorItems = ref('')
 const setEditorError = ref('')
+const setEditorDraftItems = ref([])
 const pendingSetItems = ref([])
 const practiceCounts = ref({})
 const practiceDialogOpen = ref(false)
@@ -134,31 +135,39 @@ function normalizeSet(data, fallbackId = `${Date.now()}`) {
   }
 }
 
-function serializeSetItems(items) {
-  return JSON.stringify(items, null, 2)
+function createEditorQuestion(question = null) {
+  return {
+    prompt: question?.prompt ?? '',
+    opts: Array.isArray(question?.opts) && question.opts.length === 4 ? [...question.opts] : ['', '', '', ''],
+    ans: Number.isInteger(question?.ans) ? question.ans : 0,
+  }
 }
 
-function parseSetEditorItems(text) {
-  let parsedItems
-  try {
-    parsedItems = JSON.parse(text)
-  } catch {
-    throw new Error('單字內容 JSON 格式錯誤')
+function createEditorItem(item = null, index = 0) {
+  return {
+    id: isNonEmptyString(item?.id) ? item.id.trim() : `editor-${Date.now()}-${index}`,
+    word: item?.word ?? '',
+    pos: item?.pos ?? '',
+    meaning: item?.meaning ?? '',
+    example: item?.example ?? '',
+    question: createEditorQuestion(item?.question),
   }
+}
 
-  if (!Array.isArray(parsedItems)) {
-    throw new Error('單字內容必須是 items 陣列')
-  }
+function createBlankEditorItem(index = 0) {
+  return createEditorItem(null, index)
+}
 
-  return parsedItems.map((item, index) => normalizeItem(item, index))
+function createEditorItems(items = []) {
+  return items.map((item, index) => createEditorItem(item, index))
 }
 
 function openSetEditor(mode, set = null) {
   setEditorMode.value = mode
   setEditorId.value = set?.id ?? null
   setEditorName.value = set?.setName ?? ''
-  setEditorItems.value = set ? serializeSetItems(set.items) : ''
-  pendingSetItems.value = set ? set.items : []
+  setEditorDraftItems.value = mode === 'edit' && set ? createEditorItems(set.items) : []
+  pendingSetItems.value = mode === 'create' ? [...(pendingSetItems.value ?? [])] : []
   setEditorError.value = ''
   setEditorOpen.value = true
 }
@@ -173,9 +182,8 @@ function saveSetEditor() {
       throw new Error('請輸入單字集名稱')
     }
 
-    const items = setEditorMode.value === 'create'
-      ? pendingSetItems.value
-      : parseSetEditorItems(setEditorItems.value)
+    const sourceItems = setEditorMode.value === 'create' ? pendingSetItems.value : setEditorDraftItems.value
+    const items = sourceItems.map((item, index) => normalizeItem(item, index))
 
     if (!Array.isArray(items) || !items.length) {
       throw new Error('items 不可為空')
@@ -212,6 +220,14 @@ function saveSetEditor() {
   } catch (error) {
     setEditorError.value = error.message
   }
+}
+
+function addEditorItem() {
+  setEditorDraftItems.value = [...setEditorDraftItems.value, createBlankEditorItem(setEditorDraftItems.value.length)]
+}
+
+function removeEditorItem(index) {
+  setEditorDraftItems.value = setEditorDraftItems.value.filter((_, itemIndex) => itemIndex !== index)
 }
 
 function parseImportJson(text) {
@@ -470,7 +486,7 @@ function startFlashcards(setId) {
   }
 
   flashcardIndex.value = 0
-  currentSession.value = createSession('flashcard', buildPracticeEntries(setId, activeSet.value?.items ?? []), false, setId)
+  currentSession.value = createSession('flashcard', toSessionEntries(activeSet.value?.items ?? []), false, setId)
   currentView.value = 'flashcard'
   window.scrollTo({ top: 0, behavior: 'smooth' })
 }
@@ -770,14 +786,8 @@ onMounted(() => {
             </Button>
             <div>
               <h1 class="text-xl font-semibold tracking-tight text-zinc-950">單字特訓</h1>
-              <p class="text-sm text-zinc-500">
-                {{
-                  currentView === 'home'
-                    ? '匯入單字集後，可用單字卡、選擇題與拼字三種模式練習。'
-                    : currentSession?.review
-                      ? '本輪錯題復習只保留在這次練習流程中。'
-                      : '所有題目會一次展開，填完再送出。'
-                }}
+              <p v-if="currentView === 'home'" class="text-sm text-zinc-500">
+                建立或匯入單字集後即可開始。
               </p>
             </div>
           </div>
@@ -790,12 +800,12 @@ onMounted(() => {
               <Trash2 class="h-4 w-4" />
             </Button>
             <Button variant="outline" size="icon" class="h-9 w-9" @click="editActiveSet">
-              編輯
+              <PencilLine class="h-4 w-4" />
             </Button>
           </div>
         </div>
 
-        <div class="flex flex-wrap items-center justify-between gap-3">
+        <div v-if="currentView === 'home'" class="flex flex-wrap items-center justify-between gap-3">
           <div class="text-sm text-zinc-500">
             <span v-if="hasSets">{{ sets.length }} 個單字集，{{ totalWordCount }} 個單字</span>
             <span v-else>貼上新的單字集 JSON 後即可開始。</span>
@@ -823,7 +833,7 @@ onMounted(() => {
             </div>
             <h2 class="text-lg font-semibold text-zinc-950">尚無單字集</h2>
             <p class="mx-auto mt-2 max-w-md text-sm leading-6 text-zinc-500">
-              先讓 AI 產出新格式 JSON，再貼回來匯入。第一版只接受單字中心資料，不支援舊題目格式。
+              先建立單字集，再開始練習。
             </p>
             <div class="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
               <Button @click="openImport">
@@ -860,23 +870,22 @@ onMounted(() => {
           <div class="mb-4 flex items-start justify-between gap-4">
             <div>
               <p class="text-sm font-semibold text-zinc-950">{{ activeSet.setName }}</p>
-              <p class="mt-1 text-sm text-zinc-500">單字卡 {{ flashcardIndex + 1 }} / {{ totalItems }}</p>
+              <p class="mt-1 text-sm text-zinc-500">單字卡</p>
             </div>
             <div class="text-right">
-              <p class="text-xs text-zinc-400">瀏覽進度</p>
-              <p class="text-lg font-semibold text-zinc-950">{{ progressPercent }}%</p>
+              <p class="text-xs text-zinc-400">{{ totalItems }} 張</p>
             </div>
           </div>
-          <Progress :model-value="progressPercent" />
         </Card>
 
-        <FlashcardView
-          :item="sessionEntries[flashcardIndex]?.item"
-          :index="flashcardIndex"
-          :total="totalItems"
-          @prev="flashcardIndex = Math.max(0, flashcardIndex - 1)"
-          @next="flashcardIndex = Math.min(totalItems - 1, flashcardIndex + 1)"
-        />
+        <div class="space-y-4">
+          <FlashcardView
+            v-for="(entry, entryIndex) in sessionEntries"
+            :key="entry.item.id"
+            :item="entry.item"
+            :index="entryIndex"
+          />
+        </div>
       </section>
 
       <section v-else-if="(currentView === 'quiz' || currentView === 'spelling') && activeSet && currentSession" class="space-y-4">
@@ -888,11 +897,10 @@ onMounted(() => {
                 <span>
                   {{ currentView === 'quiz' ? `選擇題 ${totalItems} 題` : `拼字測試 ${totalItems} 題` }}
                 </span>
-                <Badge v-if="currentSession.review" variant="secondary">本輪錯題復習</Badge>
               </div>
             </div>
             <div class="text-right">
-              <p class="text-xs text-zinc-400">已填答</p>
+              <p class="text-xs text-zinc-400">進度</p>
               <p class="text-lg font-semibold text-zinc-950">{{ progressCount }} / {{ totalItems }}</p>
             </div>
           </div>
@@ -911,7 +919,6 @@ onMounted(() => {
               :draft="currentSession.drafts?.[entryIndex] ?? null"
               batch-mode
               @draft-change="(payload) => handleQuizDraftChange(entryIndex, payload)"
-              @copy-ai-prompt="copyQuestionExplainPrompt"
             />
           </template>
 
@@ -995,10 +1002,10 @@ onMounted(() => {
                 <p class="mt-1 text-sm text-zinc-500">
                   {{
                     row.record?.isCorrect
-                      ? '答對'
+                      ? '正確'
                       : row.record?.skipped
-                        ? '跳過'
-                        : '答錯'
+                        ? '略過'
+                        : '錯誤'
                   }}
                 </p>
               </div>
@@ -1008,10 +1015,10 @@ onMounted(() => {
               >
                 {{
                   row.record?.isCorrect
-                    ? 'Correct'
+                    ? '正確'
                     : row.record?.skipped
-                      ? 'Skipped'
-                      : 'Wrong'
+                      ? '略過'
+                      : '錯誤'
                 }}
               </Badge>
             </div>
@@ -1025,11 +1032,6 @@ onMounted(() => {
                 <p class="text-zinc-600">
                   正確答案：{{ row.record?.correctAnswer ?? row.entry.item.question.opts[row.entry.item.question.ans] }}
                 </p>
-                <div class="mt-3 flex justify-end">
-                  <Button variant="outline" size="sm" @click="copyQuestionExplainPrompt(row.entry, row.record)">
-                    複製本題 AI 提示
-                  </Button>
-                </div>
               </div>
               <div v-else>
                 <p class="font-medium text-zinc-900">{{ row.entry.item.example }}</p>
@@ -1046,12 +1048,12 @@ onMounted(() => {
     <Dialog
       :open="importOpen"
       title="匯入單字集"
-      description="貼上新的單字集 JSON，然後再手動命名。"
+      description="貼上新的單字集 JSON。"
       @close="closeImport"
     >
       <div class="space-y-4">
         <div class="space-y-2">
-          <label class="text-sm font-medium text-zinc-700">貼上 AI 產生的 JSON</label>
+          <label class="text-sm font-medium text-zinc-700">貼上 JSON</label>
           <Textarea
             ref="importTextarea"
             v-model="importJson"
@@ -1085,7 +1087,7 @@ onMounted(() => {
     <Dialog
       :open="setEditorOpen"
       :title="setEditorMode === 'create' ? '新增單字集' : '編輯單字集'"
-      :description="setEditorMode === 'create' ? '送出 JSON 後，只要再輸入單字集名稱就好。' : '可直接修改名稱與 items JSON。'"
+      :description="setEditorMode === 'create' ? '輸入名稱後即可完成新增。' : '可直接編輯每個單字欄位。'"
       @close="closeSetEditor"
     >
       <div class="space-y-4">
@@ -1094,14 +1096,72 @@ onMounted(() => {
           <Input v-model="setEditorName" placeholder="例如：核心單字 A" />
         </div>
 
-        <div v-if="setEditorMode === 'edit'" class="space-y-2">
-          <label class="text-sm font-medium text-zinc-700">單字內容 JSON</label>
-          <Textarea
-            v-model="setEditorItems"
-            :rows="14"
-            class="font-mono"
-            placeholder='[{"word":"abandon","meaning":"放棄；遺棄","example":"He decided to abandon the plan after the cost doubled.","question":{"prompt":"The captain had to _____ the ship during the storm.","opts":["abandon","delay","gather","repair"],"ans":0}}]'
-          />
+        <div v-if="setEditorMode === 'edit'" class="space-y-4">
+          <div
+            v-for="(item, itemIndex) in setEditorDraftItems"
+            :key="item.id"
+            class="rounded-2xl border border-zinc-200 bg-zinc-50 p-4"
+          >
+            <div class="flex items-center justify-between gap-3">
+              <p class="text-sm font-semibold text-zinc-950">第 {{ itemIndex + 1 }} 個單字</p>
+              <Button
+                variant="outline"
+                size="icon"
+                class="h-8 w-8 border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700"
+                @click="removeEditorItem(itemIndex)"
+              >
+                <Trash2 class="h-4 w-4" />
+              </Button>
+            </div>
+
+            <div class="mt-4 grid gap-3 sm:grid-cols-2">
+              <div class="space-y-2 sm:col-span-1">
+                <label class="text-sm font-medium text-zinc-700">單字</label>
+                <Input v-model="item.word" placeholder="word" />
+              </div>
+              <div class="space-y-2 sm:col-span-1">
+                <label class="text-sm font-medium text-zinc-700">詞性</label>
+                <Input v-model="item.pos" placeholder="n. / v. / adj." />
+              </div>
+              <div class="space-y-2 sm:col-span-2">
+                <label class="text-sm font-medium text-zinc-700">中文意思</label>
+                <Textarea v-model="item.meaning" :rows="2" placeholder="中文意思" />
+              </div>
+              <div class="space-y-2 sm:col-span-2">
+                <label class="text-sm font-medium text-zinc-700">例句</label>
+                <Textarea v-model="item.example" :rows="3" placeholder="例句" />
+              </div>
+              <div class="space-y-2 sm:col-span-2">
+                <label class="text-sm font-medium text-zinc-700">題目</label>
+                <Textarea v-model="item.question.prompt" :rows="3" placeholder="題幹" />
+              </div>
+            </div>
+
+            <div class="mt-4 grid gap-3 sm:grid-cols-2">
+              <div v-for="(option, optionIndex) in item.question.opts" :key="`${item.id}-option-${optionIndex}`" class="space-y-2">
+                <label class="text-sm font-medium text-zinc-700">選項 {{ optionIndex + 1 }}</label>
+                <Input v-model="item.question.opts[optionIndex]" :placeholder="`選項 ${optionIndex + 1}`" />
+              </div>
+            </div>
+
+            <div class="mt-4 flex flex-wrap gap-2">
+              <button
+                v-for="answerIndex in 4"
+                :key="`${item.id}-answer-${answerIndex}`"
+                type="button"
+                class="rounded-md border px-3 py-2 text-sm font-medium transition-colors"
+                :class="item.question.ans === answerIndex - 1 ? 'border-zinc-900 bg-zinc-900 text-white' : 'border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-50'"
+                @click="item.question.ans = answerIndex - 1"
+              >
+                正解 {{ answerIndex }}
+              </button>
+            </div>
+          </div>
+
+          <Button variant="outline" class="w-full" @click="addEditorItem">
+            <Plus class="h-4 w-4" />
+            新增單字
+          </Button>
         </div>
 
         <p v-if="setEditorError" class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">
@@ -1132,7 +1192,7 @@ onMounted(() => {
     <Dialog
       :open="practiceDialogOpen"
       :title="practiceDialogMode === 'quiz' ? '開始練習' : '拼字測試'"
-      description="用拉條決定這次要練幾題，拉到最右邊就是全部單字。"
+      description="用拉條決定這次要練幾題。"
       @close="closePracticeDialog"
     >
       <div v-if="practiceDialogSetId && sets.find((set) => set.id === practiceDialogSetId)" class="space-y-4">
@@ -1144,7 +1204,6 @@ onMounted(() => {
                 {{ practiceDialogCount }} / {{ sets.find((set) => set.id === practiceDialogSetId)?.items.length ?? 1 }} 題
               </p>
             </div>
-            <span class="text-xs font-medium text-zinc-500">拉滿 = 全部單字</span>
           </div>
           <input
             class="mt-3 h-2 w-full cursor-pointer appearance-none rounded-full bg-zinc-200 accent-zinc-900"

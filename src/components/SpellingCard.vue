@@ -30,7 +30,7 @@ const blankedExample = computed(() => {
     return props.entry.item.example.replace(regex, '_____')
   }
 
-  return `${props.entry.item.example} (${word.length} letters)`
+  return props.entry.item.example
 })
 
 const normalizedAnswer = computed(() => answer.value.trim().toLowerCase())
@@ -67,13 +67,13 @@ function submit() {
         <p class="text-sm text-zinc-500">第 {{ index + 1 }} / {{ total }} 題</p>
       </div>
       <div class="text-right">
-        <p class="text-xs text-zinc-400">Hint</p>
+        <p class="text-xs text-zinc-400">中文意思</p>
         <p class="text-sm font-semibold text-zinc-900">{{ entry.item.meaning }}</p>
       </div>
     </div>
 
     <div class="rounded-2xl bg-zinc-50 p-4">
-      <p class="text-xs font-semibold uppercase tracking-[0.16em] text-zinc-400">Example</p>
+      <p class="text-xs font-semibold uppercase tracking-[0.16em] text-zinc-400">例句</p>
       <p class="mt-3 text-[15px] leading-7 text-zinc-800 sm:text-base">{{ blankedExample }}</p>
     </div>
 
@@ -90,15 +90,13 @@ function submit() {
 
     <div v-if="!batchMode && submitted" class="mt-5 rounded-2xl border border-zinc-200 bg-white p-4">
       <p class="text-sm font-semibold text-zinc-900">
-        {{ isCorrect ? '拼對了' : answer.trim() ? '拼錯了' : '這題已跳過' }}
+        {{ isCorrect ? '正確' : answer.trim() ? '錯誤' : '略過' }}
       </p>
       <p class="mt-2 text-sm leading-6 text-zinc-600">
         正解是 <span class="font-semibold text-zinc-950">{{ entry.item.word }}</span>
         <span v-if="entry.item.pos">（{{ entry.item.pos }}）</span>，
         {{ entry.item.meaning }}
       </p>
-      <div class="mt-4 flex justify-end">
-      </div>
     </div>
   </Card>
 </template>
