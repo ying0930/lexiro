@@ -626,7 +626,7 @@ onMounted(() => {
                     ? '匯入單字集後，可用單字卡、選擇題與拼字三種模式練習。'
                     : currentSession?.review
                       ? '本輪錯題復習只保留在這次練習流程中。'
-                      : '每筆資料就是一個單字與一題選擇題。'
+                      : '所有題目會一次展開，填完再送出。'
                 }}
               </p>
             </div>
@@ -686,36 +686,12 @@ onMounted(() => {
         </div>
 
         <div v-else class="space-y-4">
-          <Card class="overflow-hidden border-zinc-200 p-0">
-            <div class="bg-[radial-gradient(circle_at_top_left,_rgba(252,211,77,0.24),_transparent_36%),linear-gradient(135deg,_rgba(255,255,255,0.98),_rgba(244,244,245,0.94))] p-5 sm:p-6">
-              <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-                <div>
-                  <p class="text-xs font-semibold uppercase tracking-[0.18em] text-amber-700/70">Word Studio</p>
-                  <h2 class="mt-1 text-lg font-semibold text-zinc-950">從單字集切換不同練習模式</h2>
-                  <p class="mt-2 max-w-2xl text-sm leading-6 text-zinc-600">
-                    單字卡用來看字義與例句，開始練習用原始選擇題，拼字測試則用例句挖空與中文提示做回想。
-                  </p>
-                </div>
-                <div class="grid grid-cols-2 gap-3 sm:min-w-[250px]">
-                  <div class="rounded-xl border border-white/80 bg-white/70 px-4 py-3 shadow-sm">
-                    <p class="text-xs text-zinc-400">單字集</p>
-                    <p class="mt-1 text-lg font-semibold text-zinc-950">{{ sets.length }}</p>
-                  </div>
-                  <div class="rounded-xl border border-white/80 bg-white/70 px-4 py-3 shadow-sm">
-                    <p class="text-xs text-zinc-400">總單字數</p>
-                    <p class="mt-1 text-lg font-semibold text-zinc-950">{{ totalWordCount }}</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </Card>
-
           <div class="grid gap-4 md:grid-cols-2">
             <SetCard
               v-for="set in sets"
               :key="set.id"
               :set="set"
-              :active="set.id === activeSetId"
+              :active="isSetInProgress(set.id)"
               @flashcards="startFlashcards"
               @quiz="startRound('quiz', $event)"
               @spelling="startRound('spelling', $event)"
@@ -749,50 +725,64 @@ onMounted(() => {
         />
       </section>
 
-      <section v-else-if="(currentView === 'quiz' || currentView === 'spelling') && activeSet && currentSession && currentEntry" class="space-y-4">
+      <section v-else-if="(currentView === 'quiz' || currentView === 'spelling') && activeSet && currentSession" class="space-y-4">
         <Card class="p-5">
           <div class="mb-4 flex items-start justify-between gap-4">
             <div>
               <p class="text-sm font-semibold text-zinc-950">{{ activeSet.setName }}</p>
               <div class="mt-1 flex flex-wrap items-center gap-2 text-sm text-zinc-500">
                 <span>
-                  {{
-                    currentView === 'quiz'
-                      ? `選擇題 ${currentSession.index + 1} / ${totalItems}`
-                      : `拼字測試 ${currentSession.index + 1} / ${totalItems}`
-                  }}
+                  {{ currentView === 'quiz' ? `選擇題 ${totalItems} 題` : `拼字測試 ${totalItems} 題` }}
                 </span>
                 <Badge v-if="currentSession.review" variant="secondary">本輪錯題復習</Badge>
               </div>
             </div>
             <div class="text-right">
-              <p class="text-xs text-zinc-400">目前答對</p>
-              <p class="text-lg font-semibold text-zinc-950">{{ currentSession.correctCount }}</p>
+              <p class="text-xs text-zinc-400">已填答</p>
+              <p class="text-lg font-semibold text-zinc-950">{{ progressCount }} / {{ totalItems }}</p>
             </div>
           </div>
           <Progress :model-value="progressPercent" />
         </Card>
 
-        <QuizCard
-          v-if="currentView === 'quiz'"
-          :entry="currentEntry"
-          :index="currentSession.index"
-          :total="totalItems"
-          :review="currentSession.review"
-          @answered="handleQuizAnswered"
-          @copy-ai-prompt="copyQuestionExplainPrompt"
-          @next="handleQuizNext"
-        />
+        <div class="space-y-4">
+          <template v-if="currentView === 'quiz'">
+            <QuizCard
+              v-for="(entry, entryIndex) in sessionEntries"
+              :key="entry.item.id"
+              :entry="entry"
+              :index="entryIndex"
+              :total="totalItems"
+              :review="currentSession.review"
+              :draft="currentSession.drafts?.[entryIndex] ?? null"
+              batch-mode
+              @draft-change="(payload) => handleQuizDraftChange(entryIndex, payload)"
+              @copy-ai-prompt="copyQuestionExplainPrompt"
+            />
+          </template>
 
-        <SpellingCard
-          v-else
-          :entry="currentEntry"
-          :index="currentSession.index"
-          :total="totalItems"
-          :review="currentSession.review"
-          @submitted="handleSpellingSubmitted"
-          @next="handleSpellingNext"
-        />
+          <template v-else>
+            <SpellingCard
+              v-for="(entry, entryIndex) in sessionEntries"
+              :key="entry.item.id"
+              :entry="entry"
+              :index="entryIndex"
+              :total="totalItems"
+              :review="currentSession.review"
+              :draft="currentSession.drafts?.[entryIndex] ?? null"
+              batch-mode
+              @draft-change="(payload) => handleSpellingDraftChange(entryIndex, payload)"
+            />
+          </template>
+
+          <Card class="border-zinc-200 p-5 sm:p-6">
+            <div class="flex flex-col items-end gap-3 sm:flex-row sm:justify-end">
+              <Button @click="submitCurrentRound">
+                送出答案
+              </Button>
+            </div>
+          </Card>
+        </div>
       </section>
 
       <section v-else-if="currentView === 'result' && activeSet && resultSummary" class="space-y-4">

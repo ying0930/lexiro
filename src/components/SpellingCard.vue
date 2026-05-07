@@ -1,7 +1,6 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
 import Badge from './ui/badge/Badge.vue'
-import Button from './ui/button/Button.vue'
 import Card from './ui/card/Card.vue'
 import Input from './ui/input/Input.vue'
 
@@ -10,9 +9,11 @@ const props = defineProps({
   index: { type: Number, required: true },
   total: { type: Number, required: true },
   review: { type: Boolean, default: false },
+  draft: { type: Object, default: null },
+  batchMode: { type: Boolean, default: false },
 })
 
-const emit = defineEmits(['submitted', 'next'])
+const emit = defineEmits(['draft-change'])
 
 const answer = ref('')
 const submitted = ref(false)
@@ -37,21 +38,21 @@ const normalizedWord = computed(() => props.entry.item.word.trim().toLowerCase()
 const isCorrect = computed(() => normalizedAnswer.value === normalizedWord.value)
 
 watch(
-  () => props.entry,
+  [() => props.entry, () => props.draft],
   () => {
-    answer.value = ''
-    submitted.value = false
+    answer.value = props.draft?.answer ?? ''
+    submitted.value = props.batchMode ? false : Boolean(props.draft?.submitted)
   },
+  { immediate: true, deep: true },
 )
 
-function submit() {
-  if (submitted.value) return
-  submitted.value = true
-  emit('submitted', {
-    userAnswer: answer.value.trim(),
-    isCorrect: isCorrect.value,
+watch([answer, submitted], () => {
+  emit('draft-change', {
+    answer: answer.value,
+    submitted: submitted.value,
   })
-}
+})
+
 </script>
 
 <template>
@@ -83,7 +84,7 @@ function submit() {
       <p class="text-xs text-zinc-500">判定會忽略大小寫與前後空白，其餘需完全正確。留白送出會視為跳過。</p>
     </div>
 
-    <div v-if="submitted" class="mt-5 rounded-2xl border border-zinc-200 bg-white p-4">
+    <div v-if="!batchMode && submitted" class="mt-5 rounded-2xl border border-zinc-200 bg-white p-4">
       <p class="text-sm font-semibold text-zinc-900">
         {{ isCorrect ? '拼對了' : answer.trim() ? '拼錯了' : '這題已跳過' }}
       </p>
@@ -93,14 +94,7 @@ function submit() {
         {{ entry.item.meaning }}
       </p>
       <div class="mt-4 flex justify-end">
-        <Button @click="$emit('next')">
-          {{ index + 1 === total ? '看結果' : '下一題' }}
-        </Button>
       </div>
-    </div>
-
-    <div v-else class="mt-5 flex justify-end">
-      <Button @click="submit">送出答案</Button>
     </div>
   </Card>
 </template>

@@ -10,9 +10,11 @@ const props = defineProps({
   index: { type: Number, required: true },
   total: { type: Number, required: true },
   review: { type: Boolean, default: false },
+  draft: { type: Object, default: null },
+  batchMode: { type: Boolean, default: false },
 })
 
-const emit = defineEmits(['answered', 'next', 'copy-ai-prompt'])
+const emit = defineEmits(['copy-ai-prompt', 'draft-change'])
 
 const labels = ['(A)', '(B)', '(C)', '(D)']
 const selectedIndex = ref(null)
@@ -23,25 +25,24 @@ const promptParts = computed(() => props.entry.item.question.prompt.split('_____
 const hasBlank = computed(() => props.entry.item.question.prompt.includes('_____'))
 
 watch(
-  () => props.entry,
+  [() => props.entry, () => props.draft],
   () => {
-    selectedIndex.value = null
-    answered.value = false
+    selectedIndex.value = props.draft?.selectedIndex ?? null
+    answered.value = props.batchMode ? false : Boolean(props.draft?.answered)
   },
+  { immediate: true, deep: true },
 )
 
-function choose(index) {
-  if (answered.value) return
-  selectedIndex.value = index
-}
-
-function submit() {
-  if (answered.value) return
-  answered.value = true
-  emit('answered', {
+watch([selectedIndex, answered], () => {
+  emit('draft-change', {
     selectedIndex: selectedIndex.value,
-    isCorrect: selectedIndex.value === props.entry.item.question.ans,
+    answered: answered.value,
   })
+})
+
+function choose(index) {
+  if (!props.batchMode && answered.value) return
+  selectedIndex.value = index
 }
 
 function optionClass(index) {
@@ -68,8 +69,9 @@ function optionClass(index) {
         <p class="text-sm text-zinc-500">第 {{ index + 1 }} / {{ total }} 題</p>
       </div>
       <div class="text-right space-y-2">
-        <p class="text-xs text-zinc-400">Word</p>
-        <p class="text-sm font-semibold text-zinc-900">{{ entry.item.word }}</p>
+        <Badge variant="secondary" class="rounded-full px-3 py-1 text-xs font-medium">
+          {{ batchMode ? '待送出' : answered ? '已完成' : '進行中' }}
+        </Badge>
         <div v-if="review" class="flex justify-end">
           <Button variant="outline" size="sm" @click="$emit('copy-ai-prompt', entry)">
             複製本題 AI 提示
@@ -108,7 +110,7 @@ function optionClass(index) {
       </button>
     </div>
 
-    <div v-if="answered" class="mt-5 rounded-2xl border border-zinc-200 bg-white p-4">
+    <div v-if="!batchMode && answered" class="mt-5 rounded-2xl border border-zinc-200 bg-white p-4">
       <p class="text-sm font-semibold text-zinc-900">
         {{
           selectedIndex === entry.item.question.ans
@@ -123,14 +125,7 @@ function optionClass(index) {
         {{ entry.item.meaning }}
       </p>
       <div class="mt-4 flex flex-wrap justify-end gap-2">
-        <Button @click="$emit('next')">
-          {{ index + 1 === total ? '看結果' : '下一題' }}
-        </Button>
       </div>
-    </div>
-
-    <div v-else class="mt-5 flex justify-end">
-      <Button @click="submit">送出答案</Button>
     </div>
   </Card>
 </template>
