@@ -41,6 +41,11 @@ const toastMessage = ref('')
 const toastVisible = ref(false)
 const pendingDeleteId = ref(null)
 const importTextarea = ref(null)
+const practiceCounts = ref({})
+const practiceDialogOpen = ref(false)
+const practiceDialogMode = ref('quiz')
+const practiceDialogSetId = ref(null)
+const practiceDialogCount = ref(1)
 
 let confirmResolver = null
 let toastTimer = null
@@ -143,6 +148,27 @@ function toSessionEntries(items) {
     item,
     originalIndex: index,
   }))
+}
+
+function shuffleEntries(entries) {
+  const cloned = [...entries]
+  for (let index = cloned.length - 1; index > 0; index -= 1) {
+    const randomIndex = Math.floor(Math.random() * (index + 1))
+    ;[cloned[index], cloned[randomIndex]] = [cloned[randomIndex], cloned[index]]
+  }
+  return cloned
+}
+
+function getPracticeCount(setId, totalItems) {
+  const storedCount = practiceCounts.value[setId]
+  if (!Number.isInteger(storedCount)) return totalItems
+  return Math.min(Math.max(storedCount, 1), totalItems)
+}
+
+function buildPracticeEntries(setId, items) {
+  const shuffled = shuffleEntries(toSessionEntries(items))
+  const count = getPracticeCount(setId, shuffled.length)
+  return shuffled.slice(0, count)
 }
 
 function createSession(mode, entries, review = false, sourceSetId = null) {
@@ -250,6 +276,9 @@ function loadState() {
     const validSetIds = new Set(sanitizedSets.map((set) => set.id))
   const savedView = typeof parsed.currentView === 'string' ? parsed.currentView : 'home'
   const savedSession = normalizeSession(parsed.currentSession, validSetIds, savedView)
+    practiceCounts.value = parsed.practiceCounts && typeof parsed.practiceCounts === 'object' && !Array.isArray(parsed.practiceCounts)
+      ? parsed.practiceCounts
+      : {}
 
     currentSession.value = savedSession
   currentView.value = savedView
@@ -261,6 +290,7 @@ function loadState() {
       activeSetId.value = validSetIds.has(parsed.activeSetId) ? parsed.activeSetId : sanitizedSets[0]?.id ?? null
       currentView.value = 'home'
       flashcardIndex.value = 0
+      practiceCounts.value = {}
     }
   } catch {
     sets.value = []
@@ -268,6 +298,7 @@ function loadState() {
     currentView.value = 'home'
     currentSession.value = null
     flashcardIndex.value = 0
+    practiceCounts.value = {}
   }
 }
 
@@ -280,6 +311,7 @@ function saveState() {
       currentView: currentView.value,
       currentSession: currentSession.value,
       flashcardIndex: flashcardIndex.value,
+      practiceCounts: practiceCounts.value,
     }),
   )
 }
@@ -350,7 +382,7 @@ function startFlashcards(setId) {
   }
 
   flashcardIndex.value = 0
-  currentSession.value = createSession('flashcard', toSessionEntries(activeSet.value?.items ?? []), false, setId)
+  currentSession.value = createSession('flashcard', buildPracticeEntries(setId, activeSet.value?.items ?? []), false, setId)
   currentView.value = 'flashcard'
   window.scrollTo({ top: 0, behavior: 'smooth' })
 }
@@ -365,7 +397,7 @@ async function startRound(mode, setId, reviewEntries = null) {
       return
     }
 
-    const entries = toSessionEntries(activeSet.value?.items ?? [])
+    const entries = buildPracticeEntries(setId, activeSet.value?.items ?? [])
     currentSession.value = createSession(mode, entries, false, setId)
     currentView.value = mode
     window.scrollTo({ top: 0, behavior: 'smooth' })
@@ -373,12 +405,41 @@ async function startRound(mode, setId, reviewEntries = null) {
   }
 
   const entries = reviewEntries
-    ? reviewEntries.map((entry) => ({ ...entry }))
-    : toSessionEntries(activeSet.value?.items ?? [])
+    ? shuffleEntries(reviewEntries.map((entry) => ({ ...entry })))
+    : buildPracticeEntries(setId, activeSet.value?.items ?? [])
 
   currentSession.value = createSession(mode, entries, Boolean(reviewEntries), setId)
   currentView.value = mode
   window.scrollTo({ top: 0, behavior: 'smooth' })
+}
+
+function handlePracticeCountChange(setId, value, totalItems) {
+  const parsedValue = Number.parseInt(value, 10)
+  const nextValue = Number.isNaN(parsedValue) ? totalItems : Math.min(Math.max(parsedValue, 1), totalItems)
+  practiceCounts.value = {
+    ...practiceCounts.value,
+    [setId]: nextValue,
+  }
+}
+
+function openPracticeDialog(mode, setId) {
+  const set = sets.value.find((item) => item.id === setId)
+  if (!set) return
+  practiceDialogMode.value = mode
+  practiceDialogSetId.value = setId
+  practiceDialogCount.value = getPracticeCount(setId, set.items.length)
+  practiceDialogOpen.value = true
+}
+
+async function confirmPracticeDialog() {
+  if (!practiceDialogSetId.value) return
+  handlePracticeCountChange(practiceDialogSetId.value, practiceDialogCount.value, activeSet.value?.items.length ?? 1)
+  practiceDialogOpen.value = false
+  await startRound(practiceDialogMode.value, practiceDialogSetId.value)
+}
+
+function closePracticeDialog() {
+  practiceDialogOpen.value = false
 }
 
 function buildQuizRecord(entry, draft) {
@@ -693,8 +754,8 @@ onMounted(() => {
               :set="set"
               :active="isSetInProgress(set.id)"
               @flashcards="startFlashcards"
-              @quiz="startRound('quiz', $event)"
-              @spelling="startRound('spelling', $event)"
+              @quiz="openPracticeDialog('quiz', $event)"
+              @spelling="openPracticeDialog('spelling', $event)"
               @delete="requestDelete"
             />
           </div>
@@ -940,6 +1001,39 @@ onMounted(() => {
       <div class="flex justify-end gap-2">
         <Button variant="outline" @click="resolveConfirm(false)">取消</Button>
         <Button variant="destructive" @click="resolveConfirm(true)">確定</Button>
+      </div>
+    </Dialog>
+
+    <Dialog
+      :open="practiceDialogOpen"
+      :title="practiceDialogMode === 'quiz' ? '開始練習' : '拼字測試'"
+      description="用拉條決定這次要練幾題，拉到最右邊就是全部單字。"
+      @close="closePracticeDialog"
+    >
+      <div v-if="practiceDialogSetId && sets.find((set) => set.id === practiceDialogSetId)" class="space-y-4">
+        <div class="rounded-2xl bg-zinc-50 p-4">
+          <div class="flex items-center justify-between gap-3">
+            <div>
+              <p class="text-xs font-semibold uppercase tracking-[0.16em] text-zinc-400">練習題數</p>
+              <p class="mt-1 text-sm text-zinc-600">
+                {{ practiceDialogCount }} / {{ sets.find((set) => set.id === practiceDialogSetId)?.items.length ?? 1 }} 題
+              </p>
+            </div>
+            <span class="text-xs font-medium text-zinc-500">拉滿 = 全部單字</span>
+          </div>
+          <input
+            class="mt-3 h-2 w-full cursor-pointer appearance-none rounded-full bg-zinc-200 accent-zinc-900"
+            type="range"
+            min="1"
+            :max="sets.find((set) => set.id === practiceDialogSetId)?.items.length ?? 1"
+            v-model="practiceDialogCount"
+          />
+        </div>
+
+        <div class="flex justify-end gap-2">
+          <Button variant="outline" @click="closePracticeDialog">取消</Button>
+          <Button @click="confirmPracticeDialog">開始</Button>
+        </div>
       </div>
     </Dialog>
 

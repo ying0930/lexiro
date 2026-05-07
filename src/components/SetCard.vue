@@ -24,7 +24,6 @@ defineEmits(['flashcards', 'quiz', 'spelling', 'delete'])
       <Badge v-if="active" variant="secondary">進行中</Badge>
     </div>
 
-
     <div class="mt-5 grid gap-2 sm:grid-cols-2">
       <Button variant="outline" class="justify-start" @click="$emit('flashcards', set.id)">
         <BookOpenText class="h-4 w-4" />

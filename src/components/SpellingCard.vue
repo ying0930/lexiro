@@ -53,6 +53,10 @@ watch([answer, submitted], () => {
   })
 })
 
+function submit() {
+  submitted.value = true
+}
+
 </script>
 
 <template>
