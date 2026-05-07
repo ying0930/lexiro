@@ -13,6 +13,7 @@ const PROMPTS = {
 - 不要加 markdown code block。
 - 不要加任何說明文字。
 - 最外層必須是單一 object，不是陣列。
+- 僅生成使用者給的單字和片語，不要自行添加，給幾個就生成幾個。
 
 【JSON 格式】
 {
