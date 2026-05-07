@@ -145,15 +145,39 @@ function toSessionEntries(items) {
   }))
 }
 
-function createSession(mode, entries, review = false) {
+function createSession(mode, entries, review = false, sourceSetId = null) {
   return {
+    sourceSetId,
     mode,
     entries,
     index: 0,
     correctCount: 0,
     wrongEntries: [],
     answers: [],
+    drafts: [],
     review,
+    status: 'in-progress',
+  }
+}
+
+function normalizeSession(session, validSetIds, currentView = 'home') {
+  if (!session || typeof session !== 'object' || Array.isArray(session)) return null
+  if (!isNonEmptyString(session.sourceSetId)) return null
+  if (!validSetIds.has(session.sourceSetId)) return null
+  if (!isNonEmptyString(session.mode)) return null
+  if (!Array.isArray(session.entries) || !session.entries.length) return null
+
+  return {
+    sourceSetId: session.sourceSetId,
+    mode: session.mode,
+    entries: session.entries,
+    index: Number.isInteger(session.index) && session.index >= 0 ? session.index : 0,
+    correctCount: Number.isInteger(session.correctCount) && session.correctCount >= 0 ? session.correctCount : 0,
+    wrongEntries: Array.isArray(session.wrongEntries) ? session.wrongEntries : [],
+    answers: Array.isArray(session.answers) ? session.answers : [],
+    drafts: Array.isArray(session.drafts) ? session.drafts : [],
+    review: Boolean(session.review),
+    status: session.status === 'completed' || currentView === 'result' ? 'completed' : 'in-progress',
   }
 }
 
@@ -165,7 +189,10 @@ const currentEntry = computed(() => sessionEntries.value[currentSession.value?.i
 const progressCount = computed(() => {
   if (!currentSession.value) return 0
   if (currentView.value === 'flashcard') return flashcardIndex.value + 1
-  return Math.min(currentSession.value.index + 1, totalItems.value)
+  return currentSession.value.drafts.filter((draft) => {
+    if (!draft) return false
+    return (draft.selectedIndex !== null && draft.selectedIndex !== undefined) || isNonEmptyString(draft.answer)
+  }).length
 })
 const progressPercent = computed(() => {
   if (!totalItems.value) return 0
@@ -220,12 +247,27 @@ function loadState() {
       .filter(Boolean)
 
     sets.value = sanitizedSets
-    activeSetId.value = sanitizedSets.some((set) => set.id === parsed.activeSetId)
-      ? parsed.activeSetId
-      : sanitizedSets[0]?.id ?? null
+    const validSetIds = new Set(sanitizedSets.map((set) => set.id))
+  const savedView = typeof parsed.currentView === 'string' ? parsed.currentView : 'home'
+  const savedSession = normalizeSession(parsed.currentSession, validSetIds, savedView)
+
+    currentSession.value = savedSession
+  currentView.value = savedView
+    flashcardIndex.value = Number.isInteger(parsed.flashcardIndex) && parsed.flashcardIndex >= 0 ? parsed.flashcardIndex : 0
+
+    if (savedSession) {
+      activeSetId.value = validSetIds.has(parsed.activeSetId) ? parsed.activeSetId : savedSession.sourceSetId
+    } else {
+      activeSetId.value = validSetIds.has(parsed.activeSetId) ? parsed.activeSetId : sanitizedSets[0]?.id ?? null
+      currentView.value = 'home'
+      flashcardIndex.value = 0
+    }
   } catch {
     sets.value = []
     activeSetId.value = null
+    currentView.value = 'home'
+    currentSession.value = null
+    flashcardIndex.value = 0
   }
 }
 
@@ -235,14 +277,38 @@ function saveState() {
     JSON.stringify({
       sets: sets.value,
       activeSetId: activeSetId.value,
+      currentView: currentView.value,
+      currentSession: currentSession.value,
+      flashcardIndex: flashcardIndex.value,
     }),
   )
 }
 
-function resetStudyView() {
-  currentView.value = 'home'
+function clearStudyProgress() {
   currentSession.value = null
   flashcardIndex.value = 0
+}
+
+function resetStudyView() {
+  currentView.value = 'home'
+  clearStudyProgress()
+}
+
+function returnHome() {
+  currentView.value = 'home'
+}
+
+function isResumableSession(setId, mode) {
+  if (!currentSession.value) return false
+  if (currentSession.value.sourceSetId !== setId) return false
+  if (currentSession.value.mode !== mode) return false
+  if (currentView.value === 'result') return false
+
+  if (mode === 'flashcard') {
+    return flashcardIndex.value < (currentSession.value.entries?.length ?? 0)
+  }
+
+  return currentSession.value.index < currentSession.value.entries.length
 }
 
 function showToast(message) {
@@ -271,83 +337,118 @@ function ensureActiveSet(setId) {
   saveState()
 }
 
+function isSetInProgress(setId) {
+  return currentSession.value?.status === 'in-progress' && currentSession.value.sourceSetId === setId
+}
+
 function startFlashcards(setId) {
   ensureActiveSet(setId)
+  if (isResumableSession(setId, 'flashcard')) {
+    currentView.value = 'flashcard'
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+    return
+  }
+
   flashcardIndex.value = 0
-  currentSession.value = createSession('flashcard', toSessionEntries(activeSet.value?.items ?? []), false)
+  currentSession.value = createSession('flashcard', toSessionEntries(activeSet.value?.items ?? []), false, setId)
   currentView.value = 'flashcard'
   window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
-function startRound(mode, setId, reviewEntries = null) {
+async function startRound(mode, setId, reviewEntries = null) {
   ensureActiveSet(setId)
+  if (isResumableSession(setId, mode) && !reviewEntries) {
+    const confirmed = await showConfirm('接續上次進度', '這個單字集還有未完成的練習，要接著做嗎？')
+    if (confirmed) {
+      currentView.value = mode
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+      return
+    }
+
+    const entries = toSessionEntries(activeSet.value?.items ?? [])
+    currentSession.value = createSession(mode, entries, false, setId)
+    currentView.value = mode
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+    return
+  }
+
   const entries = reviewEntries
     ? reviewEntries.map((entry) => ({ ...entry }))
     : toSessionEntries(activeSet.value?.items ?? [])
 
-  currentSession.value = createSession(mode, entries, Boolean(reviewEntries))
+  currentSession.value = createSession(mode, entries, Boolean(reviewEntries), setId)
   currentView.value = mode
   window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
+function buildQuizRecord(entry, draft) {
+  const selectedIndex = draft?.selectedIndex ?? null
+  const isCorrect = selectedIndex === entry.item.question.ans
+
+  return {
+    type: 'quiz',
+    selectedIndex,
+    userAnswer: getQuizUserAnswerText(entry, selectedIndex),
+    correctAnswer: entry.item.question.opts[entry.item.question.ans],
+    isCorrect,
+    skipped: selectedIndex === null || selectedIndex === undefined,
+  }
+}
+
+function buildSpellingRecord(entry, draft) {
+  const userAnswer = draft?.answer?.trim() ?? ''
+  const isCorrect = userAnswer.trim().toLowerCase() === entry.item.word.trim().toLowerCase()
+
+  return {
+    type: 'spelling',
+    userAnswer: userAnswer || '未作答',
+    correctAnswer: entry.item.word,
+    isCorrect,
+    skipped: !userAnswer,
+  }
+}
+
+function submitCurrentRound() {
+  if (!currentSession.value || currentView.value !== 'quiz' && currentView.value !== 'spelling') return
+
+  const records = currentSession.value.entries.map((entry, index) => {
+    const draft = currentSession.value.drafts[index] ?? null
+    return currentView.value === 'quiz'
+      ? buildQuizRecord(entry, draft)
+      : buildSpellingRecord(entry, draft)
+  })
+
+  currentSession.value.answers = records
+  currentSession.value.correctCount = records.filter((record) => record.isCorrect).length
+  currentSession.value.wrongEntries = currentSession.value.entries.filter((entry, index) => !records[index]?.isCorrect)
+  currentSession.value.status = 'completed'
+  finishRound()
+}
+
 function finishRound() {
+  if (currentSession.value) {
+    currentSession.value.status = 'completed'
+  }
   currentView.value = 'result'
   nextTick(() => {
     document.getElementById('completion-panel')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
   })
 }
 
-function handleQuizAnswered(payload) {
-  if (!currentSession.value || !currentEntry.value) return
-  const record = {
-    type: 'quiz',
-    selectedIndex: payload.selectedIndex ?? null,
-    userAnswer: getQuizUserAnswerText(currentEntry.value, payload.selectedIndex),
-    correctAnswer: currentEntry.value.item.question.opts[currentEntry.value.item.question.ans],
-    isCorrect: payload.isCorrect,
-    skipped: payload.selectedIndex === null || payload.selectedIndex === undefined,
-  }
-
-  currentSession.value.answers[currentSession.value.index] = record
-
-  if (payload.isCorrect) {
-    currentSession.value.correctCount += 1
-  } else {
-    currentSession.value.wrongEntries.push({ ...currentEntry.value })
-  }
-}
-
-function handleQuizNext() {
+function handleQuizDraftChange(entryIndex, payload) {
   if (!currentSession.value) return
-  if (currentSession.value.index >= currentSession.value.entries.length - 1) {
-    finishRound()
-    return
-  }
-  currentSession.value.index += 1
-}
-
-function handleSpellingSubmitted(payload) {
-  if (!currentSession.value || !currentEntry.value) return
-  const trimmed = payload.userAnswer?.trim() ?? ''
-  const record = {
-    type: 'spelling',
-    userAnswer: trimmed || '未作答',
-    correctAnswer: currentEntry.value.item.word,
-    isCorrect: payload.isCorrect,
-    skipped: !trimmed,
-  }
-
-  currentSession.value.answers[currentSession.value.index] = record
-
-  if (payload.isCorrect) {
-    currentSession.value.correctCount += 1
-  } else {
-    currentSession.value.wrongEntries.push({ ...currentEntry.value })
+  currentSession.value.drafts[entryIndex] = {
+    selectedIndex: payload?.selectedIndex ?? null,
+    answered: Boolean(payload?.answered),
   }
 }
 
-function handleSpellingNext() {
-  handleQuizNext()
+function handleSpellingDraftChange(entryIndex, payload) {
+  if (!currentSession.value) return
+  currentSession.value.drafts[entryIndex] = {
+    answer: payload?.answer ?? '',
+    submitted: Boolean(payload?.submitted),
+  }
 }
 
 function restartCurrentMode() {
@@ -367,7 +468,7 @@ function reviewWrongAnswers() {
 }
 
 function exitCurrentView() {
-  resetStudyView()
+  returnHome()
 }
 
 function copyToClipboard(text) {
@@ -490,6 +591,8 @@ async function deleteActiveSet() {
   if (!activeSet.value) return
   await requestDelete(activeSet.value.id)
 }
+
+watch([sets, activeSetId, currentView, currentSession, flashcardIndex], saveState, { deep: true })
 
 onMounted(() => {
   loadState()
