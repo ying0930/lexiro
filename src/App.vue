@@ -19,6 +19,7 @@ import Badge from './components/ui/badge/Badge.vue'
 import Button from './components/ui/button/Button.vue'
 import Card from './components/ui/card/Card.vue'
 import Dialog from './components/ui/dialog/Dialog.vue'
+import Input from './components/ui/input/Input.vue'
 import Progress from './components/ui/progress/Progress.vue'
 import Textarea from './components/ui/textarea/Textarea.vue'
 import Toast from './components/ui/toast/Toast.vue'
@@ -41,6 +42,13 @@ const toastMessage = ref('')
 const toastVisible = ref(false)
 const pendingDeleteId = ref(null)
 const importTextarea = ref(null)
+const setEditorOpen = ref(false)
+const setEditorMode = ref('create')
+const setEditorId = ref(null)
+const setEditorName = ref('')
+const setEditorItems = ref('')
+const setEditorError = ref('')
+const pendingSetItems = ref([])
 const practiceCounts = ref({})
 const practiceDialogOpen = ref(false)
 const practiceDialogMode = ref('quiz')
@@ -123,6 +131,86 @@ function normalizeSet(data, fallbackId = `${Date.now()}`) {
     id: isNonEmptyString(data.id) ? data.id.trim() : fallbackId,
     setName: isNonEmptyString(data.setName) ? data.setName.trim() : fallbackName,
     items: data.items.map((item, index) => normalizeItem(item, index)),
+  }
+}
+
+function serializeSetItems(items) {
+  return JSON.stringify(items, null, 2)
+}
+
+function parseSetEditorItems(text) {
+  let parsedItems
+  try {
+    parsedItems = JSON.parse(text)
+  } catch {
+    throw new Error('單字內容 JSON 格式錯誤')
+  }
+
+  if (!Array.isArray(parsedItems)) {
+    throw new Error('單字內容必須是 items 陣列')
+  }
+
+  return parsedItems.map((item, index) => normalizeItem(item, index))
+}
+
+function openSetEditor(mode, set = null) {
+  setEditorMode.value = mode
+  setEditorId.value = set?.id ?? null
+  setEditorName.value = set?.setName ?? ''
+  setEditorItems.value = set ? serializeSetItems(set.items) : ''
+  pendingSetItems.value = set ? set.items : []
+  setEditorError.value = ''
+  setEditorOpen.value = true
+}
+
+function closeSetEditor() {
+  setEditorOpen.value = false
+}
+
+function saveSetEditor() {
+  try {
+    if (!isNonEmptyString(setEditorName.value)) {
+      throw new Error('請輸入單字集名稱')
+    }
+
+    const items = setEditorMode.value === 'create'
+      ? pendingSetItems.value
+      : parseSetEditorItems(setEditorItems.value)
+
+    if (!Array.isArray(items) || !items.length) {
+      throw new Error('items 不可為空')
+    }
+
+    if (setEditorMode.value === 'create') {
+      const nextSet = {
+        id: `${Date.now()}`,
+        setName: setEditorName.value.trim(),
+        items,
+      }
+      sets.value = [...sets.value, nextSet]
+      activeSetId.value = nextSet.id
+      showToast(`已新增「${nextSet.setName}」 (${nextSet.items.length} 個單字)`)
+    } else {
+      const targetIndex = sets.value.findIndex((set) => set.id === setEditorId.value)
+      if (targetIndex === -1) throw new Error('找不到要編輯的單字集')
+
+      const nextSet = {
+        ...sets.value[targetIndex],
+        setName: setEditorName.value.trim(),
+        items,
+      }
+      sets.value = sets.value.map((set) => (set.id === setEditorId.value ? nextSet : set))
+      if (currentSession.value?.sourceSetId === nextSet.id) {
+        resetStudyView()
+      }
+      showToast(`已更新「${nextSet.setName}」 (${nextSet.items.length} 個單字)`)
+    }
+
+    saveState()
+    setEditorOpen.value = false
+    importOpen.value = false
+  } catch (error) {
+    setEditorError.value = error.message
   }
 }
 
@@ -573,17 +661,13 @@ function importSet() {
     return
   }
 
-  const normalized = {
-    ...result.data,
-    id: `${Date.now()}`,
-  }
-
-  sets.value = [...sets.value, normalized]
-  activeSetId.value = normalized.id
-  saveState()
-  resetStudyView()
-  closeImport()
-  showToast(`已匯入「${normalized.setName}」 (${normalized.items.length} 個單字)`)
+  setEditorMode.value = 'create'
+  setEditorId.value = null
+  setEditorName.value = ''
+  pendingSetItems.value = result.data.items
+  setEditorError.value = ''
+  setEditorOpen.value = true
+  importOpen.value = false
 }
 
 watch(importJson, (value) => {
@@ -653,6 +737,11 @@ async function deleteActiveSet() {
   await requestDelete(activeSet.value.id)
 }
 
+function editActiveSet() {
+  if (!activeSet.value) return
+  openSetEditor('edit', activeSet.value)
+}
+
 watch([sets, activeSetId, currentView, currentSession, flashcardIndex], saveState, { deep: true })
 
 onMounted(() => {
@@ -699,6 +788,9 @@ onMounted(() => {
             </Badge>
             <Button variant="outline" size="icon" class="h-9 w-9" @click="deleteActiveSet">
               <Trash2 class="h-4 w-4" />
+            </Button>
+            <Button variant="outline" size="icon" class="h-9 w-9" @click="editActiveSet">
+              編輯
             </Button>
           </div>
         </div>
@@ -757,6 +849,7 @@ onMounted(() => {
               @quiz="openPracticeDialog('quiz', $event)"
               @spelling="openPracticeDialog('spelling', $event)"
               @delete="requestDelete"
+              @edit="openSetEditor('edit', sets.find((item) => item.id === $event))"
             />
           </div>
         </div>
@@ -953,7 +1046,7 @@ onMounted(() => {
     <Dialog
       :open="importOpen"
       title="匯入單字集"
-      description="貼上新的單字集 JSON。最外層只接受單一 object，第一版不支援舊題目陣列格式。"
+      description="貼上新的單字集 JSON，然後再手動命名。"
       @close="closeImport"
     >
       <div class="space-y-4">
@@ -971,8 +1064,7 @@ onMounted(() => {
         <div class="rounded-lg border border-zinc-200 bg-zinc-50 px-4 py-3">
           <p class="text-xs font-semibold text-zinc-500">匯入前檢查</p>
           <p class="mt-1 text-xs leading-5 text-zinc-500">
-            每筆 item 必須包含 <code>word</code>、<code>meaning</code>、<code>example</code>、<code>question</code>，
-            且 <code>question</code> 只支援 <code>prompt / opts[4] / ans</code>。
+            會先檢查 JSON 格式是否正確，接著再讓你輸入單字集名稱並確認內容。
           </p>
         </div>
 
@@ -986,6 +1078,39 @@ onMounted(() => {
         <div class="flex justify-end gap-2">
           <Button variant="outline" @click="closeImport">取消</Button>
           <Button @click="importSet">套用</Button>
+        </div>
+      </div>
+    </Dialog>
+
+    <Dialog
+      :open="setEditorOpen"
+      :title="setEditorMode === 'create' ? '新增單字集' : '編輯單字集'"
+      :description="setEditorMode === 'create' ? '送出 JSON 後，只要再輸入單字集名稱就好。' : '可直接修改名稱與 items JSON。'"
+      @close="closeSetEditor"
+    >
+      <div class="space-y-4">
+        <div class="space-y-2">
+          <label class="text-sm font-medium text-zinc-700">單字集名稱</label>
+          <Input v-model="setEditorName" placeholder="例如：核心單字 A" />
+        </div>
+
+        <div v-if="setEditorMode === 'edit'" class="space-y-2">
+          <label class="text-sm font-medium text-zinc-700">單字內容 JSON</label>
+          <Textarea
+            v-model="setEditorItems"
+            :rows="14"
+            class="font-mono"
+            placeholder='[{"word":"abandon","meaning":"放棄；遺棄","example":"He decided to abandon the plan after the cost doubled.","question":{"prompt":"The captain had to _____ the ship during the storm.","opts":["abandon","delay","gather","repair"],"ans":0}}]'
+          />
+        </div>
+
+        <p v-if="setEditorError" class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">
+          {{ setEditorError }}
+        </p>
+
+        <div class="flex justify-end gap-2">
+          <Button variant="outline" @click="closeSetEditor">取消</Button>
+          <Button @click="saveSetEditor">儲存</Button>
         </div>
       </div>
     </Dialog>

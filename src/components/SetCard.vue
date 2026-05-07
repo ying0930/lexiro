@@ -9,7 +9,7 @@ defineProps({
   active: { type: Boolean, default: false },
 })
 
-defineEmits(['flashcards', 'quiz', 'spelling', 'delete'])
+defineEmits(['flashcards', 'quiz', 'spelling', 'delete', 'edit'])
 </script>
 
 <template>
@@ -44,6 +44,9 @@ defineEmits(['flashcards', 'quiz', 'spelling', 'delete'])
       >
         <Trash2 class="h-4 w-4" />
         刪除
+      </Button>
+      <Button variant="outline" class="justify-start" @click="$emit('edit', set.id)">
+        編輯單字集
       </Button>
     </div>
   </Card>
