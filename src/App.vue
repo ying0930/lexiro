@@ -33,6 +33,8 @@ const currentView = ref('home')
 const currentSession = ref(null)
 const flashcardIndex = ref(0)
 const importOpen = ref(false)
+const importStep = ref(1)
+const importWords = ref('')
 const confirmOpen = ref(false)
 const importJson = ref('')
 const importError = ref('')
@@ -461,6 +463,8 @@ function showToast(message) {
 }
 
 function openImport() {
+  importStep.value = 1
+  importWords.value = ''
   importJson.value = ''
   importError.value = ''
   importPreview.value = ''
@@ -470,6 +474,21 @@ function openImport() {
 
 function closeImport() {
   importOpen.value = false
+}
+
+function nextImportStep() {
+  importStep.value = 2
+  nextTick(() => importTextarea.value?.focus())
+}
+
+async function copyImportPrompt() {
+  try {
+    const text = prompts.generateWordSet.replace('{{WORDS}}', importWords.value.trim() || '(未輸入單字)')
+    await copyToClipboard(text)
+    showToast('已複製 AI 指令，請貼至 AI 平台產生單字集')
+  } catch {
+    showToast('複製失敗')
+  }
 }
 
 function ensureActiveSet(setId) {
@@ -1128,16 +1147,45 @@ onMounted(() => {
     <Dialog
       :open="importOpen"
       title="匯入單字集"
-      description="貼上新的單字集 JSON。"
+      :description="importStep === 1 ? '第一步：輸入單字並複製 AI 提示詞' : '第二步：貼上 AI 產生的 JSON'"
       @close="closeImport"
     >
-      <div class="space-y-4">
+      <div v-if="importStep === 1" class="space-y-4">
+        <div class="space-y-2">
+          <label class="text-sm font-medium text-zinc-700">輸入你想學習的單字 (每行一個，可附上中文意思)</label>
+          <Textarea
+            ref="importTextarea"
+            v-model="importWords"
+            :rows="8"
+            class="font-mono"
+            placeholder="apple - 蘋果&#10;banana - 香蕉&#10;car"
+          />
+        </div>
+
+        <div class="rounded-lg border border-zinc-200 bg-zinc-50 px-4 py-3">
+          <p class="text-xs font-semibold text-zinc-500">如何使用？</p>
+          <p class="mt-1 text-xs leading-5 text-zinc-500">
+            請輸入你要學習的單字，點擊「複製 AI 指令」，貼給 AI 平台 (如 ChatGPT)，它會為你生成需要的 JSON 格式。
+          </p>
+        </div>
+
+        <div class="flex flex-col gap-2 sm:flex-row sm:justify-end">
+          <Button variant="outline" @click="closeImport">取消</Button>
+          <Button variant="outline" @click="copyImportPrompt">
+            <ClipboardCopy class="h-4 w-4 mr-1.5" />
+            複製 AI 指令
+          </Button>
+          <Button @click="nextImportStep">下一步</Button>
+        </div>
+      </div>
+
+      <div v-else-if="importStep === 2" class="space-y-4">
         <div class="space-y-2">
           <label class="text-sm font-medium text-zinc-700">貼上 JSON</label>
           <Textarea
             ref="importTextarea"
             v-model="importJson"
-            :rows="12"
+            :rows="8"
             class="font-mono"
             placeholder='{"setName":"核心單字 A","items":[{"word":"abandon","meaning":"放棄；遺棄","example":"He decided to abandon the plan after the cost doubled.","question":{"prompt":"The captain had to _____ the ship during the storm.","opts":["abandon","delay","gather","repair"],"ans":0}}]}'
           />
@@ -1158,7 +1206,7 @@ onMounted(() => {
         </p>
 
         <div class="flex justify-end gap-2">
-          <Button variant="outline" @click="closeImport">取消</Button>
+          <Button variant="outline" @click="importStep = 1">上一步</Button>
           <Button @click="importSet">套用</Button>
         </div>
       </div>
