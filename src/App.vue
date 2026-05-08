@@ -330,12 +330,16 @@ const progressPercent = computed(() => {
 })
 const resultSummary = computed(() => {
   if (!currentSession.value) return null
+  const total = currentSession.value.entries.length
+  const correctCount = currentSession.value.correctCount
+  const score = total > 0 ? Math.round((correctCount / total) * 100) : 0
   return {
     mode: currentSession.value.mode,
     review: currentSession.value.review,
-    total: currentSession.value.entries.length,
-    correctCount: currentSession.value.correctCount,
+    total,
+    correctCount,
     wrongCount: currentSession.value.wrongEntries.length,
+    score,
   }
 })
 const resultRows = computed(() => {
@@ -994,24 +998,34 @@ onMounted(() => {
       </section>
 
       <section v-else-if="currentView === 'result' && activeSet && resultSummary" class="space-y-4">
-        <Card id="completion-panel" class="p-6 text-center">
-          <div class="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-zinc-100">
-            <BookOpenText class="h-6 w-6 text-zinc-700" />
+        <Card id="completion-panel" class="p-6">
+          <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+            <div class="flex items-start gap-4">
+              <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-zinc-100">
+                <BookOpenText class="h-6 w-6 text-zinc-700" />
+              </div>
+              <div>
+                <h2 class="text-xl font-semibold text-zinc-950">
+                  {{ resultSummary.review ? '本輪錯題復習完成' : '本次練習結果' }}
+                </h2>
+                <p class="mt-1 text-sm text-zinc-500">
+                  {{ resultSummary.mode === 'quiz' ? '選擇題' : '拼字測試' }}
+                </p>
+              </div>
+            </div>
+            
+            <div class="flex flex-col sm:items-end gap-1 text-left sm:text-right">
+              <div class="flex items-baseline gap-1">
+                <span class="text-3xl font-bold text-zinc-950">{{ resultSummary.score }}</span>
+                <span class="text-sm font-medium text-zinc-500">分</span>
+              </div>
+              <p class="text-sm text-zinc-500">
+                答對 {{ resultSummary.correctCount }} / {{ resultSummary.total }} 題，錯題 {{ resultSummary.wrongCount }} 題
+              </p>
+            </div>
           </div>
-          <h2 class="text-xl font-semibold text-zinc-950">
-            {{ resultSummary.review ? '本輪錯題復習完成' : '本輪練習完成' }}
-          </h2>
-          <p class="mt-2 text-sm text-zinc-500">
-            {{
-              resultSummary.mode === 'quiz'
-                ? '選擇題結果'
-                : '拼字測試結果'
-            }}
-            ｜答對 {{ resultSummary.correctCount }} / {{ resultSummary.total }}
-          </p>
-          <p class="mt-1 text-sm text-zinc-500">錯題 {{ resultSummary.wrongCount }} 題</p>
 
-          <div class="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
+          <div class="mt-6 flex flex-col items-center justify-start gap-3 sm:flex-row border-t border-zinc-100 pt-6">
             <Button @click="restartCurrentMode">
               <RotateCcw class="h-4 w-4" />
               重新做一次
@@ -1075,7 +1089,7 @@ onMounted(() => {
                   複製本題解析
                 </Button>
                 <Badge
-                  :variant="row.record?.isCorrect ? 'default' : 'secondary'"
+                  :variant="row.record?.isCorrect ? 'success' : row.record?.skipped ? 'secondary' : 'destructive'"
                   class="rounded-md px-3 py-1 text-sm"
                 >
                   {{
