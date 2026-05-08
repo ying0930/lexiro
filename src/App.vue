@@ -646,25 +646,71 @@ function copyToClipboard(text) {
 async function copyPrompt() {
   try {
     await copyToClipboard(prompts.generateWordSet)
-    showToast('已複製 AI 指令')
+    showToast('已複製 AI 指令，請貼至 AI 平台產生單字集')
   } catch {
     showToast('複製失敗')
   }
 }
 
-async function copyQuestionExplainPrompt(entry, record = null) {
-  const question = entry.item.question
-  const promptText = prompts.explainQuestion
-    .replace('{{QUESTION}}', question.prompt)
-    .replace('{{OPTIONS}}', formatQuestionOptions(question))
-    .replace('{{USER_ANSWER}}', record?.userAnswer ?? '未作答')
-    .replace('{{CORRECT_ANSWER}}', question.opts[question.ans])
-    .replace('{{MEANING}}', entry.item.meaning)
-    .replace('{{EXAMPLE}}', entry.item.example)
+async function copyQuestionExplainPrompt(entry, record = null, mode = 'quiz') {
+  let promptText = ''
+  if (mode === 'quiz') {
+    const question = entry.item.question
+    promptText = prompts.explainQuestion
+      .replace('{{QUESTION}}', question.prompt)
+      .replace('{{OPTIONS}}', formatQuestionOptions(question))
+      .replace('{{USER_ANSWER}}', record?.userAnswer ?? '未作答')
+      .replace('{{CORRECT_ANSWER}}', question.opts[question.ans])
+      .replace('{{MEANING}}', entry.item.meaning)
+      .replace('{{EXAMPLE}}', entry.item.example)
+  } else {
+    promptText = prompts.explainSpellingQuestion
+      .replace('{{MEANING}}', entry.item.meaning)
+      .replace('{{EXAMPLE}}', entry.item.example)
+      .replace('{{USER_ANSWER}}', record?.userAnswer ?? '未作答')
+      .replace('{{CORRECT_ANSWER}}', entry.item.word)
+  }
 
   try {
     await copyToClipboard(promptText)
-    showToast(`已複製「${entry.item.word}」AI 提示`)
+    showToast(`已複製「${entry.item.word}」解析指令，請貼至 AI 平台獲得解析`)
+  } catch {
+    showToast('複製失敗')
+  }
+}
+
+async function copyAllWrongQuestionsPrompt() {
+  if (!resultSummary.value || resultSummary.value.wrongCount === 0) return
+
+  const wrongRows = resultRows.value.filter(row => !row.record?.isCorrect)
+  if (wrongRows.length === 0) return
+
+  const wrongQuestionsText = wrongRows.map((row, idx) => {
+    const mode = resultSummary.value.mode
+    const entry = row.entry
+    const record = row.record
+    let text = `【第 ${idx + 1} 題】 單字：${entry.item.word}\n`
+    
+    if (mode === 'quiz') {
+      const q = entry.item.question
+      text += `题目：${q.prompt}\n`
+      text += `選項：\n${formatQuestionOptions(q)}\n`
+      text += `我的答案：${record?.userAnswer ?? '未作答'}\n`
+      text += `正確答案：${q.opts[q.ans]}\n`
+    } else {
+      text += `單字字義：${entry.item.meaning}\n`
+      text += `例句：${entry.item.example}\n`
+      text += `我的答案：${record?.userAnswer ?? '未作答'}\n`
+      text += `正確答案：${entry.item.word}\n`
+    }
+    return text
+  }).join('\n-------------------\n\n')
+
+  const promptText = prompts.explainAllWrongQuestions.replace('{{WRONG_QUESTIONS}}', wrongQuestionsText)
+
+  try {
+    await copyToClipboard(promptText)
+    showToast('已複製所有錯題解析指令，請貼至 AI 平台獲得解析')
   } catch {
     showToast('複製失敗')
   }
@@ -772,54 +818,53 @@ onMounted(() => {
 <template>
   <div class="min-h-screen pb-20">
     <header class="sticky top-0 z-40 border-b border-zinc-200/70 bg-white/85 backdrop-blur-md">
-      <div class="mx-auto flex max-w-5xl flex-col gap-3 px-4 py-4">
-        <div class="flex items-center justify-between gap-3">
-          <div class="flex items-center gap-2">
-            <Button
-              v-if="currentView !== 'home'"
-              variant="ghost"
-              size="icon"
-              class="h-9 w-9"
-              @click="exitCurrentView"
-            >
-              <ArrowLeft class="h-4 w-4" />
-            </Button>
-            <div>
-              <h1 class="text-xl font-semibold tracking-tight text-zinc-950">單字特訓</h1>
-              <p v-if="currentView === 'home'" class="text-sm text-zinc-500">
-                建立或匯入單字集後即可開始。
-              </p>
-            </div>
-          </div>
-
-          <div v-if="activeSet && currentView !== 'home'" class="flex items-center gap-2">
-            <Badge variant="secondary" class="rounded-md px-3 py-1 text-sm">
-              {{ activeSet.setName }}
-            </Badge>
-            <Button variant="outline" size="icon" class="h-9 w-9" @click="deleteActiveSet">
-              <Trash2 class="h-4 w-4" />
-            </Button>
-            <Button variant="outline" size="icon" class="h-9 w-9" @click="editActiveSet">
-              <PencilLine class="h-4 w-4" />
-            </Button>
+      <div class="mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-4">
+        <div class="flex items-center gap-3">
+          <Button
+            v-if="currentView !== 'home'"
+            variant="ghost"
+            size="icon"
+            class="h-9 w-9 shrink-0"
+            @click="exitCurrentView"
+          >
+            <ArrowLeft class="h-4 w-4" />
+          </Button>
+          <div>
+            <h1 class="text-xl font-semibold tracking-tight text-zinc-950">單字特訓</h1>
+            <p v-if="currentView === 'home'" class="text-sm text-zinc-500 mt-0.5">
+              <span v-if="hasSets">{{ sets.length }} 個單字集，共 {{ totalWordCount }} 個單字</span>
+              <span v-else>建立或匯入單字集後即可開始。</span>
+            </p>
           </div>
         </div>
 
-        <div v-if="currentView === 'home'" class="flex flex-wrap items-center justify-between gap-3">
-          <div class="text-sm text-zinc-500">
-            <span v-if="hasSets">{{ sets.length }} 個單字集，{{ totalWordCount }} 個單字</span>
-            <span v-else>貼上新的單字集 JSON 後即可開始。</span>
-          </div>
-          <div class="flex items-center gap-2">
-            <Button variant="outline" @click="copyPrompt">
-              <ClipboardCopy class="h-4 w-4" />
+        <div class="flex items-center gap-2 shrink-0">
+          <template v-if="currentView === 'home'">
+            <Button variant="outline" @click="copyPrompt" class="hidden sm:flex">
+              <ClipboardCopy class="h-4 w-4 mr-1.5" />
               複製 AI 指令
             </Button>
-            <Button @click="openImport">
-              <Plus class="h-4 w-4" />
-              匯入單字集
+            <Button variant="outline" size="icon" @click="copyPrompt" class="sm:hidden" aria-label="複製 AI 指令">
+              <ClipboardCopy class="h-4 w-4" />
             </Button>
-          </div>
+            
+            <Button @click="openImport">
+              <Plus class="h-4 w-4 sm:mr-1.5" />
+              <span class="hidden sm:inline">匯入單字集</span>
+            </Button>
+          </template>
+
+          <template v-else-if="activeSet">
+            <Badge variant="secondary" class="hidden sm:inline-flex rounded-md px-3 py-1 text-sm">
+              {{ activeSet.setName }}
+            </Badge>
+            <Button variant="outline" size="icon" class="h-9 w-9" @click="deleteActiveSet" aria-label="刪除單字集">
+              <Trash2 class="h-4 w-4" />
+            </Button>
+            <Button variant="outline" size="icon" class="h-9 w-9" @click="editActiveSet" aria-label="編輯單字集">
+              <PencilLine class="h-4 w-4" />
+            </Button>
+          </template>
         </div>
       </div>
     </header>
@@ -919,6 +964,7 @@ onMounted(() => {
               :draft="currentSession.drafts?.[entryIndex] ?? null"
               batch-mode
               @draft-change="(payload) => handleQuizDraftChange(entryIndex, payload)"
+              @toast="showToast"
             />
           </template>
 
@@ -933,6 +979,7 @@ onMounted(() => {
               :draft="currentSession.drafts?.[entryIndex] ?? null"
               batch-mode
               @draft-change="(payload) => handleSpellingDraftChange(entryIndex, payload)"
+              @toast="showToast"
             />
           </template>
 
@@ -977,6 +1024,14 @@ onMounted(() => {
               <BookOpenText class="h-4 w-4" />
               復習錯題
             </Button>
+            <Button
+              v-if="resultSummary.wrongCount"
+              variant="outline"
+              @click="copyAllWrongQuestionsPrompt"
+            >
+              <ClipboardCopy class="h-4 w-4" />
+              複製所有錯題解析
+            </Button>
             <Button variant="outline" @click="switchModeAfterResult">
               <SpellCheck2 class="h-4 w-4" />
               {{ resultSummary.mode === 'quiz' ? '切換到拼字' : '切換到練習' }}
@@ -1009,18 +1064,29 @@ onMounted(() => {
                   }}
                 </p>
               </div>
-              <Badge
-                :variant="row.record?.isCorrect ? 'default' : 'secondary'"
-                class="rounded-md px-3 py-1 text-sm"
-              >
-                {{
-                  row.record?.isCorrect
-                    ? '正確'
-                    : row.record?.skipped
-                      ? '略過'
-                      : '錯誤'
-                }}
-              </Badge>
+              <div class="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  class="h-7 px-2 text-xs text-zinc-600"
+                  @click="copyQuestionExplainPrompt(row.entry, row.record, resultSummary.mode)"
+                >
+                  <ClipboardCopy class="h-3 w-3 mr-1" />
+                  複製本題解析
+                </Button>
+                <Badge
+                  :variant="row.record?.isCorrect ? 'default' : 'secondary'"
+                  class="rounded-md px-3 py-1 text-sm"
+                >
+                  {{
+                    row.record?.isCorrect
+                      ? '正確'
+                      : row.record?.skipped
+                        ? '略過'
+                        : '錯誤'
+                  }}
+                </Badge>
+              </div>
             </div>
 
             <div class="mt-4 space-y-3 text-sm leading-6 text-zinc-700">
@@ -1088,6 +1154,7 @@ onMounted(() => {
       :open="setEditorOpen"
       :title="setEditorMode === 'create' ? '新增單字集' : '編輯單字集'"
       :description="setEditorMode === 'create' ? '輸入名稱後即可完成新增。' : '可直接編輯每個單字欄位。'"
+      width-class="max-w-4xl"
       @close="closeSetEditor"
     >
       <div class="space-y-4">

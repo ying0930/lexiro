@@ -2,6 +2,9 @@
 import { computed, ref, watch } from 'vue'
 import Badge from './ui/badge/Badge.vue'
 import Card from './ui/card/Card.vue'
+import Button from './ui/button/Button.vue'
+import { ClipboardCopy, Check } from 'lucide-vue-next'
+import PROMPTS from '../../prompts.js'
 import { cn } from '../lib/utils'
 
 const props = defineProps({
@@ -13,11 +16,12 @@ const props = defineProps({
   batchMode: { type: Boolean, default: false },
 })
 
-const emit = defineEmits(['draft-change'])
+const emit = defineEmits(['draft-change', 'toast'])
 
 const labels = ['1', '2', '3', '4']
 const selectedIndex = ref(null)
 const answered = ref(false)
+const copied = ref(false)
 
 const answerText = computed(() => props.entry.item.question.opts[props.entry.item.question.ans])
 const promptParts = computed(() => props.entry.item.question.prompt.split('_____'))
@@ -44,6 +48,36 @@ function choose(index) {
   selectedIndex.value = index
 }
 
+async function copyExplanationPrompt() {
+  const q = props.entry.item.question
+  const questionStr = q.prompt
+  const optionsStr = q.opts.map((opt, i) => `${labels[i]}. ${opt}`).join('\n')
+  const userAnswerStr = selectedIndex.value !== null ? q.opts[selectedIndex.value] : '未作答'
+  const correctAnswerStr = q.opts[q.ans]
+  const meaningStr = props.entry.item.meaning || ''
+  const exampleStr = props.entry.item.example || ''
+
+  const text = PROMPTS.explainQuestion
+    .replace('{{QUESTION}}', questionStr)
+    .replace('{{OPTIONS}}', optionsStr)
+    .replace('{{USER_ANSWER}}', userAnswerStr)
+    .replace('{{CORRECT_ANSWER}}', correctAnswerStr)
+    .replace('{{MEANING}}', meaningStr)
+    .replace('{{EXAMPLE}}', exampleStr)
+
+  try {
+    await navigator.clipboard.writeText(text)
+    copied.value = true
+    emit('toast', '已複製此題解析指令，請貼至 AI 平台獲得解析')
+    setTimeout(() => {
+      copied.value = false
+    }, 2000)
+  } catch (err) {
+    emit('toast', '複製失敗')
+    console.error('Failed to copy text: ', err)
+  }
+}
+
 function optionClass(index) {
   const isCorrect = index === props.entry.item.question.ans
   const isSelected = index === selectedIndex.value
@@ -67,10 +101,15 @@ function optionClass(index) {
         <Badge variant="secondary">{{ review ? '錯題復習' : '選擇題練習' }}</Badge>
         <p class="text-sm text-zinc-500">第 {{ index + 1 }} / {{ total }} 題</p>
       </div>
-      <div class="text-right space-y-2">
+      <div class="flex flex-col items-end gap-2">
         <Badge variant="secondary" class="rounded-full px-3 py-1 text-xs font-medium">
           {{ batchMode ? '待送出' : answered ? '已完成' : '進行中' }}
         </Badge>
+        <Button variant="outline" size="sm" class="h-8 gap-1.5 text-xs text-zinc-600" @click="copyExplanationPrompt">
+          <Check v-if="copied" class="h-3.5 w-3.5 text-green-600" />
+          <ClipboardCopy v-else class="h-3.5 w-3.5" />
+          {{ copied ? '已複製' : '複製本題解析' }}
+        </Button>
       </div>
     </div>
 
