@@ -1328,7 +1328,7 @@ onMounted(() => {
         <div class="rounded-lg border border-zinc-200 bg-zinc-50 px-4 py-3">
           <p class="text-xs font-semibold text-zinc-500">如何使用？</p>
           <p class="mt-1 text-xs leading-5 text-zinc-500">
-            請輸入你要學習的單字，點擊「複製 AI 指令」，貼給 AI 平台 (如 ChatGPT)，它只需要生成 items，不用包含 setName。
+            請輸入你要學習的單字，點擊「複製 AI 指令」，貼給 AI 平台 (如 ChatGPT)，接著在下一步的輸入框貼上。
           </p>
         </div>
 
@@ -1357,7 +1357,7 @@ onMounted(() => {
         <div class="rounded-lg border border-zinc-200 bg-zinc-50 px-4 py-3">
           <p class="text-xs font-semibold text-zinc-500">匯入前檢查</p>
           <p class="mt-1 text-xs leading-5 text-zinc-500">
-            會先檢查 JSON 格式是否正確，確認後再讓你輸入單字集名稱。
+            此步驟會檢查 JSON 格式是否正確，在下一步會讓你輸入單字集名稱。
           </p>
         </div>
 
