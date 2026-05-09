@@ -4,13 +4,16 @@ import {
   ArrowLeft,
   BookOpenText,
   ClipboardCopy,
+  Download,
   FileQuestion,
   Plus,
   PencilLine,
   RotateCcw,
   SpellCheck2,
   Trash2,
+  Upload,
 } from 'lucide-vue-next'
+import { strFromU8, strToU8, unzipSync, zipSync } from 'fflate'
 import prompts from '../prompts.js'
 import FlashcardView from './components/FlashcardView.vue'
 import QuizCard from './components/QuizCard.vue'
@@ -45,6 +48,14 @@ const toastMessage = ref('')
 const toastVisible = ref(false)
 const pendingDeleteId = ref(null)
 const importTextarea = ref(null)
+const transferOpen = ref(false)
+const exportSelectedIds = ref([])
+const exportError = ref('')
+const zipImportError = ref('')
+const zipImportPreview = ref('')
+const zipImportSets = ref(null)
+const zipImportName = ref('')
+const zipImportInputKey = ref(0)
 const setEditorOpen = ref(false)
 const setEditorMode = ref('create')
 const setEditorId = ref(null)
@@ -353,6 +364,16 @@ const resultRows = computed(() => {
   }))
 })
 const totalWordCount = computed(() => sets.value.reduce((sum, set) => sum + set.items.length, 0))
+const exportSelectedSets = computed(() =>
+  sets.value.filter((set) => exportSelectedIds.value.includes(set.id)),
+)
+const exportSelectedCount = computed(() => exportSelectedSets.value.length)
+const exportSelectedWordCount = computed(() =>
+  exportSelectedSets.value.reduce((sum, set) => sum + set.items.length, 0),
+)
+const exportAllSelected = computed(() =>
+  sets.value.length > 0 && exportSelectedCount.value === sets.value.length,
+)
 
 function formatQuestionOptions(question) {
   return question.opts
@@ -489,6 +510,161 @@ async function copyImportPrompt() {
   } catch {
     showToast('複製失敗')
   }
+}
+
+function openTransfer() {
+  transferOpen.value = true
+  exportSelectedIds.value = sets.value.map((set) => set.id)
+  exportError.value = ''
+  resetZipImportState()
+}
+
+function closeTransfer() {
+  transferOpen.value = false
+}
+
+function toggleExportAll() {
+  exportSelectedIds.value = exportAllSelected.value ? [] : sets.value.map((set) => set.id)
+}
+
+function buildExportPayload(selectedSets) {
+  return {
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    sets: selectedSets,
+  }
+}
+
+function buildExportFileName() {
+  const now = new Date()
+  const datePart = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(
+    now.getDate(),
+  ).padStart(2, '0')}`
+  const timePart = `${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}`
+  return `vocp-sets-${datePart}-${timePart}.zip`
+}
+
+function downloadBlob(blob, filename) {
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = filename
+  document.body.appendChild(link)
+  link.click()
+  link.remove()
+  URL.revokeObjectURL(url)
+}
+
+function exportSelectedSetsToZip() {
+  exportError.value = ''
+  if (!exportSelectedSets.value.length) {
+    exportError.value = '請至少選擇一個單字集'
+    return
+  }
+
+  const payload = buildExportPayload(exportSelectedSets.value)
+  const jsonText = JSON.stringify(payload, null, 2)
+  const zipped = zipSync({ 'vocp-sets.json': strToU8(jsonText) }, { level: 0 })
+  const blob = new Blob([zipped], { type: 'application/zip' })
+  downloadBlob(blob, buildExportFileName())
+  showToast(`已匯出 ${exportSelectedSets.value.length} 個單字集`)
+}
+
+function resetZipImportState(resetInput = true) {
+  zipImportError.value = ''
+  zipImportPreview.value = ''
+  zipImportSets.value = null
+  zipImportName.value = ''
+  if (resetInput) {
+    zipImportInputKey.value += 1
+  }
+}
+
+function normalizeExportPayload(data) {
+  if (!data || typeof data !== 'object' || Array.isArray(data)) {
+    throw new Error('匯入資料必須是 JSON object')
+  }
+
+  const timestamp = Date.now()
+  if (Array.isArray(data.sets)) {
+    if (!data.sets.length) throw new Error('sets 不可為空')
+    return data.sets.map((set, index) => normalizeSet(set, `imported-${timestamp}-${index + 1}`))
+  }
+
+  if (Array.isArray(data.items)) {
+    return [normalizeSet(data, `imported-${timestamp}-1`)]
+  }
+
+  throw new Error('找不到 sets 或 items')
+}
+
+function ensureUniqueSetId(baseId, existingIds) {
+  let nextId = baseId
+  let counter = 1
+  while (existingIds.has(nextId)) {
+    nextId = `${baseId}-${counter}`
+    counter += 1
+  }
+  return nextId
+}
+
+async function handleZipImportChange(event) {
+  const file = event.target.files?.[0]
+  resetZipImportState(false)
+  if (!file) return
+
+  zipImportName.value = file.name
+
+  try {
+    const buffer = await file.arrayBuffer()
+    const entries = unzipSync(new Uint8Array(buffer))
+    const entryNames = Object.keys(entries)
+    const jsonEntry =
+      entryNames.find((name) => name.toLowerCase().endsWith('vocp-sets.json'))
+      || entryNames.find((name) => name.toLowerCase().endsWith('.json'))
+    if (!jsonEntry) throw new Error('找不到 JSON 檔案')
+
+    let parsed
+    try {
+      parsed = JSON.parse(strFromU8(entries[jsonEntry]))
+    } catch {
+      throw new Error('JSON 格式錯誤')
+    }
+
+    const normalizedSets = normalizeExportPayload(parsed)
+    zipImportSets.value = normalizedSets
+    const totalWords = normalizedSets.reduce((sum, set) => sum + set.items.length, 0)
+    zipImportPreview.value = `已讀取 ${normalizedSets.length} 個單字集，共 ${totalWords} 個單字`
+  } catch (error) {
+    zipImportError.value = error.message || '匯入失敗'
+  }
+}
+
+function applyZipImport() {
+  if (!zipImportSets.value || !zipImportSets.value.length) {
+    zipImportError.value = '請先選擇匯入檔案'
+    return
+  }
+
+  const existingIds = new Set(sets.value.map((set) => set.id))
+  const imported = zipImportSets.value.map((set, index) => {
+    const baseId = isNonEmptyString(set.id) ? set.id : `imported-${Date.now()}-${index + 1}`
+    const nextId = ensureUniqueSetId(baseId, existingIds)
+    existingIds.add(nextId)
+    return {
+      ...set,
+      id: nextId,
+    }
+  })
+
+  sets.value = [...sets.value, ...imported]
+  if (!activeSetId.value && imported.length) {
+    activeSetId.value = imported[0].id
+  }
+
+  showToast(`已匯入 ${imported.length} 個單字集`)
+  resetZipImportState()
+  transferOpen.value = false
 }
 
 function ensureActiveSet(setId) {
@@ -824,6 +1000,7 @@ onMounted(() => {
   loadState()
   window.addEventListener('keydown', (event) => {
     if (event.key === 'Escape' && importOpen.value) closeImport()
+    if (event.key === 'Escape' && transferOpen.value) closeTransfer()
     if (event.key === 'Escape' && confirmOpen.value) resolveConfirm(false)
   })
 })
@@ -847,7 +1024,7 @@ onMounted(() => {
             <h1 class="text-xl font-semibold tracking-tight text-zinc-950">單字特訓</h1>
             <p v-if="currentView === 'home'" class="text-sm text-zinc-500 mt-0.5">
               <span v-if="hasSets">{{ sets.length }} 個單字集，共 {{ totalWordCount }} 個單字</span>
-              <span v-else>建立或匯入單字集後即可開始。</span>
+              <span v-else>建立或新增單字集後即可開始。</span>
             </p>
           </div>
         </div>
@@ -870,6 +1047,16 @@ onMounted(() => {
 
     <main class="mx-auto mt-6 max-w-5xl px-4">
       <section v-if="currentView === 'home'">
+        <div v-if="hasSets" class="mb-4 flex flex-wrap items-center justify-end gap-2">
+          <Button variant="outline" @click="openTransfer">
+            <Upload class="h-4 w-4" />
+            匯出/匯入
+          </Button>
+          <Button @click="openImport">
+            <Plus class="h-4 w-4" />
+            新增單字集
+          </Button>
+        </div>
         <div v-if="!hasSets" class="py-16">
           <Card class="border-dashed border-zinc-300 bg-white/90 p-10 text-center">
             <div class="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-lg bg-zinc-100">
@@ -882,7 +1069,11 @@ onMounted(() => {
             <div class="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
               <Button @click="openImport">
                 <Plus class="h-4 w-4" />
-                匯入單字集
+                新增單字集
+              </Button>
+              <Button variant="outline" @click="openTransfer">
+                <Upload class="h-4 w-4" />
+                匯出/匯入
               </Button>
             </div>
           </Card>
@@ -1118,7 +1309,7 @@ onMounted(() => {
 
     <Dialog
       :open="importOpen"
-      title="匯入單字集"
+      title="新增單字集"
       :description="importStep === 1 ? '第一步：輸入單字並複製 AI 提示詞' : '第二步：貼上 AI 產生的 JSON，下一步輸入名稱'"
       @close="closeImport"
     >
@@ -1180,6 +1371,104 @@ onMounted(() => {
         <div class="flex justify-end gap-2">
           <Button variant="outline" @click="importStep = 1">上一步</Button>
           <Button @click="importSet">下一步</Button>
+        </div>
+      </div>
+    </Dialog>
+
+    <Dialog
+      :open="transferOpen"
+      title="匯出 / 匯入"
+      description="用 zip 備份或匯入單字資料。"
+      width-class="max-w-3xl"
+      @close="closeTransfer"
+    >
+      <div class="space-y-6">
+        <div class="rounded-2xl border border-zinc-200 bg-white p-4">
+          <div class="flex items-start justify-between gap-3">
+            <div>
+              <p class="text-sm font-semibold text-zinc-950">匯出單字集</p>
+              <p class="mt-1 text-xs text-zinc-500">勾選要匯出的單字集並下載 zip。</p>
+            </div>
+            <Button variant="outline" size="sm" :disabled="!sets.length" @click="toggleExportAll">
+              {{ exportAllSelected ? '取消全選' : '全選' }}
+            </Button>
+          </div>
+
+          <div v-if="sets.length" class="mt-4 space-y-2">
+            <label
+              v-for="set in sets"
+              :key="set.id"
+              class="flex items-start gap-3 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2"
+            >
+              <input
+                v-model="exportSelectedIds"
+                type="checkbox"
+                :value="set.id"
+                class="mt-1 h-4 w-4 accent-zinc-900"
+              />
+              <div>
+                <p class="text-sm font-medium text-zinc-900">{{ set.setName }}</p>
+                <p class="text-xs text-zinc-500">{{ set.items.length }} 個單字</p>
+              </div>
+            </label>
+          </div>
+          <p v-else class="mt-4 text-sm text-zinc-500">尚無單字集可匯出。</p>
+
+          <p v-if="sets.length" class="mt-3 text-xs text-zinc-500">
+            已選 {{ exportSelectedCount }} 個單字集，共 {{ exportSelectedWordCount }} 個單字。
+          </p>
+          <p v-if="exportError" class="mt-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">
+            {{ exportError }}
+          </p>
+
+          <div class="mt-3 flex justify-end">
+            <Button :disabled="!exportSelectedCount" @click="exportSelectedSetsToZip">
+              <Download class="h-4 w-4" />
+              匯出 zip
+            </Button>
+          </div>
+        </div>
+
+        <div class="rounded-2xl border border-zinc-200 bg-white p-4">
+          <div class="flex items-start justify-between gap-3">
+            <div>
+              <p class="text-sm font-semibold text-zinc-950">匯入 zip</p>
+              <p class="mt-1 text-xs text-zinc-500">支援使用匯出產生的 zip。</p>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              :disabled="!zipImportPreview && !zipImportError && !zipImportName"
+              @click="resetZipImportState"
+            >
+              清除
+            </Button>
+          </div>
+
+          <div class="mt-4 space-y-2">
+            <input
+              :key="zipImportInputKey"
+              type="file"
+              accept=".zip"
+              class="block w-full text-sm text-zinc-600 file:mr-3 file:rounded-md file:border-0 file:bg-zinc-900 file:px-3 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-zinc-800"
+              @change="handleZipImportChange"
+            />
+            <p v-if="zipImportName" class="text-xs text-zinc-500">已選擇：{{ zipImportName }}</p>
+          </div>
+
+          <p v-if="zipImportPreview" class="mt-3 rounded-lg bg-green-50 px-3 py-2 text-sm text-green-700">
+            {{ zipImportPreview }}
+          </p>
+          <p v-if="zipImportError" class="mt-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">
+            {{ zipImportError }}
+          </p>
+
+          <div class="mt-3 flex justify-end">
+            <Button :disabled="!zipImportSets || !zipImportSets.length" @click="applyZipImport">
+              <Upload class="h-4 w-4" />
+              匯入
+            </Button>
+          </div>
         </div>
       </div>
     </Dialog>
