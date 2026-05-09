@@ -17,7 +17,6 @@ const PROMPTS = {
 
 【JSON 格式】
 {
-  "setName": "單字集名稱",
   "items": [
     {
       "id": "w-001",
@@ -35,7 +34,6 @@ const PROMPTS = {
 }
 
 【欄位要求】
-- setName：單字集名稱。
 - items：陣列，每筆代表一個單字。
 - 每筆 item 必須包含：word、meaning、example、question。
 - pos 可填常見詞性縮寫，例如 n. / v. / adj. / adv.。

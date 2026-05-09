@@ -665,18 +665,9 @@ function copyToClipboard(text) {
   }
   return navigator.clipboard.writeText(text)
 }
-
-async function copyPrompt() {
-  try {
-    await copyToClipboard(prompts.generateWordSet)
-    showToast('已複製 AI 指令，請貼至 AI 平台產生單字集')
-  } catch {
-    showToast('複製失敗')
-  }
-}
-
 async function copyQuestionExplainPrompt(entry, record = null, mode = 'quiz') {
   let promptText = ''
+
   if (mode === 'quiz') {
     const question = entry.item.question
     promptText = prompts.explainQuestion
@@ -862,22 +853,7 @@ onMounted(() => {
         </div>
 
         <div class="flex items-center gap-2 shrink-0">
-          <template v-if="currentView === 'home'">
-            <Button variant="outline" @click="copyPrompt" class="hidden sm:flex">
-              <ClipboardCopy class="h-4 w-4 mr-1.5" />
-              複製 AI 指令
-            </Button>
-            <Button variant="outline" size="icon" @click="copyPrompt" class="sm:hidden" aria-label="複製 AI 指令">
-              <ClipboardCopy class="h-4 w-4" />
-            </Button>
-            
-            <Button @click="openImport">
-              <Plus class="h-4 w-4 sm:mr-1.5" />
-              <span class="hidden sm:inline">匯入單字集</span>
-            </Button>
-          </template>
-
-          <template v-else-if="activeSet">
+          <template v-if="currentView !== 'home' && activeSet">
             <Badge variant="secondary" class="hidden sm:inline-flex rounded-md px-3 py-1 text-sm">
               {{ activeSet.setName }}
             </Badge>
@@ -907,10 +883,6 @@ onMounted(() => {
               <Button @click="openImport">
                 <Plus class="h-4 w-4" />
                 匯入單字集
-              </Button>
-              <Button variant="outline" @click="copyPrompt">
-                <ClipboardCopy class="h-4 w-4" />
-                複製 AI 指令
               </Button>
             </div>
           </Card>
@@ -1147,7 +1119,7 @@ onMounted(() => {
     <Dialog
       :open="importOpen"
       title="匯入單字集"
-      :description="importStep === 1 ? '第一步：輸入單字並複製 AI 提示詞' : '第二步：貼上 AI 產生的 JSON'"
+      :description="importStep === 1 ? '第一步：輸入單字並複製 AI 提示詞' : '第二步：貼上 AI 產生的 JSON，下一步輸入名稱'"
       @close="closeImport"
     >
       <div v-if="importStep === 1" class="space-y-4">
@@ -1165,7 +1137,7 @@ onMounted(() => {
         <div class="rounded-lg border border-zinc-200 bg-zinc-50 px-4 py-3">
           <p class="text-xs font-semibold text-zinc-500">如何使用？</p>
           <p class="mt-1 text-xs leading-5 text-zinc-500">
-            請輸入你要學習的單字，點擊「複製 AI 指令」，貼給 AI 平台 (如 ChatGPT)，它會為你生成需要的 JSON 格式。
+            請輸入你要學習的單字，點擊「複製 AI 指令」，貼給 AI 平台 (如 ChatGPT)，它只需要生成 items，不用包含 setName。
           </p>
         </div>
 
@@ -1187,14 +1159,14 @@ onMounted(() => {
             v-model="importJson"
             :rows="8"
             class="font-mono"
-            placeholder='{"setName":"核心單字 A","items":[{"word":"abandon","meaning":"放棄；遺棄","example":"He decided to abandon the plan after the cost doubled.","question":{"prompt":"The captain had to _____ the ship during the storm.","opts":["abandon","delay","gather","repair"],"ans":0}}]}'
+            placeholder='{"items":[{"word":"abandon","meaning":"放棄；遺棄","example":"He decided to abandon the plan after the cost doubled.","question":{"prompt":"The captain had to _____ the ship during the storm.","opts":["abandon","delay","gather","repair"],"ans":0}}]}'
           />
         </div>
 
         <div class="rounded-lg border border-zinc-200 bg-zinc-50 px-4 py-3">
           <p class="text-xs font-semibold text-zinc-500">匯入前檢查</p>
           <p class="mt-1 text-xs leading-5 text-zinc-500">
-            會先檢查 JSON 格式是否正確，接著再讓你輸入單字集名稱並確認內容。
+            會先檢查 JSON 格式是否正確，確認後再讓你輸入單字集名稱。
           </p>
         </div>
 
@@ -1207,7 +1179,7 @@ onMounted(() => {
 
         <div class="flex justify-end gap-2">
           <Button variant="outline" @click="importStep = 1">上一步</Button>
-          <Button @click="importSet">套用</Button>
+          <Button @click="importSet">下一步</Button>
         </div>
       </div>
     </Dialog>
@@ -1215,7 +1187,7 @@ onMounted(() => {
     <Dialog
       :open="setEditorOpen"
       :title="setEditorMode === 'create' ? '新增單字集' : '編輯單字集'"
-      :description="setEditorMode === 'create' ? '輸入名稱後即可完成新增。' : '可直接編輯每個單字欄位。'"
+      :description="setEditorMode === 'create' ? '輸入名稱後即可套用。' : '可直接編輯每個單字欄位。'"
       width-class="max-w-4xl"
       @close="closeSetEditor"
     >
@@ -1299,7 +1271,7 @@ onMounted(() => {
 
         <div class="flex justify-end gap-2">
           <Button variant="outline" @click="closeSetEditor">取消</Button>
-          <Button @click="saveSetEditor">儲存</Button>
+          <Button @click="saveSetEditor">{{ setEditorMode === 'create' ? '套用' : '儲存' }}</Button>
         </div>
       </div>
     </Dialog>
