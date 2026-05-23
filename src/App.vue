@@ -1140,7 +1140,7 @@ onMounted(() => {
                 尚未載入單字集
               </h2>
               <p class="text-sm leading-relaxed text-ink-500 dark:text-ink-400">
-                開始特訓前，請先建立您的客製化單字集。您可以點擊 <strong class="font-bold text-emerald-600 dark:text-emerald-400">新增單字集</strong>按鈕，或匯入之前生成過的單字集。
+                您可以點擊 <strong class="font-bold text-emerald-600 dark:text-emerald-400">新增單字集</strong> 按鈕，或匯入之前生成過的單字集。
               </p>
             </div>
             
@@ -1474,7 +1474,7 @@ onMounted(() => {
     <!-- Dialog: Backup / Import -->
     <Dialog
       :open="transferOpen"
-      title="備份與數據導入"
+      title="備份與數據匯入"
       description="下載 ZIP 以離線備份您的單字集，或自 ZIP 檔案快速恢復數據。"
       width-class="max-w-3xl"
       @close="closeTransfer"
