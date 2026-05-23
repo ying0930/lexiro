@@ -5,6 +5,7 @@ import {
   downloadBackupFile,
   hasDriveToken,
   listBackupFiles,
+  pruneOldBackupFiles,
   requestDriveAccess,
   revokeDriveAccess,
   uploadBackupZip,
@@ -957,8 +958,10 @@ async function backupSelectedSetsToDrive() {
     await ensureDriveSignedIn()
     const filename = buildExportFileName()
     await uploadBackupZip(buildExportZipBlob(exportSelectedSets.value), filename)
-    showToast(`已備份到 Google Drive：${filename}`)
-    await refreshDriveBackups()
+    const pruneResult = await pruneOldBackupFiles(10)
+    driveBackups.value = pruneResult.kept
+    const pruneText = pruneResult.deleted.length ? `，已刪除 ${pruneResult.deleted.length} 個舊備份` : ''
+    showToast(`已備份到 Google Drive：${filename}${pruneText}`)
   } catch (error) {
     driveError.value = error.message || '備份到 Google Drive 失敗'
   } finally {

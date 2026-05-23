@@ -3,6 +3,7 @@ const DRIVE_API_BASE = 'https://www.googleapis.com/drive/v3'
 const DRIVE_UPLOAD_BASE = 'https://www.googleapis.com/upload/drive/v3'
 const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.file'
 const WORDMEM_FOLDER_NAME = 'Wordmem'
+const MAX_BACKUP_FILES = 10
 
 let gisScriptPromise = null
 let tokenClient = null
@@ -199,6 +200,22 @@ export async function listBackupFiles() {
   const response = await driveFetch(`${DRIVE_API_BASE}/files?${params.toString()}`)
   const data = await response.json()
   return (data.files ?? []).filter((file) => /^wordmem-backup-\d{8}-\d{4}\.zip$/i.test(file.name))
+}
+
+export async function deleteBackupFile(fileId) {
+  await driveFetch(`${DRIVE_API_BASE}/files/${encodeURIComponent(fileId)}`, {
+    method: 'DELETE',
+  })
+}
+
+export async function pruneOldBackupFiles(maxFiles = MAX_BACKUP_FILES) {
+  const files = await listBackupFiles()
+  const oldFiles = files.slice(maxFiles)
+  await Promise.all(oldFiles.map((file) => deleteBackupFile(file.id)))
+  return {
+    kept: files.slice(0, maxFiles),
+    deleted: oldFiles,
+  }
 }
 
 export async function downloadBackupFile(fileId) {
