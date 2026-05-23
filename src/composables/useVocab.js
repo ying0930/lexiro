@@ -38,6 +38,8 @@ const zipImportName = ref('')
 const zipImportInputKey = ref(0)
 const importMode = ref('append')
 const duplicateSummary = ref(null)
+const importVersionDiffs = ref([])
+const importVersionChoices = ref({})
 const driveConfigured = Boolean(import.meta.env.VITE_GOOGLE_CLIENT_ID)
 const driveSignedIn = ref(false)
 const driveAccountLabel = ref('')
@@ -581,6 +583,7 @@ function resetZipImportState(resetInput = true) {
   zipImportSets.value = null
   zipImportName.value = ''
   duplicateSummary.value = null
+  resetImportVersionDiffs()
   if (resetInput) {
     zipImportInputKey.value += 1
   }
@@ -647,10 +650,91 @@ function getSetContentSignature(set) {
   )
 }
 
+function getItemContentSignature(item) {
+  return JSON.stringify({
+    word: item.word,
+    pos: item.pos,
+    meaning: item.meaning,
+    example: item.example,
+    question: item.question,
+  })
+}
+
+function getItemKey(item) {
+  return item.word.trim().toLowerCase()
+}
+
+function createImportVersionDiff(localSet, importedSet) {
+  const localItems = new Map(localSet.items.map((item) => [getItemKey(item), item]))
+  const importedItems = new Map(importedSet.items.map((item) => [getItemKey(item), item]))
+  const added = []
+  const removed = []
+  const changed = []
+
+  importedItems.forEach((importedItem, key) => {
+    const localItem = localItems.get(key)
+    if (!localItem) {
+      added.push(importedItem.word)
+      return
+    }
+    if (getItemContentSignature(localItem) !== getItemContentSignature(importedItem)) {
+      changed.push(importedItem.word)
+    }
+  })
+
+  localItems.forEach((localItem, key) => {
+    if (!importedItems.has(key)) {
+      removed.push(localItem.word)
+    }
+  })
+
+  return {
+    setName: importedSet.setName,
+    localSetId: localSet.id,
+    localCount: localSet.items.length,
+    importedCount: importedSet.items.length,
+    added,
+    removed,
+    changed,
+    identical: !added.length && !removed.length && !changed.length,
+  }
+}
+
+function refreshImportVersionDiffs(targetSets = []) {
+  const localByName = new Map(sets.value.map((set) => [set.setName.trim(), set]))
+  const diffs = targetSets
+    .map((set) => {
+      const localSet = localByName.get(set.setName.trim())
+      return localSet ? createImportVersionDiff(localSet, set) : null
+    })
+    .filter(Boolean)
+
+  importVersionDiffs.value = diffs
+  importVersionChoices.value = diffs.reduce((choices, diff) => {
+    choices[diff.setName] = importVersionChoices.value[diff.setName] ?? 'local'
+    return choices
+  }, {})
+}
+
+function resetImportVersionDiffs() {
+  importVersionDiffs.value = []
+  importVersionChoices.value = {}
+}
+
+function setImportVersionChoice(setName, choice) {
+  importVersionChoices.value = {
+    ...importVersionChoices.value,
+    [setName]: choice,
+  }
+}
+
 function summarizeDuplicateResult(result) {
   const messages = []
   if (result.skippedByName.length) {
-    messages.push(`已有此單字集，略過 ${result.skippedByName.length} 個：${result.skippedByName.join('、')}`)
+    messages.push(`保留本機版本 ${result.skippedByName.length} 個：${result.skippedByName.join('、')}`)
+  }
+  if (result.replacedVersions.length) {
+    messages.push(`使用匯入版本更新 ${result.replacedVersions.length} 個：${result.replacedVersions.join('、')}`)
   }
   if (result.skippedByContent.length) {
     messages.push(`偵測到重複內容，略過 ${result.skippedByContent.length} 個：${result.skippedByContent.join('、')}`)
@@ -683,6 +767,7 @@ async function handleZipImportChange(event) {
     const { sets: normalizedSets, exportedAt } = parseBackupZipBuffer(buffer)
     zipImportSets.value = normalizedSets
     zipImportPreview.value = formatBackupPreview(normalizedSets, exportedAt)
+    refreshImportVersionDiffs(normalizedSets)
   } catch (error) {
     zipImportError.value = error.message || '匯入失敗'
   }
@@ -695,6 +780,7 @@ async function applyImportedSets(targetSets, mode = 'append') {
     skippedByName: [],
     skippedByContent: [],
     renamedIds: [],
+    replacedVersions: [],
   }
 
   if (mode === 'overwrite') {
@@ -725,12 +811,28 @@ async function applyImportedSets(targetSets, mode = 'append') {
     return result
   }
 
-  const existingNames = new Set(sets.value.map((set) => set.setName.trim()))
-  const existingContentSignatures = new Set(sets.value.map((set) => getSetContentSignature(set)))
+  const nextSets = [...sets.value]
+  const existingNames = new Set(nextSets.map((set) => set.setName.trim()))
+  const existingContentSignatures = new Set(nextSets.map((set) => getSetContentSignature(set)))
   const importedContentSignatures = new Set()
+  const replacedSetIds = new Set()
 
   targetSets.forEach((set, index) => {
-    if (existingNames.has(set.setName.trim())) {
+    const existingIndex = nextSets.findIndex((localSet) => localSet.setName.trim() === set.setName.trim())
+    if (existingIndex !== -1) {
+      const localSet = nextSets[existingIndex]
+      const choice = importVersionChoices.value[set.setName] ?? 'local'
+      if (choice === 'imported') {
+        existingContentSignatures.delete(getSetContentSignature(localSet))
+        nextSets[existingIndex] = {
+          ...set,
+          id: localSet.id,
+        }
+        existingContentSignatures.add(getSetContentSignature(nextSets[existingIndex]))
+        replacedSetIds.add(localSet.id)
+        result.replacedVersions.push(set.setName)
+        return
+      }
       result.skippedByName.push(set.setName)
       return
     }
@@ -757,14 +859,27 @@ async function applyImportedSets(targetSets, mode = 'append') {
   })
 
   if (!result.imported.length) {
+    if (result.replacedVersions.length) {
+      sets.value = nextSets
+      if (currentSession.value && replacedSetIds.has(currentSession.value.sourceSetId)) {
+        resetStudyView()
+      }
+      saveState()
+      duplicateSummary.value = result
+      showToast(summarizeDuplicateResult(result))
+      return result
+    }
     duplicateSummary.value = result
     showToast(summarizeDuplicateResult(result) || '沒有可匯入的新單字集')
     return result
   }
 
-  sets.value = [...sets.value, ...result.imported]
+  sets.value = [...nextSets, ...result.imported]
   if (!activeSetId.value) {
     activeSetId.value = result.imported[0].id
+  }
+  if (currentSession.value && replacedSetIds.has(currentSession.value.sourceSetId)) {
+    resetStudyView()
   }
 
   saveState()
@@ -794,6 +909,7 @@ function resetDriveImportState() {
   driveImportSets.value = null
   driveImportExportedAt.value = ''
   duplicateSummary.value = null
+  resetImportVersionDiffs()
 }
 
 async function ensureDriveSignedIn(prompt = null) {
@@ -885,6 +1001,7 @@ async function selectDriveBackup(fileId) {
     driveImportSets.value = normalizedSets
     driveImportExportedAt.value = exportedAt
     driveImportPreview.value = formatBackupPreview(normalizedSets, exportedAt)
+    refreshImportVersionDiffs(normalizedSets)
   } catch (error) {
     driveError.value = error.message || '讀取 Google Drive 備份失敗'
     driveImportSets.value = null
@@ -1293,6 +1410,8 @@ export function useVocab() {
     zipImportInputKey,
     importMode,
     duplicateSummary,
+    importVersionDiffs,
+    importVersionChoices,
     driveConfigured,
     driveSignedIn,
     driveAccountLabel,
@@ -1381,6 +1500,9 @@ export function useVocab() {
     resetZipImportState,
     normalizeExportPayload,
     parseBackupZipBuffer,
+    refreshImportVersionDiffs,
+    resetImportVersionDiffs,
+    setImportVersionChoice,
     ensureUniqueSetId,
     handleZipImportChange,
     applyImportedSets,
