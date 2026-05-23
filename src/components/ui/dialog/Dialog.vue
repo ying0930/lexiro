@@ -15,20 +15,13 @@ defineEmits(['close'])
 
 <template>
   <Teleport to="body">
-    <Transition
-      enter-active-class="transition duration-300 ease-out"
-      enter-from-class="opacity-0 scale-95"
-      enter-to-class="opacity-100 scale-100"
-      leave-active-class="transition duration-200 ease-in"
-      leave-from-class="opacity-100 scale-100"
-      leave-to-class="opacity-0 scale-95"
-    >
+    <Transition name="dialog-fade">
       <div
         v-if="open"
-        class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 sm:p-6 backdrop-blur-md transition-all duration-300"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 sm:p-6 backdrop-blur-md"
         @click.self="$emit('close')"
       >
-        <div :class="['flex max-h-full w-full flex-col rounded-3xl border border-ink-200 dark:border-ink-800 bg-white dark:bg-ink-900 shadow-2xl overflow-hidden transition-all duration-300', widthClass]">
+        <div :class="['dialog-content-panel flex max-h-full w-full flex-col rounded-3xl border border-ink-200/50 dark:border-ink-800/50 bg-white dark:bg-ink-900 shadow-2xl overflow-hidden', widthClass]">
           <!-- Header block -->
           <div class="flex shrink-0 items-start justify-between gap-4 p-6 pb-4">
             <div class="space-y-1">

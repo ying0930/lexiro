@@ -49,17 +49,19 @@ onMounted(() => {
     <AppHeader />
 
     <main class="mx-auto mt-8 max-w-5xl px-6 relative z-10">
-      <!-- Home View -->
-      <HomeView v-if="currentView === 'home'" />
+      <Transition name="page" mode="out-in">
+        <!-- Home View -->
+        <HomeView v-if="currentView === 'home'" />
 
-      <!-- Flashcards View -->
-      <FlashcardsView v-else-if="currentView === 'flashcard'" />
+        <!-- Flashcards View -->
+        <FlashcardsView v-else-if="currentView === 'flashcard'" />
 
-      <!-- Quiz / Spelling Practice View -->
-      <PracticeView v-else-if="currentView === 'quiz' || currentView === 'spelling'" />
+        <!-- Quiz / Spelling Practice View -->
+        <PracticeView v-else-if="currentView === 'quiz' || currentView === 'spelling'" />
 
-      <!-- Completion Results View -->
-      <ResultView v-else-if="currentView === 'result'" />
+        <!-- Completion Results View -->
+        <ResultView v-else-if="currentView === 'result'" />
+      </Transition>
     </main>
 
     <!-- Dialogs -->
