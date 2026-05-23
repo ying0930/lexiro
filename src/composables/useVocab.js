@@ -1,6 +1,14 @@
 import { ref, computed, watch, nextTick } from 'vue'
 import { strFromU8, strToU8, unzipSync, zipSync } from 'fflate'
 import prompts from '../../prompts.js'
+import {
+  downloadBackupFile,
+  hasDriveToken,
+  listBackupFiles,
+  requestDriveAccess,
+  revokeDriveAccess,
+  uploadBackupZip,
+} from '../lib/googleDrive.js'
 
 // Singleton reactive state shared across all component imports
 const sets = ref([])
@@ -28,6 +36,21 @@ const zipImportPreview = ref('')
 const zipImportSets = ref(null)
 const zipImportName = ref('')
 const zipImportInputKey = ref(0)
+const importMode = ref('append')
+const duplicateSummary = ref(null)
+const driveConfigured = Boolean(import.meta.env.VITE_GOOGLE_CLIENT_ID)
+const driveSignedIn = ref(false)
+const driveAccountLabel = ref('')
+const driveBackupLoading = ref(false)
+const driveImportLoading = ref(false)
+const driveListLoading = ref(false)
+const driveError = ref('')
+const driveBackups = ref([])
+const driveSelectedFileId = ref('')
+const driveSelectedFileName = ref('')
+const driveImportPreview = ref('')
+const driveImportSets = ref(null)
+const driveImportExportedAt = ref('')
 const setEditorOpen = ref(false)
 const setEditorMode = ref('create')
 const setEditorId = ref(null)
@@ -492,7 +515,9 @@ function openTransfer() {
   transferOpen.value = true
   exportSelectedIds.value = sets.value.map((set) => set.id)
   exportError.value = ''
+  driveError.value = ''
   resetZipImportState()
+  resetDriveImportState()
 }
 
 function closeTransfer() {
@@ -507,6 +532,7 @@ function buildExportPayload(selectedSets) {
   return {
     version: 1,
     exportedAt: new Date().toISOString(),
+    appName: 'Wordmem',
     sets: selectedSets,
   }
 }
@@ -517,7 +543,14 @@ function buildExportFileName() {
     now.getDate(),
   ).padStart(2, '0')}`
   const timePart = `${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}`
-  return `vocp-sets-${datePart}-${timePart}.zip`
+  return `wordmem-backup-${datePart}-${timePart}.zip`
+}
+
+function buildExportZipBlob(selectedSets) {
+  const payload = buildExportPayload(selectedSets)
+  const jsonText = JSON.stringify(payload, null, 2)
+  const zipped = zipSync({ 'vocp-sets.json': strToU8(jsonText) }, { level: 0 })
+  return new Blob([zipped], { type: 'application/zip' })
 }
 
 function downloadBlob(blob, filename) {
@@ -538,11 +571,7 @@ function exportSelectedSetsToZip() {
     return
   }
 
-  const payload = buildExportPayload(exportSelectedSets.value)
-  const jsonText = JSON.stringify(payload, null, 2)
-  const zipped = zipSync({ 'vocp-sets.json': strToU8(jsonText) }, { level: 0 })
-  const blob = new Blob([zipped], { type: 'application/zip' })
-  downloadBlob(blob, buildExportFileName())
+  downloadBlob(buildExportZipBlob(exportSelectedSets.value), buildExportFileName())
   showToast(`已匯出 ${exportSelectedSets.value.length} 個單字集`)
 }
 
@@ -551,6 +580,7 @@ function resetZipImportState(resetInput = true) {
   zipImportPreview.value = ''
   zipImportSets.value = null
   zipImportName.value = ''
+  duplicateSummary.value = null
   if (resetInput) {
     zipImportInputKey.value += 1
   }
@@ -574,6 +604,63 @@ function normalizeExportPayload(data) {
   throw new Error('找不到 sets 或 items')
 }
 
+function parseBackupZipBuffer(buffer) {
+  const entries = unzipSync(new Uint8Array(buffer))
+  const entryNames = Object.keys(entries)
+  const jsonEntry =
+    entryNames.find((name) => name.toLowerCase().endsWith('vocp-sets.json'))
+    || entryNames.find((name) => name.toLowerCase().endsWith('.json'))
+  if (!jsonEntry) throw new Error('找不到 JSON 檔案')
+
+  let parsed
+  try {
+    parsed = JSON.parse(strFromU8(entries[jsonEntry]))
+  } catch {
+    throw new Error('JSON 格式錯誤')
+  }
+
+  return {
+    payload: parsed,
+    sets: normalizeExportPayload(parsed),
+    exportedAt: parsed?.exportedAt ?? '',
+  }
+}
+
+function countWords(targetSets) {
+  return targetSets.reduce((sum, set) => sum + set.items.length, 0)
+}
+
+function formatBackupPreview(targetSets, exportedAt = '') {
+  const summary = `備份時間：${exportedAt ? new Date(exportedAt).toLocaleString() : '未提供'}，單字集 ${targetSets.length} 個，單字 ${countWords(targetSets)} 個`
+  return summary
+}
+
+function getSetContentSignature(set) {
+  return JSON.stringify(
+    set.items.map((item) => ({
+      word: item.word,
+      pos: item.pos,
+      meaning: item.meaning,
+      example: item.example,
+      question: item.question,
+    })),
+  )
+}
+
+function summarizeDuplicateResult(result) {
+  const messages = []
+  if (result.skippedByName.length) {
+    messages.push(`已有此單字集，略過 ${result.skippedByName.length} 個：${result.skippedByName.join('、')}`)
+  }
+  if (result.skippedByContent.length) {
+    messages.push(`偵測到重複內容，略過 ${result.skippedByContent.length} 個：${result.skippedByContent.join('、')}`)
+  }
+  if (result.renamedIds.length) {
+    messages.push(`因 id 衝突已改用新 id：${result.renamedIds.map((item) => item.setName).join('、')}`)
+  }
+  return messages.join('；')
+}
+
 function ensureUniqueSetId(baseId, existingIds) {
   let nextId = baseId
   let counter = 1
@@ -593,54 +680,237 @@ async function handleZipImportChange(event) {
 
   try {
     const buffer = await file.arrayBuffer()
-    const entries = unzipSync(new Uint8Array(buffer))
-    const entryNames = Object.keys(entries)
-    const jsonEntry =
-      entryNames.find((name) => name.toLowerCase().endsWith('vocp-sets.json'))
-      || entryNames.find((name) => name.toLowerCase().endsWith('.json'))
-    if (!jsonEntry) throw new Error('找不到 JSON 檔案')
-
-    let parsed
-    try {
-      parsed = JSON.parse(strFromU8(entries[jsonEntry]))
-    } catch {
-      throw new Error('JSON 格式錯誤')
-    }
-
-    const normalizedSets = normalizeExportPayload(parsed)
+    const { sets: normalizedSets, exportedAt } = parseBackupZipBuffer(buffer)
     zipImportSets.value = normalizedSets
-    const totalWords = normalizedSets.reduce((sum, set) => sum + set.items.length, 0)
-    zipImportPreview.value = `已讀取 ${normalizedSets.length} 個單字集，共 ${totalWords} 個單字`
+    zipImportPreview.value = formatBackupPreview(normalizedSets, exportedAt)
   } catch (error) {
     zipImportError.value = error.message || '匯入失敗'
   }
 }
 
-function applyZipImport() {
+async function applyImportedSets(targetSets, mode = 'append') {
+  const existingIds = new Set(sets.value.map((set) => set.id))
+  const result = {
+    imported: [],
+    skippedByName: [],
+    skippedByContent: [],
+    renamedIds: [],
+  }
+
+  if (mode === 'overwrite') {
+    const confirmed = await showConfirm(
+      '覆蓋本機資料',
+      `將以備份中的 ${targetSets.length} 個單字集取代目前本機資料，並清除目前練習進度。確定覆蓋？`,
+    )
+    if (!confirmed) return null
+
+    const nextIds = new Set()
+    const imported = targetSets.map((set, index) => {
+      const baseId = isNonEmptyString(set.id) ? set.id : `imported-${Date.now()}-${index + 1}`
+      const nextId = ensureUniqueSetId(baseId, nextIds)
+      nextIds.add(nextId)
+      return {
+        ...set,
+        id: nextId,
+      }
+    })
+
+    sets.value = imported
+    activeSetId.value = imported[0]?.id ?? null
+    resetStudyView()
+    saveState()
+    result.imported = imported
+    duplicateSummary.value = result
+    showToast(`已覆蓋本機資料，匯入 ${imported.length} 個單字集`)
+    return result
+  }
+
+  const existingNames = new Set(sets.value.map((set) => set.setName.trim()))
+  const existingContentSignatures = new Set(sets.value.map((set) => getSetContentSignature(set)))
+  const importedContentSignatures = new Set()
+
+  targetSets.forEach((set, index) => {
+    if (existingNames.has(set.setName.trim())) {
+      result.skippedByName.push(set.setName)
+      return
+    }
+
+    const signature = getSetContentSignature(set)
+    if (existingContentSignatures.has(signature) || importedContentSignatures.has(signature)) {
+      result.skippedByContent.push(set.setName)
+      return
+    }
+
+    const baseId = isNonEmptyString(set.id) ? set.id : `imported-${Date.now()}-${index + 1}`
+    const nextId = ensureUniqueSetId(baseId, existingIds)
+    existingIds.add(nextId)
+    existingNames.add(set.setName.trim())
+    existingContentSignatures.add(signature)
+    importedContentSignatures.add(signature)
+    if (nextId !== baseId) {
+      result.renamedIds.push({ setName: set.setName, from: baseId, to: nextId })
+    }
+    result.imported.push({
+      ...set,
+      id: nextId,
+    })
+  })
+
+  if (!result.imported.length) {
+    duplicateSummary.value = result
+    showToast(summarizeDuplicateResult(result) || '沒有可匯入的新單字集')
+    return result
+  }
+
+  sets.value = [...sets.value, ...result.imported]
+  if (!activeSetId.value) {
+    activeSetId.value = result.imported[0].id
+  }
+
+  saveState()
+  duplicateSummary.value = result
+  const duplicateText = summarizeDuplicateResult(result)
+  showToast(`已匯入 ${result.imported.length} 個單字集${duplicateText ? `；${duplicateText}` : ''}`)
+  return result
+}
+
+async function applyZipImport() {
+  zipImportError.value = ''
   if (!zipImportSets.value || !zipImportSets.value.length) {
     zipImportError.value = '請先選擇匯入檔案'
     return
   }
 
-  const existingIds = new Set(sets.value.map((set) => set.id))
-  const imported = zipImportSets.value.map((set, index) => {
-    const baseId = isNonEmptyString(set.id) ? set.id : `imported-${Date.now()}-${index + 1}`
-    const nextId = ensureUniqueSetId(baseId, existingIds)
-    existingIds.add(nextId)
-    return {
-      ...set,
-      id: nextId,
-    }
-  })
-
-  sets.value = [...sets.value, ...imported]
-  if (!activeSetId.value && imported.length) {
-    activeSetId.value = imported[0].id
-  }
-
-  showToast(`已匯入 ${imported.length} 個單字集`)
+  const result = await applyImportedSets(zipImportSets.value, importMode.value)
+  if (!result) return
   resetZipImportState()
   transferOpen.value = false
+}
+
+function resetDriveImportState() {
+  driveSelectedFileId.value = ''
+  driveSelectedFileName.value = ''
+  driveImportPreview.value = ''
+  driveImportSets.value = null
+  driveImportExportedAt.value = ''
+  duplicateSummary.value = null
+}
+
+async function ensureDriveSignedIn(prompt = null) {
+  driveError.value = ''
+  if (!driveConfigured) {
+    driveError.value = '尚未設定 VITE_GOOGLE_CLIENT_ID，無法使用 Google Drive 備份。'
+    throw new Error(driveError.value)
+  }
+
+  const token = await requestDriveAccess(import.meta.env.VITE_GOOGLE_CLIENT_ID, prompt ?? (hasDriveToken() ? '' : 'consent'))
+  driveSignedIn.value = hasDriveToken()
+  driveAccountLabel.value = token.expiresAt ? `Google Drive 已授權，約 ${new Date(token.expiresAt).toLocaleTimeString()} 前有效` : 'Google Drive 已授權'
+  return token
+}
+
+async function signInDrive() {
+  try {
+    await ensureDriveSignedIn('consent select_account')
+    showToast('已登入 Google Drive')
+  } catch (error) {
+    driveSignedIn.value = false
+    driveError.value = error.message || 'Google 登入失敗'
+  }
+}
+
+function signOutDrive() {
+  revokeDriveAccess()
+  driveSignedIn.value = false
+  driveAccountLabel.value = ''
+  driveBackups.value = []
+  resetDriveImportState()
+  showToast('已登出 Google Drive')
+}
+
+async function backupSelectedSetsToDrive() {
+  driveError.value = ''
+  exportError.value = ''
+  if (!exportSelectedSets.value.length) {
+    exportError.value = '請至少選擇一個單字集'
+    return
+  }
+
+  driveBackupLoading.value = true
+  try {
+    await ensureDriveSignedIn()
+    const filename = buildExportFileName()
+    await uploadBackupZip(buildExportZipBlob(exportSelectedSets.value), filename)
+    showToast(`已備份到 Google Drive：${filename}`)
+    await refreshDriveBackups()
+  } catch (error) {
+    driveError.value = error.message || '備份到 Google Drive 失敗'
+  } finally {
+    driveBackupLoading.value = false
+  }
+}
+
+async function refreshDriveBackups() {
+  driveError.value = ''
+  driveListLoading.value = true
+  try {
+    await ensureDriveSignedIn()
+    driveBackups.value = await listBackupFiles()
+    if (!driveBackups.value.length) {
+      resetDriveImportState()
+    }
+  } catch (error) {
+    driveError.value = error.message || '讀取 Google Drive 備份列表失敗'
+  } finally {
+    driveListLoading.value = false
+  }
+}
+
+async function selectDriveBackup(fileId) {
+  driveError.value = ''
+  const file = driveBackups.value.find((item) => item.id === fileId)
+  driveSelectedFileId.value = fileId
+  driveSelectedFileName.value = file?.name ?? ''
+  driveImportPreview.value = ''
+  driveImportSets.value = null
+  driveImportExportedAt.value = ''
+
+  if (!fileId) return
+
+  driveImportLoading.value = true
+  try {
+    await ensureDriveSignedIn()
+    const buffer = await downloadBackupFile(fileId)
+    const { sets: normalizedSets, exportedAt } = parseBackupZipBuffer(buffer)
+    driveImportSets.value = normalizedSets
+    driveImportExportedAt.value = exportedAt
+    driveImportPreview.value = formatBackupPreview(normalizedSets, exportedAt)
+  } catch (error) {
+    driveError.value = error.message || '讀取 Google Drive 備份失敗'
+    driveImportSets.value = null
+  } finally {
+    driveImportLoading.value = false
+  }
+}
+
+async function applyDriveImport() {
+  driveError.value = ''
+  if (!driveImportSets.value || !driveImportSets.value.length) {
+    driveError.value = '請先選擇 Google Drive 備份檔'
+    return
+  }
+
+  driveImportLoading.value = true
+  try {
+    const result = await applyImportedSets(driveImportSets.value, importMode.value)
+    if (!result) return
+    resetDriveImportState()
+    transferOpen.value = false
+  } catch (error) {
+    driveError.value = error.message || '從 Google Drive 導入失敗'
+  } finally {
+    driveImportLoading.value = false
+  }
 }
 
 function ensureActiveSet(setId) {
@@ -1021,6 +1291,21 @@ export function useVocab() {
     zipImportSets,
     zipImportName,
     zipImportInputKey,
+    importMode,
+    duplicateSummary,
+    driveConfigured,
+    driveSignedIn,
+    driveAccountLabel,
+    driveBackupLoading,
+    driveImportLoading,
+    driveListLoading,
+    driveError,
+    driveBackups,
+    driveSelectedFileId,
+    driveSelectedFileName,
+    driveImportPreview,
+    driveImportSets,
+    driveImportExportedAt,
     setEditorOpen,
     setEditorMode,
     setEditorId,
@@ -1090,13 +1375,24 @@ export function useVocab() {
     toggleExportAll,
     buildExportPayload,
     buildExportFileName,
+    buildExportZipBlob,
     downloadBlob,
     exportSelectedSetsToZip,
     resetZipImportState,
     normalizeExportPayload,
+    parseBackupZipBuffer,
     ensureUniqueSetId,
     handleZipImportChange,
+    applyImportedSets,
     applyZipImport,
+    resetDriveImportState,
+    ensureDriveSignedIn,
+    signInDrive,
+    signOutDrive,
+    backupSelectedSetsToDrive,
+    refreshDriveBackups,
+    selectDriveBackup,
+    applyDriveImport,
     ensureActiveSet,
     isSetInProgress,
     startFlashcards,

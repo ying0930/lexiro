@@ -40,7 +40,7 @@ const {
         </span>
         <div class="space-y-2 max-w-md">
           <h2 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-ink-950 dark:text-ink-50">
-            尚未載入單字集
+            Wordmem 尚未載入單字集
           </h2>
           <p class="text-sm leading-relaxed text-ink-500 dark:text-ink-400">
             您可以點擊 <strong class="font-bold text-emerald-600 dark:text-emerald-400">新增單字集</strong> 按鈕，或匯入之前生成過的單字集。

@@ -36,7 +36,7 @@ const {
         </Button>
         <div class="text-left">
           <h1 class="text-xl sm:text-2xl font-extrabold tracking-tight text-ink-950 dark:text-ink-50">
-            單字特訓
+            Wordmem
           </h1>
           <p v-if="currentView === 'home'" class="text-xs text-ink-500 dark:text-ink-400 mt-0.5">
             <span v-if="hasSets" class="font-medium">
