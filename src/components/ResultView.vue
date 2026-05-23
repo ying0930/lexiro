@@ -27,7 +27,7 @@ onMounted(() => {
 <template>
   <section v-if="activeSet && resultSummary" class="space-y-6">
     <!-- Result Summary Dashboard Card -->
-    <Card id="completion-panel" class="p-8 text-left" :glow="true">
+    <Card id="completion-panel" class="p-8 text-left" :glow="false">
       <div class="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-6 border-b border-ink-200/50 dark:border-ink-800/50">
         <div class="flex items-start gap-4">
           <span class="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-ink-950 text-white dark:bg-ink-50 dark:text-ink-950 shadow-md" aria-hidden="true">

@@ -9,7 +9,7 @@ const props = defineProps({
 </script>
 
 <template>
-  <Card v-if="item" class="p-6 sm:p-8" :glow="true">
+  <Card v-if="item" class="p-6 sm:p-8" :glow="false">
     <div class="flex flex-wrap items-start justify-between gap-4 text-left">
       <div class="space-y-2">
         <h2 class="text-3xl sm:text-4xl font-extrabold tracking-tight text-ink-950 dark:text-ink-50">

@@ -15,7 +15,7 @@ defineEmits(['flashcards', 'quiz', 'spelling', 'delete', 'edit'])
 <template>
   <Card
     class="p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
-    :glow="true"
+    :glow="false"
   >
     <div class="flex items-start justify-between gap-4">
       <div class="space-y-1.5 text-left">
