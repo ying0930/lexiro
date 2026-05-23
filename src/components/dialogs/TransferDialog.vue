@@ -87,13 +87,16 @@ function selectOption(id) {
     :open="transferOpen"
     title="備份與匯入"
     description="下載 ZIP 離線備份 Wordmem 單字集，或手動備份到 Google Drive。"
-      <div class="space-y-6">
+    width-class="max-w-3xl"
+    @close="closeTransfer"
+  >
+    <div class="space-y-6">
       <!-- 1. Google Drive Section -->
       <div class="rounded-2xl border border-ink-200 dark:border-ink-800 bg-ink-100/50 dark:bg-ink-900/40 p-5 text-left">
         <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
           <div>
             <p class="text-sm font-bold text-ink-950 dark:text-ink-50">Google Drive</p>
-            <p class="mt-1 text-xs text-ink-400 dark:text-ink-500">手動備份到 My Drive 的 Wordmem 資料夾，或從既有備份導入。</p>
+            <p class="mt-1 text-xs text-ink-400 dark:text-ink-500">手動備份到 Google Drive，或從既有備份導入。</p>
             <p v-if="driveAccountLabel" class="mt-2 text-xs font-semibold text-emerald-700 dark:text-emerald-400">{{ driveAccountLabel }}</p>
           </div>
           <div class="flex flex-wrap gap-2">
@@ -350,7 +353,7 @@ function selectOption(id) {
         <div class="flex items-start justify-between gap-4">
           <div>
             <p class="text-sm font-bold text-ink-950 dark:text-ink-50">匯出 Wordmem 備份</p>
-            <p class="mt-1 text-xs text-ink-400 dark:text-ink-500">勾選想要存檔的單字集，下載 ZIP來離線備份。</p>
+            <p class="mt-1 text-xs text-ink-400 dark:text-ink-500">勾選想要存檔的單字集，下載 ZIP 來離線備份。</p>
           </div>
           <Button variant="outline" size="sm" class="h-8 px-3 text-xs bg-white dark:bg-ink-900" :disabled="!sets.length" @click="toggleExportAll">
             {{ exportAllSelected ? '取消全選' : '全選' }}
