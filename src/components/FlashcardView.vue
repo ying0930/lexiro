@@ -29,7 +29,7 @@ const props = defineProps({
       <div class="rounded-2xl bg-emerald-500/5 dark:bg-emerald-950/20 border border-emerald-100/30 dark:border-emerald-900/40 p-6 flex flex-col justify-between">
         <div>
           <p class="text-xs font-bold uppercase tracking-widest text-emerald-600 dark:text-emerald-400">
-            中文意思
+            中文解釋
           </p>
           <p class="mt-4 text-base sm:text-lg font-semibold leading-relaxed text-ink-900 dark:text-ink-100">
             {{ item.meaning }}
