@@ -163,10 +163,10 @@ function optionClass(index) {
       <p class="text-sm font-bold text-ink-950 dark:text-ink-50">
         {{
           selectedIndex === entry.item.question.ans
-            ? '🎉 答案正確'
+            ? '答案正確'
             : selectedIndex === null
-              ? '⏭ 已略過此題'
-              : '❌ 答案錯誤'
+              ? '已略過此題'
+              : '答案錯誤'
         }}
       </p>
       <p class="mt-2 text-sm leading-relaxed text-ink-600 dark:text-ink-400">

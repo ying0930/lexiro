@@ -138,14 +138,14 @@ async function copyExplanationPrompt() {
         @keydown.enter.prevent="submit"
       />
       <p class="text-[11px] text-ink-400 dark:text-ink-500 leading-relaxed font-medium">
-        💡 判定將忽略大小寫與前後空白。留空送出將被視為略過。
+        判定將忽略大小寫與前後空白。留空送出將被視為略過。
       </p>
     </div>
 
     <!-- Explanation Block (Single Mode Submitted) -->
     <div v-if="!batchMode && submitted" class="mt-6 rounded-2xl border border-ink-200 dark:border-ink-800 bg-white dark:bg-ink-900 p-5 text-left transition-all duration-300">
       <p class="text-sm font-bold text-ink-950 dark:text-ink-50">
-        {{ isCorrect ? '🎉 答案正確' : answer.trim() ? '❌ 答案錯誤' : '⏭ 已略過此題' }}
+        {{ isCorrect ? '答案正確' : answer.trim() ? '答案錯誤' : '已略過此題' }}
       </p>
       <p class="mt-2 text-sm leading-relaxed text-ink-600 dark:text-ink-400">
         正確解答是 <span class="font-bold text-emerald-600 dark:text-emerald-400">{{ entry.item.word }}</span>
