@@ -1261,7 +1261,7 @@ onMounted(() => {
           <Card class="p-6" :glow="false">
             <div class="flex flex-col sm:flex-row sm:justify-between items-center gap-4">
               <p class="text-xs font-medium text-ink-500 dark:text-ink-400 text-left">
-                💡 檢查無誤後，請點擊右方按鈕提交本輪全部的作答結果。
+                檢查無誤後，請點擊右方按鈕提交本輪全部的作答結果。
               </p>
               <Button variant="default" class="w-full sm:w-auto px-8 py-3" @click="submitCurrentRound">
                 送出本輪答案
@@ -1282,7 +1282,7 @@ onMounted(() => {
               </span>
               <div class="space-y-1">
                 <h2 class="text-xl sm:text-2xl font-bold tracking-tight text-ink-950 dark:text-ink-50">
-                  {{ resultSummary.review ? '🎉 本輪錯題複習完成！' : '🏁 測驗順利完成！' }}
+                  {{ resultSummary.review ? '本輪錯題複習完成！' : '測驗順利完成！' }}
                 </h2>
                 <p class="text-xs font-semibold text-ink-400 dark:text-ink-500 uppercase tracking-widest">
                   模式：{{ resultSummary.mode === 'quiz' ? '四選一選擇' : '英文拼字測試' }}
@@ -1427,9 +1427,9 @@ onMounted(() => {
         </div>
 
         <div class="rounded-2xl border border-indigo-100 dark:border-indigo-900/40 bg-indigo-500/5 p-4 text-left">
-          <p class="text-xs font-bold text-indigo-700 dark:text-indigo-400">如何使用 AI 產出高質量測驗？</p>
+          <p class="text-xs font-bold text-indigo-700 dark:text-indigo-400">如何使用 AI 產生單字集？</p>
           <p class="mt-1.5 text-xs leading-relaxed text-ink-500 dark:text-ink-400 font-medium">
-            點擊「複製 AI 指令」，貼入任意 AI 平台（例如 ChatGPT / Claude / Gemini），AI 將為您客製化台灣高中難度的詞彙例句與挖空選擇題。得到回覆後點擊下一步貼入即可。
+            點擊「複製 AI 指令」，貼入任意 AI 平台（例如 ChatGPT / Claude / Gemini），AI 將為您生成詞彙例句與挖空選擇題。得到回覆後點擊下一步貼入即可。
           </p>
         </div>
 
@@ -1458,10 +1458,10 @@ onMounted(() => {
         </div>
 
         <p v-if="importPreview" class="rounded-xl bg-emerald-500/10 border border-emerald-100 dark:border-emerald-900/40 px-4 py-2.5 text-xs text-emerald-700 dark:text-emerald-400 font-semibold text-left">
-          ✅ {{ importPreview }}
+          {{ importPreview }}
         </p>
         <p v-if="importError" class="rounded-xl bg-red-50 dark:bg-red-950/20 border border-red-100 dark:border-red-900/50 px-4 py-2.5 text-xs text-red-600 dark:text-red-400 font-semibold text-left">
-          ❌ 格式錯誤：{{ importError }}
+          格式錯誤：{{ importError }}
         </p>
 
         <div class="flex justify-end gap-2 pt-2 border-t border-ink-100 dark:border-ink-800">
