@@ -362,7 +362,7 @@ function selectOption(id) {
                 <div>
                   <p class="text-sm font-bold text-ink-900 dark:text-ink-100">{{ diff.setName }}</p>
                   <p class="mt-1 text-xs text-ink-500 dark:text-ink-400">
-                    本機 {{ diff.localCount }} 個單字，匯入版本 {{ diff.importedCount }} 個單字
+                    本機有 {{ diff.localCount }} 個單字，匯入版本有 {{ diff.importedCount }} 個單字
                   </p>
                 </div>
                 <div class="grid gap-1 text-xs text-ink-600 dark:text-ink-300">
