@@ -208,6 +208,85 @@ function selectOption(id) {
           {{ driveImportPreview }}
         </p>
 
+        <!-- Google Drive Import Settings (embedded directly in the card) -->
+        <div v-if="driveImportSets && driveImportSets.length" class="mt-4 pt-4 border-t border-ink-200/30 dark:border-ink-800/30 space-y-4">
+          <p class="text-sm font-bold text-ink-950 dark:text-ink-50">導入設定</p>
+          <div class="grid gap-2 sm:grid-cols-2">
+            <label class="flex cursor-pointer items-start gap-2 rounded-lg border border-ink-200 dark:border-ink-800 px-3 py-2 text-xs text-ink-600 dark:text-ink-300">
+              <input v-model="importMode" type="radio" value="append" class="mt-0.5 h-4 w-4 accent-emerald-500" />
+              <span><strong class="block text-ink-900 dark:text-ink-100">追加到本機</strong>同名單字集可逐一選擇版本。</span>
+            </label>
+            <label class="flex cursor-pointer items-start gap-2 rounded-lg border border-ink-200 dark:border-ink-800 px-3 py-2 text-xs text-ink-600 dark:text-ink-300">
+              <input v-model="importMode" type="radio" value="overwrite" class="mt-0.5 h-4 w-4 accent-emerald-500" />
+              <span><strong class="block text-ink-900 dark:text-ink-100">覆蓋本機</strong>取代本機資料並重設目前進度。</span>
+            </label>
+          </div>
+
+          <div v-if="importMode === 'append' && importVersionDiffs.length" class="mt-4 space-y-3">
+            <p class="text-xs font-bold text-ink-500 dark:text-ink-400">同名單字集版本差異</p>
+            <div
+              v-for="diff in importVersionDiffs"
+              :key="diff.setName"
+              class="rounded-xl border border-ink-200 dark:border-ink-800 bg-ink-50 dark:bg-ink-950/40 p-4"
+            >
+              <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <p class="text-sm font-bold text-ink-900 dark:text-ink-100">{{ diff.setName }}</p>
+                  <p class="mt-1 text-xs text-ink-500 dark:text-ink-400">
+                    本機 {{ diff.localCount }} 個單字，匯入版本 {{ diff.importedCount }} 個單字
+                  </p>
+                </div>
+                <div class="grid gap-1 text-xs text-ink-600 dark:text-ink-300">
+                  <label class="flex items-center gap-2">
+                    <input
+                      type="radio"
+                      :name="`drive-version-${diff.setName}`"
+                      value="local"
+                      :checked="importVersionChoices[diff.setName] !== 'imported'"
+                      class="h-4 w-4 accent-emerald-500"
+                      @change="setImportVersionChoice(diff.setName, 'local')"
+                    />
+                    <span>保留本機</span>
+                  </label>
+                  <label class="flex items-center gap-2">
+                    <input
+                      type="radio"
+                      :name="`drive-version-${diff.setName}`"
+                      value="imported"
+                      :checked="importVersionChoices[diff.setName] === 'imported'"
+                      class="h-4 w-4 accent-emerald-500"
+                      @change="setImportVersionChoice(diff.setName, 'imported')"
+                    />
+                    <span>使用匯入版本</span>
+                  </label>
+                </div>
+              </div>
+
+              <div class="mt-3 grid gap-2 text-xs text-ink-500 dark:text-ink-400 sm:grid-cols-3">
+                <p>
+                  <strong class="text-emerald-700 dark:text-emerald-400">新增</strong>
+                  {{ diff.added.length ? diff.added.slice(0, 5).join('、') : '無' }}<span v-if="diff.added.length > 5"> 等 {{ diff.added.length }} 個</span>
+                </p>
+                <p>
+                  <strong class="text-red-600 dark:text-red-400">移除</strong>
+                  {{ diff.removed.length ? diff.removed.slice(0, 5).join('、') : '無' }}<span v-if="diff.removed.length > 5"> 等 {{ diff.removed.length }} 個</span>
+                </p>
+                <p>
+                  <strong class="text-amber-700 dark:text-amber-300">修改</strong>
+                  {{ diff.changed.length ? diff.changed.slice(0, 5).join('、') : '無' }}<span v-if="diff.changed.length > 5"> 等 {{ diff.changed.length }} 個</span>
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <p v-if="duplicateSummary && (duplicateSummary.skippedByName.length || duplicateSummary.skippedByContent.length || duplicateSummary.renamedIds.length || duplicateSummary.replacedVersions.length)" class="mt-4 rounded-xl bg-amber-50 dark:bg-amber-950/20 border border-amber-100 dark:border-amber-900/50 px-4 py-2.5 text-xs text-amber-700 dark:text-amber-300 font-semibold">
+            <span v-if="duplicateSummary.skippedByName.length">保留本機版本：{{ duplicateSummary.skippedByName.join('、') }}。</span>
+            <span v-if="duplicateSummary.replacedVersions.length">使用匯入版本更新：{{ duplicateSummary.replacedVersions.join('、') }}。</span>
+            <span v-if="duplicateSummary.skippedByContent.length">偵測到重複內容：{{ duplicateSummary.skippedByContent.join('、') }}。</span>
+            <span v-if="duplicateSummary.renamedIds.length">id 衝突已產生新 id：{{ duplicateSummary.renamedIds.map((item) => item.setName).join('、') }}。</span>
+          </p>
+        </div>
+
         <div class="mt-4 pt-4 border-t border-ink-200/50 dark:border-ink-800/50 flex justify-end">
           <Button
             variant="default"
@@ -258,6 +337,85 @@ function selectOption(id) {
           {{ zipImportError }}
         </p>
 
+        <!-- ZIP Import Settings (embedded directly in the card) -->
+        <div v-if="zipImportSets && zipImportSets.length" class="mt-4 pt-4 border-t border-ink-200/30 dark:border-ink-800/30 space-y-4">
+          <p class="text-sm font-bold text-ink-950 dark:text-ink-50">導入設定</p>
+          <div class="grid gap-2 sm:grid-cols-2">
+            <label class="flex cursor-pointer items-start gap-2 rounded-lg border border-ink-200 dark:border-ink-800 px-3 py-2 text-xs text-ink-600 dark:text-ink-300">
+              <input v-model="importMode" type="radio" value="append" class="mt-0.5 h-4 w-4 accent-emerald-500" />
+              <span><strong class="block text-ink-900 dark:text-ink-100">追加到本機</strong>同名單字集可逐一選擇版本。</span>
+            </label>
+            <label class="flex cursor-pointer items-start gap-2 rounded-lg border border-ink-200 dark:border-ink-800 px-3 py-2 text-xs text-ink-600 dark:text-ink-300">
+              <input v-model="importMode" type="radio" value="overwrite" class="mt-0.5 h-4 w-4 accent-emerald-500" />
+              <span><strong class="block text-ink-900 dark:text-ink-100">覆蓋本機</strong>取代本機資料並重設目前進度。</span>
+            </label>
+          </div>
+
+          <div v-if="importMode === 'append' && importVersionDiffs.length" class="mt-4 space-y-3">
+            <p class="text-xs font-bold text-ink-500 dark:text-ink-400">同名單字集版本差異</p>
+            <div
+              v-for="diff in importVersionDiffs"
+              :key="diff.setName"
+              class="rounded-xl border border-ink-200 dark:border-ink-800 bg-ink-50 dark:bg-ink-950/40 p-4"
+            >
+              <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <p class="text-sm font-bold text-ink-900 dark:text-ink-100">{{ diff.setName }}</p>
+                  <p class="mt-1 text-xs text-ink-500 dark:text-ink-400">
+                    本機 {{ diff.localCount }} 個單字，匯入版本 {{ diff.importedCount }} 個單字
+                  </p>
+                </div>
+                <div class="grid gap-1 text-xs text-ink-600 dark:text-ink-300">
+                  <label class="flex items-center gap-2">
+                    <input
+                      type="radio"
+                      :name="`zip-version-${diff.setName}`"
+                      value="local"
+                      :checked="importVersionChoices[diff.setName] !== 'imported'"
+                      class="h-4 w-4 accent-emerald-500"
+                      @change="setImportVersionChoice(diff.setName, 'local')"
+                    />
+                    <span>保留本機</span>
+                  </label>
+                  <label class="flex items-center gap-2">
+                    <input
+                      type="radio"
+                      :name="`zip-version-${diff.setName}`"
+                      value="imported"
+                      :checked="importVersionChoices[diff.setName] === 'imported'"
+                      class="h-4 w-4 accent-emerald-500"
+                      @change="setImportVersionChoice(diff.setName, 'imported')"
+                    />
+                    <span>使用匯入版本</span>
+                  </label>
+                </div>
+              </div>
+
+              <div class="mt-3 grid gap-2 text-xs text-ink-500 dark:text-ink-400 sm:grid-cols-3">
+                <p>
+                  <strong class="text-emerald-700 dark:text-emerald-400">新增</strong>
+                  {{ diff.added.length ? diff.added.slice(0, 5).join('、') : '無' }}<span v-if="diff.added.length > 5"> 等 {{ diff.added.length }} 個</span>
+                </p>
+                <p>
+                  <strong class="text-red-600 dark:text-red-400">移除</strong>
+                  {{ diff.removed.length ? diff.removed.slice(0, 5).join('、') : '無' }}<span v-if="diff.removed.length > 5"> 等 {{ diff.removed.length }} 個</span>
+                </p>
+                <p>
+                  <strong class="text-amber-700 dark:text-amber-300">修改</strong>
+                  {{ diff.changed.length ? diff.changed.slice(0, 5).join('、') : '無' }}<span v-if="diff.changed.length > 5"> 等 {{ diff.changed.length }} 個</span>
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <p v-if="duplicateSummary && (duplicateSummary.skippedByName.length || duplicateSummary.skippedByContent.length || duplicateSummary.renamedIds.length || duplicateSummary.replacedVersions.length)" class="mt-4 rounded-xl bg-amber-50 dark:bg-amber-950/20 border border-amber-100 dark:border-amber-900/50 px-4 py-2.5 text-xs text-amber-700 dark:text-amber-300 font-semibold">
+            <span v-if="duplicateSummary.skippedByName.length">保留本機版本：{{ duplicateSummary.skippedByName.join('、') }}。</span>
+            <span v-if="duplicateSummary.replacedVersions.length">使用匯入版本更新：{{ duplicateSummary.replacedVersions.join('、') }}。</span>
+            <span v-if="duplicateSummary.skippedByContent.length">偵測到重複內容：{{ duplicateSummary.skippedByContent.join('、') }}。</span>
+            <span v-if="duplicateSummary.renamedIds.length">id 衝突已產生新 id：{{ duplicateSummary.renamedIds.map((item) => item.setName).join('、') }}。</span>
+          </p>
+        </div>
+
         <div class="mt-4 pt-4 border-t border-ink-200/50 dark:border-ink-800/50 flex justify-end">
           <Button variant="default" :disabled="!zipImportSets || !zipImportSets.length" @click="applyZipImport" class="gap-2">
             <Upload class="h-4 w-4" />
@@ -266,87 +424,7 @@ function selectOption(id) {
         </div>
       </div>
 
-      <!-- Import Options (conditional container for version diff settings) -->
-      <div
-        v-if="zipImportSets || driveImportSets || duplicateSummary"
-        class="rounded-2xl border border-ink-200 dark:border-ink-800 bg-white dark:bg-ink-900 p-5 text-left"
-      >
-        <p class="text-sm font-bold text-ink-950 dark:text-ink-50">導入設定</p>
-        <div class="mt-3 grid gap-2 sm:grid-cols-2">
-          <label class="flex cursor-pointer items-start gap-2 rounded-lg border border-ink-200 dark:border-ink-800 px-3 py-2 text-xs text-ink-600 dark:text-ink-300">
-            <input v-model="importMode" type="radio" value="append" class="mt-0.5 h-4 w-4 accent-emerald-500" />
-            <span><strong class="block text-ink-900 dark:text-ink-100">追加到本機</strong>同名單字集可逐一選擇版本。</span>
-          </label>
-          <label class="flex cursor-pointer items-start gap-2 rounded-lg border border-ink-200 dark:border-ink-800 px-3 py-2 text-xs text-ink-600 dark:text-ink-300">
-            <input v-model="importMode" type="radio" value="overwrite" class="mt-0.5 h-4 w-4 accent-emerald-500" />
-            <span><strong class="block text-ink-900 dark:text-ink-100">覆蓋本機</strong>取代本機資料並重設目前進度。</span>
-          </label>
-        </div>
 
-        <div v-if="importMode === 'append' && importVersionDiffs.length" class="mt-4 space-y-3">
-          <p class="text-xs font-bold text-ink-500 dark:text-ink-400">同名單字集版本差異</p>
-          <div
-            v-for="diff in importVersionDiffs"
-            :key="diff.setName"
-            class="rounded-xl border border-ink-200 dark:border-ink-800 bg-ink-50 dark:bg-ink-950/40 p-4"
-          >
-            <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-              <div>
-                <p class="text-sm font-bold text-ink-900 dark:text-ink-100">{{ diff.setName }}</p>
-                <p class="mt-1 text-xs text-ink-500 dark:text-ink-400">
-                  本機 {{ diff.localCount }} 個單字，匯入版本 {{ diff.importedCount }} 個單字
-                </p>
-              </div>
-              <div class="grid gap-1 text-xs text-ink-600 dark:text-ink-300">
-                <label class="flex items-center gap-2">
-                  <input
-                    type="radio"
-                    :name="`version-${diff.setName}`"
-                    value="local"
-                    :checked="importVersionChoices[diff.setName] !== 'imported'"
-                    class="h-4 w-4 accent-emerald-500"
-                    @change="setImportVersionChoice(diff.setName, 'local')"
-                  />
-                  <span>保留本機</span>
-                </label>
-                <label class="flex items-center gap-2">
-                  <input
-                    type="radio"
-                    :name="`version-${diff.setName}`"
-                    value="imported"
-                    :checked="importVersionChoices[diff.setName] === 'imported'"
-                    class="h-4 w-4 accent-emerald-500"
-                    @change="setImportVersionChoice(diff.setName, 'imported')"
-                  />
-                  <span>使用匯入版本</span>
-                </label>
-              </div>
-            </div>
-
-            <div class="mt-3 grid gap-2 text-xs text-ink-500 dark:text-ink-400 sm:grid-cols-3">
-              <p>
-                <strong class="text-emerald-700 dark:text-emerald-400">新增</strong>
-                {{ diff.added.length ? diff.added.slice(0, 5).join('、') : '無' }}<span v-if="diff.added.length > 5"> 等 {{ diff.added.length }} 個</span>
-              </p>
-              <p>
-                <strong class="text-red-600 dark:text-red-400">移除</strong>
-                {{ diff.removed.length ? diff.removed.slice(0, 5).join('、') : '無' }}<span v-if="diff.removed.length > 5"> 等 {{ diff.removed.length }} 個</span>
-              </p>
-              <p>
-                <strong class="text-amber-700 dark:text-amber-300">修改</strong>
-                {{ diff.changed.length ? diff.changed.slice(0, 5).join('、') : '無' }}<span v-if="diff.changed.length > 5"> 等 {{ diff.changed.length }} 個</span>
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <p v-if="duplicateSummary && (duplicateSummary.skippedByName.length || duplicateSummary.skippedByContent.length || duplicateSummary.renamedIds.length || duplicateSummary.replacedVersions.length)" class="mt-4 rounded-xl bg-amber-50 dark:bg-amber-950/20 border border-amber-100 dark:border-amber-900/50 px-4 py-2.5 text-xs text-amber-700 dark:text-amber-300 font-semibold">
-          <span v-if="duplicateSummary.skippedByName.length">保留本機版本：{{ duplicateSummary.skippedByName.join('、') }}。</span>
-          <span v-if="duplicateSummary.replacedVersions.length">使用匯入版本更新：{{ duplicateSummary.replacedVersions.join('、') }}。</span>
-          <span v-if="duplicateSummary.skippedByContent.length">偵測到重複內容：{{ duplicateSummary.skippedByContent.join('、') }}。</span>
-          <span v-if="duplicateSummary.renamedIds.length">id 衝突已產生新 id：{{ duplicateSummary.renamedIds.map((item) => item.setName).join('、') }}。</span>
-        </p>
-      </div>
 
       <!-- 3. Export Section -->
       <div class="rounded-2xl border border-ink-200 dark:border-ink-800 bg-ink-100/50 dark:bg-ink-900/40 p-5 text-left">
