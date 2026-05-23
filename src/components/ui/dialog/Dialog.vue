@@ -15,25 +15,37 @@ defineEmits(['close'])
 
 <template>
   <Teleport to="body">
-    <div
-      v-if="open"
-      class="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4 sm:p-6 backdrop-blur-sm"
-      @click.self="$emit('close')"
+    <Transition
+      enter-active-class="transition duration-300 ease-out"
+      enter-from-class="opacity-0 scale-95"
+      enter-to-class="opacity-100 scale-100"
+      leave-active-class="transition duration-200 ease-in"
+      leave-from-class="opacity-100 scale-100"
+      leave-to-class="opacity-0 scale-95"
     >
-      <div :class="['flex max-h-full w-full flex-col rounded-xl border border-zinc-200 bg-white shadow-xl', widthClass]">
-        <div class="flex shrink-0 items-start justify-between gap-4 p-6 pb-4">
-          <div class="space-y-1">
-            <h2 class="text-lg font-semibold text-zinc-950">{{ title }}</h2>
-            <p v-if="description" class="text-sm leading-6 text-zinc-500">{{ description }}</p>
+      <div
+        v-if="open"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 sm:p-6 backdrop-blur-md transition-all duration-300"
+        @click.self="$emit('close')"
+      >
+        <div :class="['flex max-h-full w-full flex-col rounded-3xl border border-ink-200 dark:border-ink-800 bg-white dark:bg-ink-900 shadow-2xl overflow-hidden transition-all duration-300', widthClass]">
+          <!-- Header block -->
+          <div class="flex shrink-0 items-start justify-between gap-4 p-6 pb-4">
+            <div class="space-y-1">
+              <h2 class="text-lg font-bold tracking-tight text-ink-950 dark:text-ink-50">{{ title }}</h2>
+              <p v-if="description" class="text-xs text-ink-500 dark:text-ink-400 leading-relaxed">{{ description }}</p>
+            </div>
+            <Button v-if="showClose" variant="ghost" size="icon" class="h-8 w-8 hover:bg-ink-100 dark:hover:bg-ink-800 rounded-lg shrink-0" @click="$emit('close')">
+              <X class="h-4 w-4 text-ink-500 dark:text-ink-400" />
+            </Button>
           </div>
-          <Button v-if="showClose" variant="ghost" size="icon" class="h-8 w-8" @click="$emit('close')">
-            <X class="h-4 w-4" />
-          </Button>
-        </div>
-        <div class="overflow-y-auto p-6 pt-0">
-          <slot />
+          
+          <!-- Content block -->
+          <div class="overflow-y-auto p-6 pt-0 text-left">
+            <slot />
+          </div>
         </div>
       </div>
-    </div>
+    </Transition>
   </Teleport>
 </template>

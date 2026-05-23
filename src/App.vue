@@ -12,6 +12,8 @@ import {
   SpellCheck2,
   Trash2,
   Upload,
+  Sun,
+  Moon,
 } from 'lucide-vue-next'
 import { strFromU8, strToU8, unzipSync, zipSync } from 'fflate'
 import prompts from '../prompts.js'
@@ -68,6 +70,8 @@ const practiceDialogOpen = ref(false)
 const practiceDialogMode = ref('quiz')
 const practiceDialogSetId = ref(null)
 const practiceDialogCount = ref(1)
+
+const theme = ref('light')
 
 let confirmResolver = null
 let toastTimer = null
@@ -405,14 +409,14 @@ function loadState() {
 
     sets.value = sanitizedSets
     const validSetIds = new Set(sanitizedSets.map((set) => set.id))
-  const savedView = typeof parsed.currentView === 'string' ? parsed.currentView : 'home'
-  const savedSession = normalizeSession(parsed.currentSession, validSetIds, savedView)
+    const savedView = typeof parsed.currentView === 'string' ? parsed.currentView : 'home'
+    const savedSession = normalizeSession(parsed.currentSession, validSetIds, savedView)
     practiceCounts.value = parsed.practiceCounts && typeof parsed.practiceCounts === 'object' && !Array.isArray(parsed.practiceCounts)
       ? parsed.practiceCounts
       : {}
 
     currentSession.value = savedSession
-  currentView.value = savedView
+    currentView.value = savedView
     flashcardIndex.value = Number.isInteger(parsed.flashcardIndex) && parsed.flashcardIndex >= 0 ? parsed.flashcardIndex : 0
 
     if (savedSession) {
@@ -841,6 +845,7 @@ function copyToClipboard(text) {
   }
   return navigator.clipboard.writeText(text)
 }
+
 async function copyQuestionExplainPrompt(entry, record = null, mode = 'quiz') {
   let promptText = ''
 
@@ -883,7 +888,7 @@ async function copyAllWrongQuestionsPrompt() {
     
     if (mode === 'quiz') {
       const q = entry.item.question
-      text += `题目：${q.prompt}\n`
+      text += `題目：${q.prompt}\n`
       text += `選項：\n${formatQuestionOptions(q)}\n`
       text += `我的答案：${record?.userAnswer ?? '未作答'}\n`
       text += `正確答案：${q.opts[q.ans]}\n`
@@ -994,10 +999,34 @@ function editActiveSet() {
   openSetEditor('edit', activeSet.value)
 }
 
+function toggleTheme() {
+  if (theme.value === 'light') {
+    theme.value = 'dark'
+    document.documentElement.classList.add('dark')
+    localStorage.setItem('vocp_theme', 'dark')
+  } else {
+    theme.value = 'light'
+    document.documentElement.classList.remove('dark')
+    localStorage.setItem('vocp_theme', 'light')
+  }
+}
+
+function initTheme() {
+  const saved = localStorage.getItem('vocp_theme')
+  if (saved === 'dark' || (!saved && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+    theme.value = 'dark'
+    document.documentElement.classList.add('dark')
+  } else {
+    theme.value = 'light'
+    document.documentElement.classList.remove('dark')
+  }
+}
+
 watch([sets, activeSetId, currentView, currentSession, flashcardIndex], saveState, { deep: true })
 
 onMounted(() => {
   loadState()
+  initTheme()
   window.addEventListener('keydown', (event) => {
     if (event.key === 'Escape' && importOpen.value) closeImport()
     if (event.key === 'Escape' && transferOpen.value) closeTransfer()
@@ -1007,109 +1036,162 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="min-h-screen pb-20">
-    <header class="sticky top-0 z-40 border-b border-zinc-200/70 bg-white/85 backdrop-blur-md">
-      <div class="mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-4">
+  <div class="min-h-screen bg-ink-50/50 dark:bg-ink-950 text-ink-950 dark:text-ink-50 transition-colors duration-300 pb-20 font-sans">
+    
+    <!-- Premium Header Shell -->
+    <header class="sticky top-0 z-40 border-b border-ink-200/50 dark:border-ink-800/50 bg-white/80 dark:bg-ink-950/80 backdrop-blur-md transition-colors duration-300">
+      <div class="mx-auto flex max-w-5xl items-center justify-between gap-4 px-6 py-4">
+        
+        <!-- Header Info -->
         <div class="flex items-center gap-3">
           <Button
             v-if="currentView !== 'home'"
             variant="ghost"
             size="icon"
-            class="h-9 w-9 shrink-0"
+            class="h-9 w-9 shrink-0 hover:bg-ink-100 dark:hover:bg-ink-800"
             @click="exitCurrentView"
           >
-            <ArrowLeft class="h-4 w-4" />
+            <ArrowLeft class="h-4 w-4 text-ink-700 dark:text-ink-300" />
           </Button>
-          <div>
-            <h1 class="text-xl font-semibold tracking-tight text-zinc-950">單字特訓</h1>
-            <p v-if="currentView === 'home'" class="text-sm text-zinc-500 mt-0.5">
-              <span v-if="hasSets">{{ sets.length }} 個單字集，共 {{ totalWordCount }} 個單字</span>
-              <span v-else>建立或新增單字集後即可開始。</span>
+          <div class="text-left">
+            <h1 class="text-xl sm:text-2xl font-extrabold tracking-tight text-ink-950 dark:text-ink-50">
+              單字特訓
+            </h1>
+            <p v-if="currentView === 'home'" class="text-xs text-ink-500 dark:text-ink-400 mt-0.5">
+              <span v-if="hasSets" class="font-medium">
+                {{ sets.length }} 個單字集，共 {{ totalWordCount }} 個單字
+              </span>
+              <span v-else class="font-medium">
+                點擊新增按鈕以載入你的專屬單字集。
+              </span>
             </p>
           </div>
         </div>
 
+        <!-- Header Actions -->
         <div class="flex items-center gap-2 shrink-0">
+          <!-- Active Set Quick Access -->
           <template v-if="currentView !== 'home' && activeSet">
-            <Badge variant="secondary" class="hidden sm:inline-flex rounded-md px-3 py-1 text-sm">
+            <Badge variant="secondary" class="hidden sm:inline-flex rounded-xl px-3 py-1.5 text-xs font-semibold bg-ink-100 dark:bg-ink-800 border-none">
               {{ activeSet.setName }}
             </Badge>
-            <Button variant="outline" size="icon" class="h-9 w-9" @click="deleteActiveSet" aria-label="刪除單字集">
-              <Trash2 class="h-4 w-4" />
-            </Button>
-            <Button variant="outline" size="icon" class="h-9 w-9" @click="editActiveSet" aria-label="編輯單字集">
+            <Button
+              variant="outline"
+              size="icon"
+              class="h-9 w-9 text-ink-500 hover:text-ink-950 dark:hover:text-ink-50 border-ink-200 dark:border-ink-800 hover:bg-ink-100 dark:hover:bg-ink-800"
+              aria-label="編輯單字集"
+              @click="editActiveSet"
+            >
               <PencilLine class="h-4 w-4" />
             </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              class="h-9 w-9 text-red-500 hover:text-red-600 border-ink-200 dark:border-ink-800 hover:bg-red-50 dark:hover:bg-red-950/20"
+              aria-label="刪除單字集"
+              @click="deleteActiveSet"
+            >
+              <Trash2 class="h-4 w-4" />
+            </Button>
           </template>
+
+          <span class="w-px h-5 bg-ink-200 dark:bg-ink-800 mx-1 hidden sm:inline-block"></span>
+
+          <!-- Dynamic Theme Switcher -->
+          <Button
+            variant="ghost"
+            size="icon"
+            class="h-9 w-9 rounded-xl hover:bg-ink-100 dark:hover:bg-ink-800"
+            title="切換主題"
+            @click="toggleTheme"
+          >
+            <Sun v-if="theme === 'dark'" class="h-4 w-4 text-emerald-400 animate-pulse" />
+            <Moon v-else class="h-4 w-4 text-indigo-600" />
+          </Button>
         </div>
+
       </div>
     </header>
 
-    <main class="mx-auto mt-6 max-w-5xl px-4">
-      <section v-if="currentView === 'home'">
-        <div v-if="hasSets" class="mb-4 flex flex-wrap items-center justify-end gap-2">
-          <Button variant="outline" @click="openTransfer">
+    <main class="mx-auto mt-8 max-w-5xl px-6">
+      
+      <!-- Home View -->
+      <section v-if="currentView === 'home'" class="space-y-6">
+        <!-- Top Toolbar -->
+        <div v-if="hasSets" class="flex flex-wrap items-center justify-end gap-3 mb-2">
+          <Button variant="outline" @click="openTransfer" class="gap-2 px-5 py-2.5">
             <Upload class="h-4 w-4" />
-            匯出/匯入
+            <span>備份與匯入</span>
           </Button>
-          <Button @click="openImport">
+          <Button variant="default" @click="openImport" class="gap-2 px-6 py-2.5">
             <Plus class="h-4 w-4" />
-            新增單字集
+            <span>新增單字集</span>
           </Button>
         </div>
+
+        <!-- Empty State Canonical Panel -->
         <div v-if="!hasSets" class="py-16">
-          <Card class="border-dashed border-zinc-300 bg-white/90 p-10 text-center">
-            <div class="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-lg bg-zinc-100">
-              <FileQuestion class="h-7 w-7 text-zinc-500" />
+          <Card class="max-w-2xl mx-auto my-8 p-12 text-center flex flex-col items-center justify-center space-y-6" :glow="true">
+            <span class="flex h-16 w-16 items-center justify-center rounded-3xl bg-ink-950 text-white dark:bg-ink-50 dark:text-ink-950 shadow-xl" aria-hidden="true">
+              <FileQuestion class="h-7 w-7" />
+            </span>
+            <div class="space-y-2 max-w-md">
+              <h2 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-ink-950 dark:text-ink-50">
+                尚未載入單字集
+              </h2>
+              <p class="text-sm leading-relaxed text-ink-500 dark:text-ink-400">
+                開始特訓前，請先建立您的客製化單字集。您可以利用 <strong class="font-bold text-emerald-600 dark:text-emerald-400">AI 單字集生成模組</strong>，或直接貼上已產生的單字格式。
+              </p>
             </div>
-            <h2 class="text-lg font-semibold text-zinc-950">尚無單字集</h2>
-            <p class="mx-auto mt-2 max-w-md text-sm leading-6 text-zinc-500">
-              先建立單字集，再開始練習。
-            </p>
-            <div class="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
-              <Button @click="openImport">
+            
+            <div class="flex flex-col sm:flex-row items-center gap-3 w-full justify-center pt-2">
+              <Button variant="default" @click="openImport" class="gap-2 px-8 py-3">
                 <Plus class="h-4 w-4" />
-                新增單字集
+                <span>新增單字集</span>
               </Button>
-              <Button variant="outline" @click="openTransfer">
+              <Button variant="outline" @click="openTransfer" class="gap-2 px-8 py-3">
                 <Upload class="h-4 w-4" />
-                匯出/匯入
+                <span>備份與匯入</span>
               </Button>
             </div>
           </Card>
         </div>
 
-        <div v-else class="space-y-4">
-          <div class="grid gap-4 md:grid-cols-2">
-            <SetCard
-              v-for="set in sets"
-              :key="set.id"
-              :set="set"
-              :active="isSetInProgress(set.id)"
-              @flashcards="startFlashcards"
-              @quiz="openPracticeDialog('quiz', $event)"
-              @spelling="openPracticeDialog('spelling', $event)"
-              @delete="requestDelete"
-              @edit="openSetEditor('edit', sets.find((item) => item.id === $event))"
-            />
-          </div>
+        <!-- Set Cards List -->
+        <div v-else class="grid gap-6 md:grid-cols-2">
+          <SetCard
+            v-for="set in sets"
+            :key="set.id"
+            :set="set"
+            :active="isSetInProgress(set.id)"
+            @flashcards="startFlashcards"
+            @quiz="openPracticeDialog('quiz', $event)"
+            @spelling="openPracticeDialog('spelling', $event)"
+            @delete="requestDelete"
+            @edit="openSetEditor('edit', sets.find((item) => item.id === $event))"
+          />
         </div>
       </section>
 
-      <section v-else-if="currentView === 'flashcard' && activeSet && currentSession" class="space-y-4">
-        <Card class="p-5">
-          <div class="mb-4 flex items-start justify-between gap-4">
+      <!-- Flashcards View -->
+      <section v-else-if="currentView === 'flashcard' && activeSet && currentSession" class="space-y-6">
+        <Card class="p-6 text-left" :glow="false">
+          <div class="flex items-start justify-between gap-4">
             <div>
-              <p class="text-sm font-semibold text-zinc-950">{{ activeSet.setName }}</p>
-              <p class="mt-1 text-sm text-zinc-500">單字卡</p>
+              <p class="text-xs uppercase font-bold tracking-widest text-emerald-600 dark:text-emerald-400">
+                正在進行
+              </p>
+              <h3 class="mt-1.5 text-lg font-bold tracking-tight text-ink-950 dark:text-ink-50">
+                {{ activeSet.setName }}
+              </h3>
             </div>
-            <div class="text-right">
-              <p class="text-xs text-zinc-400">{{ totalItems }} 張</p>
-            </div>
+            <Badge variant="secondary" class="rounded-lg px-3 py-1.5 text-xs font-semibold bg-ink-100 dark:bg-ink-800 border-none">
+              單字卡模式 · {{ totalItems }} 張
+            </Badge>
           </div>
         </Card>
 
-        <div class="space-y-4">
+        <div class="space-y-6">
           <FlashcardView
             v-for="(entry, entryIndex) in sessionEntries"
             :key="entry.item.id"
@@ -1119,26 +1201,32 @@ onMounted(() => {
         </div>
       </section>
 
-      <section v-else-if="(currentView === 'quiz' || currentView === 'spelling') && activeSet && currentSession" class="space-y-4">
-        <Card class="p-5">
+      <!-- Quiz / Spelling Practice View -->
+      <section v-else-if="(currentView === 'quiz' || currentView === 'spelling') && activeSet && currentSession" class="space-y-6">
+        <Card class="p-6 text-left" :glow="false">
           <div class="mb-4 flex items-start justify-between gap-4">
-            <div>
-              <p class="text-sm font-semibold text-zinc-950">{{ activeSet.setName }}</p>
-              <div class="mt-1 flex flex-wrap items-center gap-2 text-sm text-zinc-500">
-                <span>
-                  {{ currentView === 'quiz' ? `選擇題 ${totalItems} 題` : `拼字測試 ${totalItems} 題` }}
-                </span>
-              </div>
+            <div class="space-y-1">
+              <p class="text-xs uppercase font-bold tracking-widest text-emerald-600 dark:text-emerald-400">
+                單字特訓中
+              </p>
+              <h3 class="text-lg font-bold tracking-tight text-ink-950 dark:text-ink-50">
+                {{ activeSet.setName }}
+              </h3>
+              <p class="text-xs font-semibold text-ink-400 dark:text-ink-500">
+                {{ currentView === 'quiz' ? `選擇題 ${totalItems} 題` : `拼字測試 ${totalItems} 題` }}
+              </p>
             </div>
             <div class="text-right">
-              <p class="text-xs text-zinc-400">進度</p>
-              <p class="text-lg font-semibold text-zinc-950">{{ progressCount }} / {{ totalItems }}</p>
+              <p class="text-[10px] uppercase font-bold tracking-wider text-ink-400 dark:text-ink-500">已作答進度</p>
+              <p class="text-xl font-extrabold text-ink-950 dark:text-ink-50">
+                {{ progressCount }} <span class="text-xs text-ink-400">/ {{ totalItems }}</span>
+              </p>
             </div>
           </div>
           <Progress :model-value="progressPercent" />
         </Card>
 
-        <div class="space-y-4">
+        <div class="space-y-6">
           <template v-if="currentView === 'quiz'">
             <QuizCard
               v-for="(entry, entryIndex) in sessionEntries"
@@ -1169,110 +1257,119 @@ onMounted(() => {
             />
           </template>
 
-          <Card class="border-zinc-200 p-5 sm:p-6">
-            <div class="flex flex-col items-end gap-3 sm:flex-row sm:justify-end">
-              <Button @click="submitCurrentRound">
-                送出答案
+          <!-- Submit Bar -->
+          <Card class="p-6" :glow="false">
+            <div class="flex flex-col sm:flex-row sm:justify-between items-center gap-4">
+              <p class="text-xs font-medium text-ink-500 dark:text-ink-400 text-left">
+                💡 檢查無誤後，請點擊右方按鈕提交本輪全部的作答結果。
+              </p>
+              <Button variant="default" class="w-full sm:w-auto px-8 py-3" @click="submitCurrentRound">
+                送出本輪答案
               </Button>
             </div>
           </Card>
         </div>
       </section>
 
-      <section v-else-if="currentView === 'result' && activeSet && resultSummary" class="space-y-4">
-        <Card id="completion-panel" class="p-6">
-          <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+      <!-- Completion Results View -->
+      <section v-else-if="currentView === 'result' && activeSet && resultSummary" class="space-y-6">
+        <!-- Result Summary Dashboard Card -->
+        <Card id="completion-panel" class="p-8 text-left" :glow="true">
+          <div class="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-6 border-b border-ink-200/50 dark:border-ink-800/50">
             <div class="flex items-start gap-4">
-              <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-zinc-100">
-                <BookOpenText class="h-6 w-6 text-zinc-700" />
-              </div>
-              <div>
-                <h2 class="text-xl font-semibold text-zinc-950">
-                  {{ resultSummary.review ? '本輪錯題復習完成' : '本次練習結果' }}
+              <span class="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-ink-950 text-white dark:bg-ink-50 dark:text-ink-950 shadow-md" aria-hidden="true">
+                <BookOpenText class="h-6 w-6" />
+              </span>
+              <div class="space-y-1">
+                <h2 class="text-xl sm:text-2xl font-bold tracking-tight text-ink-950 dark:text-ink-50">
+                  {{ resultSummary.review ? '🎉 本輪錯題複習完成！' : '🏁 測驗順利完成！' }}
                 </h2>
-                <p class="mt-1 text-sm text-zinc-500">
-                  {{ resultSummary.mode === 'quiz' ? '選擇題' : '拼字測試' }}
+                <p class="text-xs font-semibold text-ink-400 dark:text-ink-500 uppercase tracking-widest">
+                  模式：{{ resultSummary.mode === 'quiz' ? '四選一選擇' : '英文拼字測試' }}
                 </p>
               </div>
             </div>
             
-            <div class="flex flex-col sm:items-end gap-1 text-left sm:text-right">
-              <div class="flex items-baseline gap-1">
-                <span class="text-3xl font-bold text-zinc-950">{{ resultSummary.score }}</span>
-                <span class="text-sm font-medium text-zinc-500">分</span>
+            <!-- Circular Score Visual Indicator equivalent -->
+            <div class="flex items-center gap-4 self-start md:self-auto shrink-0 bg-ink-100/50 dark:bg-ink-900/40 border border-ink-200/50 dark:border-ink-800/50 rounded-2xl p-4">
+              <div class="text-left">
+                <div class="flex items-baseline gap-0.5">
+                  <span class="text-4xl font-extrabold tracking-tight text-ink-950 dark:text-ink-50">{{ resultSummary.score }}</span>
+                  <span class="text-sm font-semibold text-ink-400 dark:text-ink-500">分</span>
+                </div>
+                <p class="text-xs font-medium text-ink-500 dark:text-ink-400 mt-1">
+                  答對 {{ resultSummary.correctCount }} / {{ resultSummary.total }} 題，錯題 {{ resultSummary.wrongCount }} 題
+                </p>
               </div>
-              <p class="text-sm text-zinc-500">
-                答對 {{ resultSummary.correctCount }} / {{ resultSummary.total }} 題，錯題 {{ resultSummary.wrongCount }} 題
-              </p>
             </div>
           </div>
 
-          <div class="mt-6 flex flex-col items-center justify-start gap-3 sm:flex-row border-t border-zinc-100 pt-6">
-            <Button @click="restartCurrentMode">
+          <!-- Bottom toolbar actions -->
+          <div class="mt-6 flex flex-wrap items-center justify-start gap-3">
+            <Button variant="default" @click="restartCurrentMode" class="gap-2 px-6 py-2.5">
               <RotateCcw class="h-4 w-4" />
-              重新做一次
+              <span>再練一次</span>
             </Button>
             <Button
               v-if="resultSummary.wrongCount"
               variant="outline"
+              class="gap-2 px-5 py-2.5"
               @click="reviewWrongAnswers"
             >
-              <BookOpenText class="h-4 w-4" />
-              復習錯題
+              <BookOpenText class="h-4 w-4 text-emerald-500" />
+              <span>複習錯題 ({{ resultSummary.wrongCount }})</span>
             </Button>
             <Button
               v-if="resultSummary.wrongCount"
               variant="outline"
+              class="gap-2 px-5 py-2.5"
               @click="copyAllWrongQuestionsPrompt"
             >
-              <ClipboardCopy class="h-4 w-4" />
-              複製所有錯題解析
+              <ClipboardCopy class="h-4 w-4 text-indigo-500" />
+              <span>複製錯題 AI 解析</span>
             </Button>
-            <Button variant="outline" @click="switchModeAfterResult">
+            <Button variant="outline" @click="switchModeAfterResult" class="gap-2 px-5 py-2.5">
               <SpellCheck2 class="h-4 w-4" />
-              {{ resultSummary.mode === 'quiz' ? '切換到拼字' : '切換到練習' }}
+              <span>{{ resultSummary.mode === 'quiz' ? '切換到拼字' : '切換到選擇' }}</span>
             </Button>
           </div>
 
-          <p v-if="!resultSummary.wrongCount" class="mt-5 text-sm font-medium text-green-700">
-            本輪全對，可以直接切換模式或重新開始下一輪。
+          <p v-if="!resultSummary.wrongCount" class="mt-6 text-xs text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1.5">
+            <span class="h-2 w-2 rounded-full bg-emerald-500 inline-block animate-ping"></span>
+            恭喜！本輪測驗取得滿分，可以切換模式或挑選其他單字集。
           </p>
         </Card>
 
-        <div class="space-y-3">
+        <!-- Detailed Results Rows List -->
+        <div class="space-y-4">
           <Card
             v-for="row in resultRows"
             :key="`${row.entry.item.id}-${row.index}`"
-            class="border-zinc-200 p-5"
+            class="p-6 text-left"
+            :glow="false"
           >
-            <div class="flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <p class="text-sm font-semibold text-zinc-950">
-                  第 {{ row.index + 1 }} 題｜{{ row.entry.item.word }}
+            <div class="flex flex-wrap items-start justify-between gap-4 pb-4 border-b border-ink-100 dark:border-ink-800">
+              <div class="space-y-1">
+                <p class="text-base font-bold text-ink-950 dark:text-ink-50">
+                  第 {{ row.index + 1 }} 題 ｜ <span class="font-extrabold tracking-tight text-emerald-600 dark:text-emerald-400">{{ row.entry.item.word }}</span>
                 </p>
-                <p class="mt-1 text-sm text-zinc-500">
-                  {{
-                    row.record?.isCorrect
-                      ? '正確'
-                      : row.record?.skipped
-                        ? '略過'
-                        : '錯誤'
-                  }}
+                <p class="text-xs text-ink-400 dark:text-ink-500 font-medium">
+                  詞性：{{ row.entry.item.pos || 'n./v./adj.' }}
                 </p>
               </div>
-              <div class="flex items-center gap-2">
+              <div class="flex items-center gap-2 shrink-0">
                 <Button
                   variant="outline"
                   size="sm"
-                  class="h-7 px-2 text-xs text-zinc-600"
+                  class="h-8 px-3 text-xs text-ink-600 dark:text-ink-400 hover:bg-ink-100 dark:hover:bg-ink-800"
                   @click="copyQuestionExplainPrompt(row.entry, row.record, resultSummary.mode)"
                 >
-                  <ClipboardCopy class="h-3 w-3 mr-1" />
-                  複製本題解析
+                  <ClipboardCopy class="h-3.5 w-3.5 mr-1" />
+                  <span>AI 詳解</span>
                 </Button>
                 <Badge
                   :variant="row.record?.isCorrect ? 'success' : row.record?.skipped ? 'secondary' : 'destructive'"
-                  class="rounded-md px-3 py-1 text-sm"
+                  class="rounded-lg px-3 py-1 text-xs font-bold"
                 >
                   {{
                     row.record?.isCorrect
@@ -1285,21 +1382,22 @@ onMounted(() => {
               </div>
             </div>
 
-            <div class="mt-4 space-y-3 text-sm leading-6 text-zinc-700">
-              <div v-if="resultSummary.mode === 'quiz'">
-                <p class="font-medium text-zinc-900">{{ row.entry.item.question.prompt }}</p>
-                <p class="mt-2 text-zinc-600">
-                  你的答案：{{ row.record?.userAnswer ?? '未作答' }}
-                </p>
-                <p class="text-zinc-600">
-                  正確答案：{{ row.record?.correctAnswer ?? row.entry.item.question.opts[row.entry.item.question.ans] }}
-                </p>
+            <!-- Detailed Content block -->
+            <div class="mt-4 space-y-3 text-sm leading-relaxed text-ink-700 dark:text-ink-300">
+              <div v-if="resultSummary.mode === 'quiz'" class="space-y-2">
+                <p class="font-semibold text-ink-900 dark:text-ink-100">{{ row.entry.item.question.prompt }}</p>
+                <div class="grid gap-1.5 p-3 rounded-xl bg-ink-100/50 dark:bg-ink-900/40 text-xs text-ink-500 dark:text-ink-400 border border-ink-200/30 dark:border-ink-800/30">
+                  <p>您的作答：<span class="font-bold text-ink-800 dark:text-ink-200">{{ row.record?.userAnswer ?? '未作答' }}</span></p>
+                  <p>正確答案：<span class="font-bold text-emerald-600 dark:text-emerald-400">{{ row.record?.correctAnswer ?? row.entry.item.question.opts[row.entry.item.question.ans] }}</span></p>
+                </div>
               </div>
-              <div v-else>
-                <p class="font-medium text-zinc-900">{{ row.entry.item.example }}</p>
-                <p class="mt-2 text-zinc-600">提示：{{ row.entry.item.meaning }}</p>
-                <p class="text-zinc-600">你的答案：{{ row.record?.userAnswer ?? '未作答' }}</p>
-                <p class="text-zinc-600">正確答案：{{ row.record?.correctAnswer ?? row.entry.item.word }}</p>
+              <div v-else class="space-y-2">
+                <p class="font-semibold text-ink-900 dark:text-ink-100">{{ row.entry.item.example }}</p>
+                <div class="grid gap-1.5 p-3 rounded-xl bg-ink-100/50 dark:bg-ink-900/40 text-xs text-ink-500 dark:text-ink-400 border border-ink-200/30 dark:border-ink-800/30">
+                  <p>中文提示：<span class="font-bold text-ink-800 dark:text-ink-200">{{ row.entry.item.meaning }}</span></p>
+                  <p>您的作答：<span class="font-bold text-ink-800 dark:text-ink-200">{{ row.record?.userAnswer ?? '未作答' }}</span></p>
+                  <p>正確答案：<span class="font-bold text-emerald-600 dark:text-emerald-400">{{ row.record?.correctAnswer ?? row.entry.item.word }}</span></p>
+                </div>
               </div>
             </div>
           </Card>
@@ -1307,137 +1405,140 @@ onMounted(() => {
       </section>
     </main>
 
+    <!-- Dialog: Import Set -->
     <Dialog
       :open="importOpen"
       title="新增單字集"
-      :description="importStep === 1 ? '第一步：輸入單字並複製 AI 提示詞' : '第二步：貼上 AI 產生的 JSON，下一步輸入名稱'"
+      :description="importStep === 1 ? '第一步：輸入你想特訓的英文單字列表並複製 AI 提示詞。' : '第二步：貼上 AI 回覆的 JSON 格式即可完成匯入。'"
       @close="closeImport"
     >
-      <div v-if="importStep === 1" class="space-y-4">
-        <div class="space-y-2">
-          <label class="text-sm font-medium text-zinc-700">輸入你想學習的單字 (每行一個，可附上中文意思)</label>
+      <div v-if="importStep === 1" class="space-y-5">
+        <div class="flex flex-col gap-1.5 w-full text-left">
+          <label class="text-xs font-semibold uppercase tracking-wider text-ink-500 dark:text-ink-400">
+            請輸入單字列表（支援每行一個，可附帶中文註記）
+          </label>
           <Textarea
             ref="importTextarea"
             v-model="importWords"
             :rows="8"
-            class="font-mono"
+            class="font-mono text-sm leading-relaxed"
             placeholder="apple - 蘋果&#10;banana - 香蕉&#10;car"
           />
         </div>
 
-        <div class="rounded-lg border border-zinc-200 bg-zinc-50 px-4 py-3">
-          <p class="text-xs font-semibold text-zinc-500">如何使用？</p>
-          <p class="mt-1 text-xs leading-5 text-zinc-500">
-            請輸入你要學習的單字，點擊「複製 AI 指令」，貼給 AI 平台 (如 ChatGPT)，接著在下一步的輸入框貼上。
+        <div class="rounded-2xl border border-indigo-100 dark:border-indigo-900/40 bg-indigo-500/5 p-4 text-left">
+          <p class="text-xs font-bold text-indigo-700 dark:text-indigo-400">如何使用 AI 產出高質量測驗？</p>
+          <p class="mt-1.5 text-xs leading-relaxed text-ink-500 dark:text-ink-400 font-medium">
+            點擊「複製 AI 指令」，貼入任意 AI 平台（例如 ChatGPT / Claude / Gemini），AI 將為您客製化台灣高中難度的詞彙例句與挖空選擇題。得到回覆後點擊下一步貼入即可。
           </p>
         </div>
 
-        <div class="flex flex-col gap-2 sm:flex-row sm:justify-end">
+        <div class="flex flex-col sm:flex-row justify-end gap-2 pt-2 border-t border-ink-100 dark:border-ink-800">
           <Button variant="outline" @click="closeImport">取消</Button>
-          <Button variant="outline" @click="copyImportPrompt">
-            <ClipboardCopy class="h-4 w-4 mr-1.5" />
-            複製 AI 指令
+          <Button variant="outline" class="gap-2" @click="copyImportPrompt">
+            <ClipboardCopy class="h-4 w-4 text-indigo-500" />
+            <span>複製 AI 指令</span>
           </Button>
-          <Button @click="nextImportStep">下一步</Button>
+          <Button variant="default" @click="nextImportStep">下一步</Button>
         </div>
       </div>
 
-      <div v-else-if="importStep === 2" class="space-y-4">
-        <div class="space-y-2">
-          <label class="text-sm font-medium text-zinc-700">貼上 JSON</label>
+      <div v-else-if="importStep === 2" class="space-y-5">
+        <div class="flex flex-col gap-1.5 w-full text-left">
+          <label class="text-xs font-semibold uppercase tracking-wider text-ink-500 dark:text-ink-400">
+            請貼上 AI 產生的 JSON 資料
+          </label>
           <Textarea
             ref="importTextarea"
             v-model="importJson"
             :rows="8"
-            class="font-mono"
+            class="font-mono text-xs leading-relaxed"
             placeholder='{"items":[{"word":"abandon","meaning":"放棄；遺棄","example":"He decided to abandon the plan after the cost doubled.","question":{"prompt":"The captain had to _____ the ship during the storm.","opts":["abandon","delay","gather","repair"],"ans":0}}]}'
           />
         </div>
 
-        <div class="rounded-lg border border-zinc-200 bg-zinc-50 px-4 py-3">
-          <p class="text-xs font-semibold text-zinc-500">匯入前檢查</p>
-          <p class="mt-1 text-xs leading-5 text-zinc-500">
-            此步驟會檢查 JSON 格式是否正確，在下一步會讓你輸入單字集名稱。
-          </p>
-        </div>
-
-        <p v-if="importPreview" class="rounded-lg bg-green-50 px-3 py-2 text-sm text-green-700">
-          {{ importPreview }}
+        <p v-if="importPreview" class="rounded-xl bg-emerald-500/10 border border-emerald-100 dark:border-emerald-900/40 px-4 py-2.5 text-xs text-emerald-700 dark:text-emerald-400 font-semibold text-left">
+          ✅ {{ importPreview }}
         </p>
-        <p v-if="importError" class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">
-          {{ importError }}
+        <p v-if="importError" class="rounded-xl bg-red-50 dark:bg-red-950/20 border border-red-100 dark:border-red-900/50 px-4 py-2.5 text-xs text-red-600 dark:text-red-400 font-semibold text-left">
+          ❌ 格式錯誤：{{ importError }}
         </p>
 
-        <div class="flex justify-end gap-2">
+        <div class="flex justify-end gap-2 pt-2 border-t border-ink-100 dark:border-ink-800">
           <Button variant="outline" @click="importStep = 1">上一步</Button>
-          <Button @click="importSet">下一步</Button>
+          <Button variant="default" :disabled="!importPreview" @click="importSet">套用與編輯名稱</Button>
         </div>
       </div>
     </Dialog>
 
+    <!-- Dialog: Backup / Import -->
     <Dialog
       :open="transferOpen"
-      title="匯出 / 匯入"
-      description="用 zip 備份或匯入單字資料。"
+      title="備份與數據導入"
+      description="下載 ZIP 以離線備份您的單字集，或自 ZIP 檔案快速恢復數據。"
       width-class="max-w-3xl"
       @close="closeTransfer"
     >
       <div class="space-y-6">
-        <div class="rounded-2xl border border-zinc-200 bg-white p-4">
-          <div class="flex items-start justify-between gap-3">
+        <!-- Export Section -->
+        <div class="rounded-2xl border border-ink-200 dark:border-ink-800 bg-ink-100/50 dark:bg-ink-900/40 p-5 text-left">
+          <div class="flex items-start justify-between gap-4">
             <div>
-              <p class="text-sm font-semibold text-zinc-950">匯出單字集</p>
-              <p class="mt-1 text-xs text-zinc-500">勾選要匯出的單字集並下載 zip。</p>
+              <p class="text-sm font-bold text-ink-950 dark:text-ink-50">匯出單字集備份</p>
+              <p class="mt-1 text-xs text-ink-400 dark:text-ink-500">勾選想要存檔的單字集，點擊右下按鈕導出。</p>
             </div>
-            <Button variant="outline" size="sm" :disabled="!sets.length" @click="toggleExportAll">
+            <Button variant="outline" size="sm" class="h-8 px-3 text-xs bg-white dark:bg-ink-900" :disabled="!sets.length" @click="toggleExportAll">
               {{ exportAllSelected ? '取消全選' : '全選' }}
             </Button>
           </div>
 
-          <div v-if="sets.length" class="mt-4 space-y-2">
+          <div v-if="sets.length" class="mt-4 grid gap-2.5 max-h-48 overflow-y-auto pr-1">
             <label
               v-for="set in sets"
               :key="set.id"
-              class="flex items-start gap-3 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2"
+              class="flex items-center gap-3 rounded-xl border border-ink-200 dark:border-ink-800 bg-white dark:bg-ink-900 px-4 py-2.5 cursor-pointer hover:bg-ink-50 dark:hover:bg-ink-850"
             >
               <input
                 v-model="exportSelectedIds"
                 type="checkbox"
                 :value="set.id"
-                class="mt-1 h-4 w-4 accent-zinc-900"
+                class="h-4 w-4 accent-emerald-500 rounded border-ink-300"
               />
-              <div>
-                <p class="text-sm font-medium text-zinc-900">{{ set.setName }}</p>
-                <p class="text-xs text-zinc-500">{{ set.items.length }} 個單字</p>
+              <div class="text-left">
+                <p class="text-sm font-bold text-ink-900 dark:text-ink-100">{{ set.setName }}</p>
+                <p class="text-[11px] text-ink-400 dark:text-ink-500 font-semibold">{{ set.items.length }} 個單字</p>
               </div>
             </label>
           </div>
-          <p v-else class="mt-4 text-sm text-zinc-500">尚無單字集可匯出。</p>
+          <p v-else class="mt-4 text-xs text-ink-400 dark:text-ink-500 font-semibold">尚無任何單字集可供匯出。</p>
 
-          <p v-if="sets.length" class="mt-3 text-xs text-zinc-500">
-            已選 {{ exportSelectedCount }} 個單字集，共 {{ exportSelectedWordCount }} 個單字。
-          </p>
-          <p v-if="exportError" class="mt-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">
-            {{ exportError }}
-          </p>
-
-          <div class="mt-3 flex justify-end">
-            <Button :disabled="!exportSelectedCount" @click="exportSelectedSetsToZip">
+          <div class="mt-4 pt-4 border-t border-ink-200/50 dark:border-ink-800/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <p v-if="sets.length" class="text-xs text-ink-500 dark:text-ink-400 font-medium text-left">
+              已勾選 {{ exportSelectedCount }} 個單字集，包含 {{ exportSelectedWordCount }} 個單字。
+            </p>
+            <p v-else></p>
+            <Button variant="default" :disabled="!exportSelectedCount" @click="exportSelectedSetsToZip" class="gap-2">
               <Download class="h-4 w-4" />
-              匯出 zip
+              <span>匯出 ZIP 封包</span>
             </Button>
           </div>
+          
+          <p v-if="exportError" class="mt-3 rounded-xl bg-red-50 dark:bg-red-950/20 border border-red-100 dark:border-red-900/50 px-4 py-2 text-xs text-red-600 dark:text-red-400 font-semibold">
+            {{ exportError }}
+          </p>
         </div>
 
-        <div class="rounded-2xl border border-zinc-200 bg-white p-4">
-          <div class="flex items-start justify-between gap-3">
+        <!-- Import Section -->
+        <div class="rounded-2xl border border-ink-200 dark:border-ink-800 bg-ink-100/50 dark:bg-ink-900/40 p-5 text-left">
+          <div class="flex items-start justify-between gap-4">
             <div>
-              <p class="text-sm font-semibold text-zinc-950">匯入 zip</p>
-              <p class="mt-1 text-xs text-zinc-500">支援使用匯出產生的 zip。</p>
+              <p class="text-sm font-bold text-ink-950 dark:text-ink-50">匯入 ZIP 封包</p>
+              <p class="mt-1 text-xs text-ink-400 dark:text-ink-500">選擇由本平台生成的 ZIP 備份檔案，恢復學習進度。</p>
             </div>
             <Button
               variant="outline"
               size="sm"
+              class="h-8 px-3 text-xs bg-white dark:bg-ink-900"
               :disabled="!zipImportPreview && !zipImportError && !zipImportName"
               @click="resetZipImportState"
             >
@@ -1450,121 +1551,132 @@ onMounted(() => {
               :key="zipImportInputKey"
               type="file"
               accept=".zip"
-              class="block w-full text-sm text-zinc-600 file:mr-3 file:rounded-md file:border-0 file:bg-zinc-900 file:px-3 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-zinc-800"
+              class="block w-full text-sm text-ink-500 file:mr-4 file:rounded-xl file:border-0 file:bg-ink-950 dark:file:bg-ink-50 file:px-4 file:py-2.5 file:text-xs file:font-semibold file:text-white dark:file:text-ink-950 file:transition-all file:cursor-pointer hover:file:opacity-90 file:active:scale-95"
               @change="handleZipImportChange"
             />
-            <p v-if="zipImportName" class="text-xs text-zinc-500">已選擇：{{ zipImportName }}</p>
+            <p v-if="zipImportName" class="text-xs text-ink-400 dark:text-ink-500 font-bold">已選擇檔案：{{ zipImportName }}</p>
           </div>
 
-          <p v-if="zipImportPreview" class="mt-3 rounded-lg bg-green-50 px-3 py-2 text-sm text-green-700">
+          <p v-if="zipImportPreview" class="mt-3 rounded-xl bg-emerald-500/10 border border-emerald-100 dark:border-emerald-900/40 px-4 py-2.5 text-xs text-emerald-700 dark:text-emerald-400 font-semibold">
             {{ zipImportPreview }}
           </p>
-          <p v-if="zipImportError" class="mt-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">
+          <p v-if="zipImportError" class="mt-3 rounded-xl bg-red-50 dark:bg-red-950/20 border border-red-100 dark:border-red-900/50 px-4 py-2.5 text-xs text-red-600 dark:text-red-400 font-semibold">
             {{ zipImportError }}
           </p>
 
-          <div class="mt-3 flex justify-end">
-            <Button :disabled="!zipImportSets || !zipImportSets.length" @click="applyZipImport">
+          <div class="mt-4 pt-4 border-t border-ink-200/50 dark:border-ink-800/50 flex justify-end">
+            <Button variant="default" :disabled="!zipImportSets || !zipImportSets.length" @click="applyZipImport" class="gap-2">
               <Upload class="h-4 w-4" />
-              匯入
+              <span>匯入此封包</span>
             </Button>
           </div>
         </div>
       </div>
     </Dialog>
 
+    <!-- Dialog: Create / Edit Set Editor -->
     <Dialog
       :open="setEditorOpen"
-      :title="setEditorMode === 'create' ? '新增單字集' : '編輯單字集'"
-      :description="setEditorMode === 'create' ? '輸入名稱後即可套用。' : '可直接編輯每個單字欄位。'"
+      :title="setEditorMode === 'create' ? '建立單字集' : '編輯單字集'"
+      :description="setEditorMode === 'create' ? '為您剛載入的單字建立名稱並套用。' : '直接修改單字、詞性、中文意思、例句及選擇題。'"
       width-class="max-w-4xl"
       @close="closeSetEditor"
     >
-      <div class="space-y-4">
-        <div class="space-y-2">
-          <label class="text-sm font-medium text-zinc-700">單字集名稱</label>
-          <Input v-model="setEditorName" placeholder="例如：核心單字 A" />
+      <div class="space-y-5">
+        <!-- Set Name Field -->
+        <div class="flex flex-col gap-1.5 w-full text-left">
+          <label class="text-xs font-bold uppercase tracking-wider text-ink-500 dark:text-ink-400">單字集名稱</label>
+          <Input v-model="setEditorName" placeholder="例如：核心高頻單字 Level 1" />
         </div>
 
-        <div v-if="setEditorMode === 'edit'" class="space-y-4">
+        <!-- Editable Items Scroll Panel -->
+        <div v-if="setEditorMode === 'edit'" class="space-y-6 max-h-[50vh] overflow-y-auto pr-1">
           <div
             v-for="(item, itemIndex) in setEditorDraftItems"
             :key="item.id"
-            class="rounded-2xl border border-zinc-200 bg-zinc-50 p-4"
+            class="rounded-2xl border border-ink-200 dark:border-ink-800 bg-ink-50/50 dark:bg-ink-900/40 p-5 text-left relative overflow-hidden"
           >
-            <div class="flex items-center justify-between gap-3">
-              <p class="text-sm font-semibold text-zinc-950">第 {{ itemIndex + 1 }} 個單字</p>
+            <!-- Glow background overlay for premium feel -->
+            <div class="pointer-events-none absolute -left-20 -top-20 h-52 w-52 rounded-full bg-emerald-500/5 blur-3xl dark:hidden" aria-hidden="true"></div>
+
+            <div class="relative z-10 flex items-center justify-between gap-4 pb-3 border-b border-ink-200/50 dark:border-ink-800/50">
+              <p class="text-sm font-bold text-ink-950 dark:text-ink-50">第 {{ itemIndex + 1 }} 個單字</p>
               <Button
-                variant="outline"
+                variant="ghost"
                 size="icon"
-                class="h-8 w-8 border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700"
+                class="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20"
                 @click="removeEditorItem(itemIndex)"
               >
                 <Trash2 class="h-4 w-4" />
               </Button>
             </div>
 
-            <div class="mt-4 grid gap-3 sm:grid-cols-2">
-              <div class="space-y-2 sm:col-span-1">
-                <label class="text-sm font-medium text-zinc-700">單字</label>
-                <Input v-model="item.word" placeholder="word" />
+            <!-- Editor fields grid -->
+            <div class="relative z-10 mt-4 grid gap-4 sm:grid-cols-2">
+              <div class="flex flex-col gap-1.5 w-full text-left">
+                <label class="text-xs font-semibold uppercase tracking-wider text-ink-500 dark:text-ink-400">英文單字</label>
+                <Input v-model="item.word" placeholder="英文單字" />
               </div>
-              <div class="space-y-2 sm:col-span-1">
-                <label class="text-sm font-medium text-zinc-700">詞性</label>
-                <Input v-model="item.pos" placeholder="n. / v. / adj." />
+              <div class="flex flex-col gap-1.5 w-full text-left">
+                <label class="text-xs font-semibold uppercase tracking-wider text-ink-500 dark:text-ink-400">單字詞性</label>
+                <Input v-model="item.pos" placeholder="詞性縮寫，例如 n. / v." />
               </div>
-              <div class="space-y-2 sm:col-span-2">
-                <label class="text-sm font-medium text-zinc-700">中文意思</label>
-                <Textarea v-model="item.meaning" :rows="2" placeholder="中文意思" />
+              <div class="flex flex-col gap-1.5 w-full text-left sm:col-span-2">
+                <label class="text-xs font-semibold uppercase tracking-wider text-ink-500 dark:text-ink-400">中文意思</label>
+                <Textarea v-model="item.meaning" :rows="2" placeholder="輸入中文意思" />
               </div>
-              <div class="space-y-2 sm:col-span-2">
-                <label class="text-sm font-medium text-zinc-700">例句</label>
-                <Textarea v-model="item.example" :rows="3" placeholder="例句" />
+              <div class="flex flex-col gap-1.5 w-full text-left sm:col-span-2">
+                <label class="text-xs font-semibold uppercase tracking-wider text-ink-500 dark:text-ink-400">例句（若包含該單字則會自動用於拼字測試）</label>
+                <Textarea v-model="item.example" :rows="2" placeholder="例句" />
               </div>
-              <div class="space-y-2 sm:col-span-2">
-                <label class="text-sm font-medium text-zinc-700">題目</label>
-                <Textarea v-model="item.question.prompt" :rows="3" placeholder="題幹" />
+              <div class="flex flex-col gap-1.5 w-full text-left sm:col-span-2">
+                <label class="text-xs font-semibold uppercase tracking-wider text-ink-500 dark:text-ink-400">選擇題幹（以 _____ 作為挖空）</label>
+                <Textarea v-model="item.question.prompt" :rows="2" placeholder="填入題幹" />
               </div>
             </div>
 
-            <div class="mt-4 grid gap-3 sm:grid-cols-2">
-              <div v-for="(option, optionIndex) in item.question.opts" :key="`${item.id}-option-${optionIndex}`" class="space-y-2">
-                <label class="text-sm font-medium text-zinc-700">選項 {{ optionIndex + 1 }}</label>
+            <!-- Quiz options grid -->
+            <div class="relative z-10 mt-4 grid gap-3 sm:grid-cols-2">
+              <div v-for="(option, optionIndex) in item.question.opts" :key="`${item.id}-option-${optionIndex}`" class="flex flex-col gap-1.5 w-full text-left">
+                <label class="text-[10px] font-bold uppercase tracking-wider text-ink-400 dark:text-ink-500">選項 {{ optionIndex + 1 }}</label>
                 <Input v-model="item.question.opts[optionIndex]" :placeholder="`選項 ${optionIndex + 1}`" />
               </div>
             </div>
 
-            <div class="mt-4 flex flex-wrap gap-2">
+            <!-- Right Answer Selector buttons -->
+            <div class="relative z-10 mt-4 flex flex-wrap gap-2 items-center">
+              <span class="text-xs font-semibold text-ink-500 dark:text-ink-400 mr-2">設定正解為：</span>
               <button
                 v-for="answerIndex in 4"
                 :key="`${item.id}-answer-${answerIndex}`"
                 type="button"
-                class="rounded-md border px-3 py-2 text-sm font-medium transition-colors"
-                :class="item.question.ans === answerIndex - 1 ? 'border-zinc-900 bg-zinc-900 text-white' : 'border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-50'"
+                class="rounded-xl border px-4 py-2 text-xs font-bold transition-all duration-200"
+                :class="item.question.ans === answerIndex - 1 ? 'button-primary text-white dark:text-ink-950 shadow-md' : 'border-ink-200 dark:border-ink-800 bg-white dark:bg-ink-900 text-ink-700 dark:text-ink-300 hover:bg-ink-50 dark:hover:bg-ink-850'"
                 @click="item.question.ans = answerIndex - 1"
               >
-                正解 {{ answerIndex }}
+                選項 {{ answerIndex }}
               </button>
             </div>
           </div>
 
-          <Button variant="outline" class="w-full" @click="addEditorItem">
+          <Button variant="outline" class="w-full gap-2 border-dashed py-3.5" @click="addEditorItem">
             <Plus class="h-4 w-4" />
-            新增單字
+            <span>新增一個單字欄位</span>
           </Button>
         </div>
 
-        <p v-if="setEditorError" class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">
-          {{ setEditorError }}
+        <p v-if="setEditorError" class="rounded-xl bg-red-50 dark:bg-red-950/20 border border-red-100 dark:border-red-900/50 px-4 py-2.5 text-xs text-red-600 dark:text-red-400 font-semibold text-left">
+          ⚠️ {{ setEditorError }}
         </p>
 
-        <div class="flex justify-end gap-2">
+        <div class="flex justify-end gap-2 pt-2 border-t border-ink-100 dark:border-ink-800">
           <Button variant="outline" @click="closeSetEditor">取消</Button>
-          <Button @click="saveSetEditor">{{ setEditorMode === 'create' ? '套用' : '儲存' }}</Button>
+          <Button variant="default" @click="saveSetEditor">{{ setEditorMode === 'create' ? '套用與儲存' : '儲存修改' }}</Button>
         </div>
       </div>
     </Dialog>
 
+    <!-- Dialog: Confirm Alert -->
     <Dialog
       :open="confirmOpen"
       :title="confirmTitle"
@@ -1573,30 +1685,35 @@ onMounted(() => {
       width-class="max-w-md"
       @close="resolveConfirm(false)"
     >
-      <div class="flex justify-end gap-2">
+      <div class="flex justify-end gap-2 pt-2">
         <Button variant="outline" @click="resolveConfirm(false)">取消</Button>
         <Button variant="destructive" @click="resolveConfirm(true)">確定</Button>
       </div>
     </Dialog>
 
+    <!-- Dialog: Practice Count Selector Dialog -->
     <Dialog
       :open="practiceDialogOpen"
-      :title="practiceDialogMode === 'quiz' ? '開始練習' : '拼字測試'"
-      description="用拉條決定這次要練幾題。"
+      :title="practiceDialogMode === 'quiz' ? '開始選擇練習' : '開始拼字測試'"
+      description="調整拉條，自由選定本次特訓的練習題數。"
       @close="closePracticeDialog"
     >
-      <div v-if="practiceDialogSetId && sets.find((set) => set.id === practiceDialogSetId)" class="space-y-4">
-        <div class="rounded-2xl bg-zinc-50 p-4">
-          <div class="flex items-center justify-between gap-3">
-            <div>
-              <p class="text-xs font-semibold uppercase tracking-[0.16em] text-zinc-400">練習題數</p>
-              <p class="mt-1 text-sm text-zinc-600">
-                {{ practiceDialogCount }} / {{ sets.find((set) => set.id === practiceDialogSetId)?.items.length ?? 1 }} 題
+      <div v-if="practiceDialogSetId && sets.find((set) => set.id === practiceDialogSetId)" class="space-y-6">
+        <div class="rounded-2xl border border-ink-200 dark:border-ink-800 bg-ink-100/50 dark:bg-ink-900/40 p-5 text-left relative overflow-hidden">
+          <!-- Glow background overlay -->
+          <div class="pointer-events-none absolute -right-20 -bottom-20 h-44 w-44 rounded-full bg-indigo-500/5 blur-3xl dark:hidden" aria-hidden="true"></div>
+
+          <div class="flex items-center justify-between gap-3 relative z-10">
+            <div class="space-y-1">
+              <p class="text-xs font-bold uppercase tracking-widest text-indigo-600 dark:text-indigo-400">特訓題數</p>
+              <p class="text-xl font-extrabold text-ink-950 dark:text-ink-50">
+                {{ practiceDialogCount }} <span class="text-xs text-ink-400">/ {{ sets.find((set) => set.id === practiceDialogSetId)?.items.length ?? 1 }} 題</span>
               </p>
             </div>
           </div>
+          
           <input
-            class="mt-3 h-2 w-full cursor-pointer appearance-none rounded-full bg-zinc-200 accent-zinc-900"
+            class="mt-5 h-2 w-full cursor-pointer appearance-none rounded-full bg-ink-200 dark:bg-ink-800 accent-emerald-500 focus:outline-none relative z-10"
             type="range"
             min="1"
             :max="sets.find((set) => set.id === practiceDialogSetId)?.items.length ?? 1"
@@ -1604,9 +1721,9 @@ onMounted(() => {
           />
         </div>
 
-        <div class="flex justify-end gap-2">
+        <div class="flex justify-end gap-2 pt-2 border-t border-ink-100 dark:border-ink-800">
           <Button variant="outline" @click="closePracticeDialog">取消</Button>
-          <Button @click="confirmPracticeDialog">開始</Button>
+          <Button variant="default" @click="confirmPracticeDialog">開始特訓</Button>
         </div>
       </div>
     </Dialog>

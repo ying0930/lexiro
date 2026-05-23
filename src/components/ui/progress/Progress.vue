@@ -11,7 +11,7 @@ const width = computed(() => `${Math.max(0, Math.min(100, props.modelValue))}%`)
 </script>
 
 <template>
-  <div :class="cn('relative h-2 w-full overflow-hidden rounded-full bg-zinc-100', $props.class)">
-    <div class="h-full rounded-full bg-zinc-900 transition-all" :style="{ width }" />
+  <div :class="cn('relative h-2 w-full overflow-hidden rounded-full bg-ink-200 dark:bg-ink-800', $props.class)">
+    <div class="h-full rounded-full bg-emerald-500 transition-all duration-300" :style="{ width }" />
   </div>
 </template>

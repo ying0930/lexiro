@@ -6,6 +6,7 @@ defineProps({
   class: { type: String, default: '' },
   placeholder: { type: String, default: '' },
   type: { type: String, default: 'text' },
+  disabled: { type: Boolean, default: false },
 })
 
 defineEmits(['update:modelValue'])
@@ -16,9 +17,10 @@ defineEmits(['update:modelValue'])
     :type="type"
     :value="modelValue"
     :placeholder="placeholder"
+    :disabled="disabled"
     :class="
       cn(
-        'flex h-10 w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm ring-offset-white transition-colors outline-none placeholder:text-zinc-400 focus-visible:ring-2 focus-visible:ring-zinc-300 disabled:cursor-not-allowed disabled:opacity-50',
+        'w-full px-4 py-3 rounded-xl border border-ink-200 dark:border-ink-800 bg-white dark:bg-ink-900 text-ink-950 dark:text-ink-50 text-sm placeholder-ink-400 dark:placeholder-ink-600 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 disabled:cursor-not-allowed disabled:opacity-50 transition-all duration-200',
         $props.class,
       )
     "

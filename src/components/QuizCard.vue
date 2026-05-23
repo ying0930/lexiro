@@ -18,7 +18,7 @@ const props = defineProps({
 
 const emit = defineEmits(['draft-change', 'toast'])
 
-const labels = ['1', '2', '3', '4']
+const labels = ['A', 'B', 'C', 'D']
 const selectedIndex = ref(null)
 const answered = ref(false)
 const copied = ref(false)
@@ -83,42 +83,56 @@ function optionClass(index) {
   const isSelected = index === selectedIndex.value
 
   return cn(
-    'flex w-full items-start gap-3 rounded-xl border px-4 py-3 text-left text-sm font-medium transition-colors',
-    !answered.value && 'border-zinc-200 bg-zinc-50 text-zinc-700 hover:bg-zinc-100',
-    !answered.value && isSelected && 'border-amber-300 bg-amber-50 text-zinc-900',
+    'flex w-full items-start gap-3 rounded-xl border px-4 py-3.5 text-left text-sm font-medium transition-all duration-200 outline-none',
+    // Normal Interactive State
+    !answered.value && 'border-ink-200 dark:border-ink-800 bg-white dark:bg-ink-900 text-ink-700 dark:text-ink-300 hover:bg-ink-50 dark:hover:bg-ink-850 active:scale-[98%] focus-visible:ring-2 focus-visible:ring-emerald-500/20',
+    // Selected State (Not Submitted)
+    !answered.value && isSelected && 'border-indigo-200 dark:border-indigo-900/50 bg-indigo-500/5 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 ring-2 ring-indigo-500/20',
+    // Answered / Submitted State
     answered.value && 'cursor-default',
-    answered.value && isCorrect && 'border-green-300 bg-green-50 text-green-800',
-    answered.value && isSelected && !isCorrect && 'border-red-300 bg-red-50 text-red-800',
-    answered.value && !isSelected && !isCorrect && 'border-zinc-200 bg-zinc-50 text-zinc-500',
+    // Correct Option Highlighting
+    answered.value && isCorrect && 'border-emerald-200 dark:border-emerald-900/50 bg-emerald-500/5 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-400 font-semibold ring-2 ring-emerald-500/10',
+    // Selected and Incorrect Option Highlighting
+    answered.value && isSelected && !isCorrect && 'border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-950/20 text-red-600 dark:text-red-400 ring-2 ring-red-500/10',
+    // Unselected and Incorrect Option Highlighting
+    answered.value && !isSelected && !isCorrect && 'border-ink-200 dark:border-ink-800 bg-ink-50/50 dark:bg-ink-900 text-ink-400 dark:text-ink-500 opacity-60',
   )
 }
 </script>
 
 <template>
-  <Card class="border-zinc-200 p-5 sm:p-6">
-    <div class="mb-5 flex items-start justify-between gap-4">
-      <div class="space-y-2">
-        <Badge variant="secondary">{{ review ? '錯題復習' : '選擇題練習' }}</Badge>
-        <p class="text-sm text-zinc-500">第 {{ index + 1 }} / {{ total }} 題</p>
+  <Card class="p-6 sm:p-8" :glow="true">
+    <div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-left">
+      <div class="space-y-1">
+        <div class="flex items-center gap-2">
+          <Badge :variant="review ? 'destructive' : 'indigo'" class="text-[10px] px-2 py-0.5 font-semibold">
+            {{ review ? '錯題複習' : '選擇練習' }}
+          </Badge>
+          <span class="text-xs font-semibold text-ink-400 dark:text-ink-500 uppercase tracking-wider">
+            第 {{ index + 1 }} / {{ total }} 題
+          </span>
+        </div>
       </div>
-      <div class="flex flex-col items-end gap-2">
-        <Badge variant="secondary" class="rounded-full px-3 py-1 text-xs font-medium">
+      
+      <div class="flex items-center gap-2 self-start sm:self-auto shrink-0">
+        <Badge variant="secondary" class="rounded-lg px-2.5 py-1 text-[11px] font-semibold bg-ink-100 dark:bg-ink-800 border-none">
           {{ batchMode ? '待送出' : answered ? '已完成' : '進行中' }}
         </Badge>
-        <Button variant="outline" size="sm" class="h-8 gap-1.5 text-xs text-zinc-600" @click="copyExplanationPrompt">
-          <Check v-if="copied" class="h-3.5 w-3.5 text-green-600" />
+        <Button variant="outline" size="sm" class="h-8 gap-1.5 text-xs text-ink-600 dark:text-ink-400 px-3 hover:bg-ink-100 dark:hover:bg-ink-800" @click="copyExplanationPrompt">
+          <Check v-if="copied" class="h-3.5 w-3.5 text-emerald-600" />
           <ClipboardCopy v-else class="h-3.5 w-3.5" />
-          {{ copied ? '已複製' : '複製本題解析' }}
+          <span>{{ copied ? '已複製' : 'AI 解析' }}</span>
         </Button>
       </div>
     </div>
 
-    <div class="rounded-2xl bg-zinc-50 p-4">
-      <p class="text-xs font-semibold uppercase tracking-[0.16em] text-zinc-400">題幹</p>
-      <p class="mt-3 text-[15px] leading-7 text-zinc-800 sm:text-base">
+    <!-- Question Block (題幹) -->
+    <div class="rounded-2xl bg-ink-100/50 dark:bg-ink-900/40 border border-ink-200/50 dark:border-ink-800/50 p-5 text-left">
+      <p class="text-xs font-bold uppercase tracking-widest text-ink-400 dark:text-ink-500">題幹</p>
+      <p class="mt-3 text-[15px] leading-relaxed text-ink-800 dark:text-ink-200 font-medium sm:text-base">
         <template v-if="!answered && hasBlank">
           {{ promptParts[0] }}
-          <span class="mx-1 inline-block w-20 border-b-2 border-zinc-300 align-middle" />
+          <span class="mx-1.5 inline-block w-16 border-b-2 border-ink-300 dark:border-ink-700 align-middle" />
           {{ promptParts.slice(1).join('_____') }}
         </template>
         <template v-else-if="answered && hasBlank">
@@ -130,7 +144,8 @@ function optionClass(index) {
       </p>
     </div>
 
-    <div class="mt-5 grid gap-3 sm:grid-cols-2">
+    <!-- Options Grid -->
+    <div class="mt-6 grid gap-3 sm:grid-cols-2">
       <button
         v-for="(option, optionIndex) in entry.item.question.opts"
         :key="`${entry.item.id}-${optionIndex}`"
@@ -138,24 +153,25 @@ function optionClass(index) {
         :disabled="answered"
         @click="choose(optionIndex)"
       >
-        <span class="shrink-0 text-zinc-400">{{ labels[optionIndex] }}</span>
-        <span>{{ option }}</span>
+        <span class="shrink-0 text-ink-400 dark:text-ink-500 font-bold">{{ labels[optionIndex] }}.</span>
+        <span class="text-ink-800 dark:text-ink-200">{{ option }}</span>
       </button>
     </div>
 
-    <div v-if="!batchMode && answered" class="mt-5 rounded-2xl border border-zinc-200 bg-white p-4">
-      <p class="text-sm font-semibold text-zinc-900">
+    <!-- Explanation Block (Single Mode Answered) -->
+    <div v-if="!batchMode && answered" class="mt-6 rounded-2xl border border-ink-200 dark:border-ink-800 bg-white dark:bg-ink-900 p-5 text-left transition-all duration-300">
+      <p class="text-sm font-bold text-ink-950 dark:text-ink-50">
         {{
           selectedIndex === entry.item.question.ans
-            ? '正確'
+            ? '🎉 答案正確'
             : selectedIndex === null
-              ? '略過'
-              : '錯誤'
+              ? '⏭ 已略過此題'
+              : '❌ 答案錯誤'
         }}
       </p>
-      <p class="mt-2 text-sm leading-6 text-zinc-600">
-        正解是 <span class="font-semibold text-zinc-950">{{ answerText }}</span>。
-        {{ entry.item.meaning }}
+      <p class="mt-2 text-sm leading-relaxed text-ink-600 dark:text-ink-400">
+        正解是 <span class="font-bold text-emerald-600 dark:text-emerald-400">{{ answerText }}</span>。
+        <span class="block mt-1 font-medium text-ink-800 dark:text-ink-200">{{ entry.item.meaning }}</span>
       </p>
     </div>
   </Card>
