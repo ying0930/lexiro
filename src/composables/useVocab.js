@@ -427,6 +427,16 @@ function loadState() {
       flashcardIndex.value = 0
       practiceCounts.value = {}
     }
+
+    // Verify and restore Google Drive login status on page refresh/initialization
+    if (hasDriveToken()) {
+      driveSignedIn.value = true
+      const expiresAt = Number(localStorage.getItem('wordmem_drive_token_expires_at') || '0')
+      driveAccountLabel.value = expiresAt ? `Google Drive 已授權，約 ${new Date(expiresAt).toLocaleTimeString()} 前有效` : 'Google Drive 已授權'
+    } else {
+      driveSignedIn.value = false
+      driveAccountLabel.value = ''
+    }
   } catch {
     sets.value = []
     activeSetId.value = null
@@ -434,6 +444,8 @@ function loadState() {
     currentSession.value = null
     flashcardIndex.value = 0
     practiceCounts.value = {}
+    driveSignedIn.value = false
+    driveAccountLabel.value = ''
   }
 }
 

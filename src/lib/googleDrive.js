@@ -7,8 +7,8 @@ const MAX_BACKUP_FILES = 10
 
 let gisScriptPromise = null
 let tokenClient = null
-let accessToken = ''
-let tokenExpiresAt = 0
+let accessToken = localStorage.getItem('wordmem_drive_access_token') || ''
+let tokenExpiresAt = Number(localStorage.getItem('wordmem_drive_token_expires_at') || '0')
 
 function loadGoogleIdentityServices() {
   if (window.google?.accounts?.oauth2) return Promise.resolve()
@@ -78,6 +78,8 @@ export async function requestDriveAccess(clientId, prompt = '') {
       }
       accessToken = response.access_token
       tokenExpiresAt = Date.now() + Math.max(Number(response.expires_in ?? 0) - 60, 0) * 1000
+      localStorage.setItem('wordmem_drive_access_token', accessToken)
+      localStorage.setItem('wordmem_drive_token_expires_at', String(tokenExpiresAt))
       resolve({
         accessToken,
         expiresAt: tokenExpiresAt,
@@ -89,6 +91,8 @@ export async function requestDriveAccess(clientId, prompt = '') {
 }
 
 export function revokeDriveAccess() {
+  localStorage.removeItem('wordmem_drive_access_token')
+  localStorage.removeItem('wordmem_drive_token_expires_at')
   if (!accessToken || !window.google?.accounts?.oauth2?.revoke) {
     accessToken = ''
     tokenExpiresAt = 0
