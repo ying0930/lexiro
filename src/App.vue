@@ -1140,7 +1140,7 @@ onMounted(() => {
                 尚未載入單字集
               </h2>
               <p class="text-sm leading-relaxed text-ink-500 dark:text-ink-400">
-                開始特訓前，請先建立您的客製化單字集。您可以利用 <strong class="font-bold text-emerald-600 dark:text-emerald-400">AI 單字集生成模組</strong>，或直接貼上已產生的單字格式。
+                開始特訓前，請先建立您的客製化單字集。您可以點擊 <strong class="font-bold text-emerald-600 dark:text-emerald-400">新增單字集</strong>按鈕，或匯入之前生成過的單字集。
               </p>
             </div>
             
