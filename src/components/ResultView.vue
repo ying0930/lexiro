@@ -35,7 +35,7 @@ onMounted(() => {
           </span>
           <div class="space-y-1">
             <h2 class="text-xl sm:text-2xl font-bold tracking-tight text-ink-950 dark:text-ink-50">
-              {{ resultSummary.review ? '本輪錯題複習完成！' : '測驗順利完成！' }}
+              {{ resultSummary.review ? '本輪錯題複習完成！' : '測驗已完成！' }}
             </h2>
             <p class="text-xs font-semibold text-ink-400 dark:text-ink-500 uppercase tracking-widest">
               模式：{{ resultSummary.mode === 'quiz' ? '選擇題' : '英文拼字測試' }}
