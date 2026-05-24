@@ -34,7 +34,7 @@ const {
 
     <!-- Empty State Canonical Panel -->
     <div v-if="!hasSets" class="py-16">
-      <Card class="motion-card max-w-2xl mx-auto my-8 p-12 text-center flex flex-col items-center justify-center space-y-6" :glow="true">
+      <Card class="max-w-2xl mx-auto my-8 p-12 text-center flex flex-col items-center justify-center space-y-6" :glow="true">
         <span class="flex h-16 w-16 items-center justify-center rounded-3xl bg-ink-950 text-white dark:bg-ink-50 dark:text-ink-950 shadow-xl" aria-hidden="true">
           <FileQuestion class="h-7 w-7" />
         </span>
@@ -61,7 +61,7 @@ const {
     </div>
 
     <!-- Set Cards List -->
-    <div v-else class="stagger-grid grid gap-6 md:grid-cols-2">
+    <div v-else class="grid gap-6 md:grid-cols-2">
       <SetCard
         v-for="set in sets"
         :key="set.id"

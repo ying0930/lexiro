@@ -47,7 +47,7 @@ watch(
     answer.value = props.draft?.answer ?? ''
     submitted.value = props.batchMode ? false : Boolean(props.draft?.submitted)
   },
-  { immediate: true },
+  { immediate: true, deep: true },
 )
 
 watch([answer, submitted], () => {
@@ -83,7 +83,7 @@ async function copyExplanationPrompt() {
 </script>
 
 <template>
-  <Card class="study-card motion-card p-6 sm:p-8" :glow="false">
+  <Card class="p-6 sm:p-8" :glow="false">
     <div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-left">
       <div class="space-y-1">
         <div class="flex items-center gap-2">

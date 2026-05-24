@@ -1,23 +1,15 @@
-import { computed, ref, watch } from 'vue'
-
-let compressionToolsPromise = null
-let driveApiPromise = null
-let promptsPromise = null
-
-function loadCompressionTools() {
-  compressionToolsPromise ??= import('fflate')
-  return compressionToolsPromise
-}
-
-function loadDriveApi() {
-  driveApiPromise ??= import('../lib/googleDrive.js')
-  return driveApiPromise
-}
-
-async function loadPrompts() {
-  const module = await (promptsPromise ??= import('../../prompts.js'))
-  return module.default ?? module
-}
+import { ref, computed, watch, nextTick } from 'vue'
+import { strFromU8, strToU8, unzipSync, zipSync } from 'fflate'
+import prompts from '../../prompts.js'
+import {
+  downloadBackupFile,
+  hasDriveToken,
+  listBackupFiles,
+  pruneOldBackupFiles,
+  requestDriveAccess,
+  revokeDriveAccess,
+  uploadBackupZip,
+} from '../lib/googleDrive.js'
 
 // Singleton reactive state shared across all component imports
 const sets = ref([])
@@ -40,7 +32,6 @@ const pendingDeleteId = ref(null)
 const transferOpen = ref(false)
 const exportSelectedIds = ref([])
 const exportError = ref('')
-const exportLoading = ref(false)
 const zipImportError = ref('')
 const zipImportPreview = ref('')
 const zipImportSets = ref(null)
@@ -77,35 +68,11 @@ const practiceDialogSetId = ref(null)
 const practiceDialogCount = ref(1)
 
 const theme = ref('light')
-const isOnline = ref(typeof navigator === 'undefined' ? true : navigator.onLine)
 
 let confirmResolver = null
 let toastTimer = null
-let saveTimer = null
-let idleSaveHandle = null
 
 const STORAGE_KEY = 'vocab_study_data'
-const DRIVE_TOKEN_KEY = 'wordmem_drive_access_token'
-const DRIVE_EXPIRES_KEY = 'wordmem_drive_token_expires_at'
-
-function updateOnlineStatus() {
-  isOnline.value = typeof navigator === 'undefined' ? true : navigator.onLine
-}
-
-function clearStoredDriveToken() {
-  localStorage.removeItem(DRIVE_TOKEN_KEY)
-  localStorage.removeItem(DRIVE_EXPIRES_KEY)
-}
-
-function getStoredDriveExpiry() {
-  return Number(localStorage.getItem(DRIVE_EXPIRES_KEY) || '0')
-}
-
-function hasStoredDriveToken() {
-  const accessToken = localStorage.getItem(DRIVE_TOKEN_KEY) || ''
-  const expiresAt = getStoredDriveExpiry()
-  return Boolean(accessToken) && Date.now() < expiresAt
-}
 
 // Helper utilities
 function isNonEmptyString(value) {
@@ -433,7 +400,7 @@ function loadState() {
     const sanitizedSets = parsed.sets
       .map((set, index) => {
         try {
-          return restoreSavedSet(set, index)
+          return normalizeSet(set, set?.id ?? `saved-${index + 1}`)
         } catch {
           return null
         }
@@ -462,9 +429,9 @@ function loadState() {
     }
 
     // Verify and restore Google Drive login status on page refresh/initialization
-    if (hasStoredDriveToken()) {
+    if (hasDriveToken()) {
       driveSignedIn.value = true
-      const expiresAt = getStoredDriveExpiry()
+      const expiresAt = Number(localStorage.getItem('wordmem_drive_token_expires_at') || '0')
       driveAccountLabel.value = expiresAt ? `Google Drive 已授權，約 ${new Date(expiresAt).toLocaleTimeString()} 前有效` : 'Google Drive 已授權'
     } else {
       driveSignedIn.value = false
@@ -482,79 +449,18 @@ function loadState() {
   }
 }
 
-function serializeState() {
-  return JSON.stringify({
-    sets: sets.value,
-    activeSetId: activeSetId.value,
-    currentView: currentView.value,
-    currentSession: currentSession.value,
-    flashcardIndex: flashcardIndex.value,
-    practiceCounts: practiceCounts.value,
-  })
-}
-
-function writeState() {
-  try {
-    localStorage.setItem(STORAGE_KEY, serializeState())
-  } catch {
-    showToast('本機儲存空間不足，請先匯出備份或清理瀏覽器資料')
-  }
-}
-
-function restoreSavedSet(set, index) {
-  if (
-    set
-    && typeof set === 'object'
-    && !Array.isArray(set)
-    && isNonEmptyString(set.id)
-    && isNonEmptyString(set.setName)
-    && Array.isArray(set.items)
-    && set.items.length
-  ) {
-    return set
-  }
-
-  return normalizeSet(set, set?.id ?? `saved-${index + 1}`)
-}
-
-function cancelQueuedSave() {
-  if (typeof window === 'undefined') return
-  if (saveTimer) {
-    window.clearTimeout(saveTimer)
-    saveTimer = null
-  }
-
-  if (idleSaveHandle && 'cancelIdleCallback' in window) {
-    window.cancelIdleCallback(idleSaveHandle)
-    idleSaveHandle = null
-  }
-}
-
 function saveState() {
-  cancelQueuedSave()
-  writeState()
-}
-
-function scheduleSaveState() {
-  if (typeof window === 'undefined') {
-    writeState()
-    return
-  }
-
-  if (saveTimer) window.clearTimeout(saveTimer)
-  saveTimer = window.setTimeout(() => {
-    saveTimer = null
-    const persist = () => {
-      idleSaveHandle = null
-      writeState()
-    }
-
-    if ('requestIdleCallback' in window) {
-      idleSaveHandle = window.requestIdleCallback(persist, { timeout: 1200 })
-    } else {
-      persist()
-    }
-  }, 180)
+  localStorage.setItem(
+    STORAGE_KEY,
+    JSON.stringify({
+      sets: sets.value,
+      activeSetId: activeSetId.value,
+      currentView: currentView.value,
+      currentSession: currentSession.value,
+      flashcardIndex: flashcardIndex.value,
+      practiceCounts: practiceCounts.value,
+    }),
+  )
 }
 
 function clearStudyProgress() {
@@ -612,7 +518,6 @@ function nextImportStep() {
 
 async function copyImportPrompt() {
   try {
-    const prompts = await loadPrompts()
     const text = prompts.generateWordSet.replace('{{WORDS}}', importWords.value.trim() || '(未輸入單字)')
     await copyToClipboard(text)
     showToast('已複製 AI 指令，請貼至 AI 平台產生單字集')
@@ -656,8 +561,7 @@ function buildExportFileName() {
   return `wordmem-backup-${datePart}-${timePart}.zip`
 }
 
-async function buildExportZipBlob(selectedSets) {
-  const { strToU8, zipSync } = await loadCompressionTools()
+function buildExportZipBlob(selectedSets) {
   const payload = buildExportPayload(selectedSets)
   const jsonText = JSON.stringify(payload, null, 2)
   const zipped = zipSync({ 'vocp-sets.json': strToU8(jsonText) }, { level: 0 })
@@ -675,23 +579,15 @@ function downloadBlob(blob, filename) {
   URL.revokeObjectURL(url)
 }
 
-async function exportSelectedSetsToZip() {
+function exportSelectedSetsToZip() {
   exportError.value = ''
   if (!exportSelectedSets.value.length) {
     exportError.value = '請至少選擇一個單字集'
     return
   }
 
-  exportLoading.value = true
-  try {
-    const blob = await buildExportZipBlob(exportSelectedSets.value)
-    downloadBlob(blob, buildExportFileName())
-    showToast(`已匯出 ${exportSelectedSets.value.length} 個單字集`)
-  } catch (error) {
-    exportError.value = error.message || '匯出 ZIP 失敗'
-  } finally {
-    exportLoading.value = false
-  }
+  downloadBlob(buildExportZipBlob(exportSelectedSets.value), buildExportFileName())
+  showToast(`已匯出 ${exportSelectedSets.value.length} 個單字集`)
 }
 
 function resetZipImportState(resetInput = true) {
@@ -724,8 +620,7 @@ function normalizeExportPayload(data) {
   throw new Error('找不到 sets 或 items')
 }
 
-async function parseBackupZipBuffer(buffer) {
-  const { strFromU8, unzipSync } = await loadCompressionTools()
+function parseBackupZipBuffer(buffer) {
   const entries = unzipSync(new Uint8Array(buffer))
   const entryNames = Object.keys(entries)
   const jsonEntry =
@@ -882,7 +777,7 @@ async function handleZipImportChange(event) {
 
   try {
     const buffer = await file.arrayBuffer()
-    const { sets: normalizedSets, exportedAt } = await parseBackupZipBuffer(buffer)
+    const { sets: normalizedSets, exportedAt } = parseBackupZipBuffer(buffer)
     zipImportSets.value = normalizedSets
     zipImportPreview.value = formatBackupPreview(normalizedSets, exportedAt)
     refreshImportVersionDiffs(normalizedSets)
@@ -1036,13 +931,7 @@ async function ensureDriveSignedIn(prompt = null) {
     driveError.value = '尚未設定 VITE_GOOGLE_CLIENT_ID，無法使用 Google Drive 備份。'
     throw new Error(driveError.value)
   }
-  updateOnlineStatus()
-  if (!isOnline.value) {
-    driveError.value = '目前離線，Google Drive 備份需要網路連線。'
-    throw new Error(driveError.value)
-  }
 
-  const { hasDriveToken, requestDriveAccess } = await loadDriveApi()
   const token = await requestDriveAccess(import.meta.env.VITE_GOOGLE_CLIENT_ID, prompt ?? (hasDriveToken() ? '' : 'consent'))
   driveSignedIn.value = hasDriveToken()
   driveAccountLabel.value = token.expiresAt ? `Google Drive 已授權，約 ${new Date(token.expiresAt).toLocaleTimeString()} 前有效` : 'Google Drive 已授權'
@@ -1059,13 +948,8 @@ async function signInDrive() {
   }
 }
 
-async function signOutDrive() {
-  try {
-    const { revokeDriveAccess } = await loadDriveApi()
-    revokeDriveAccess()
-  } catch {
-    clearStoredDriveToken()
-  }
+function signOutDrive() {
+  revokeDriveAccess()
   driveSignedIn.value = false
   driveAccountLabel.value = ''
   driveBackups.value = []
@@ -1084,10 +968,8 @@ async function backupSelectedSetsToDrive() {
   driveBackupLoading.value = true
   try {
     await ensureDriveSignedIn()
-    const { pruneOldBackupFiles, uploadBackupZip } = await loadDriveApi()
     const filename = buildExportFileName()
-    const blob = await buildExportZipBlob(exportSelectedSets.value)
-    await uploadBackupZip(blob, filename)
+    await uploadBackupZip(buildExportZipBlob(exportSelectedSets.value), filename)
     const pruneResult = await pruneOldBackupFiles(10)
     driveBackups.value = pruneResult.kept
     const pruneText = pruneResult.deleted.length ? `，已刪除 ${pruneResult.deleted.length} 個舊備份` : ''
@@ -1104,7 +986,6 @@ async function refreshDriveBackups() {
   driveListLoading.value = true
   try {
     await ensureDriveSignedIn()
-    const { listBackupFiles } = await loadDriveApi()
     driveBackups.value = await listBackupFiles()
     if (!driveBackups.value.length) {
       resetDriveImportState()
@@ -1130,9 +1011,8 @@ async function selectDriveBackup(fileId) {
   driveImportLoading.value = true
   try {
     await ensureDriveSignedIn()
-    const { downloadBackupFile } = await loadDriveApi()
     const buffer = await downloadBackupFile(fileId)
-    const { sets: normalizedSets, exportedAt } = await parseBackupZipBuffer(buffer)
+    const { sets: normalizedSets, exportedAt } = parseBackupZipBuffer(buffer)
     driveImportSets.value = normalizedSets
     driveImportExportedAt.value = exportedAt
     driveImportPreview.value = formatBackupPreview(normalizedSets, exportedAt)
@@ -1234,8 +1114,7 @@ function openPracticeDialog(mode, setId) {
 
 async function confirmPracticeDialog() {
   if (!practiceDialogSetId.value) return
-  const targetSet = sets.value.find((set) => set.id === practiceDialogSetId.value)
-  handlePracticeCountChange(practiceDialogSetId.value, practiceDialogCount.value, targetSet?.items.length ?? 1)
+  handlePracticeCountChange(practiceDialogSetId.value, practiceDialogCount.value, activeSet.value?.items.length ?? 1)
   practiceDialogOpen.value = false
   await startRound(practiceDialogMode.value, practiceDialogSetId.value)
 }
@@ -1340,7 +1219,6 @@ function copyToClipboard(text) {
 
 async function copyQuestionExplainPrompt(entry, record = null, mode = 'quiz') {
   let promptText = ''
-  const prompts = await loadPrompts()
 
   if (mode === 'quiz') {
     const question = entry.item.question
@@ -1369,7 +1247,6 @@ async function copyQuestionExplainPrompt(entry, record = null, mode = 'quiz') {
 
 async function copyAllWrongQuestionsPrompt() {
   if (!resultSummary.value || resultSummary.value.wrongCount === 0) return
-  const prompts = await loadPrompts()
 
   const wrongRows = resultRows.value.filter(row => !row.record?.isCorrect)
   if (wrongRows.length === 0) return
@@ -1517,7 +1394,7 @@ watch(importJson, (value) => {
   importError.value = result.error
 })
 
-watch([sets, activeSetId, currentView, currentSession, flashcardIndex], scheduleSaveState, { deep: true })
+watch([sets, activeSetId, currentView, currentSession, flashcardIndex], saveState, { deep: true })
 
 export function useVocab() {
   return {
@@ -1541,7 +1418,6 @@ export function useVocab() {
     transferOpen,
     exportSelectedIds,
     exportError,
-    exportLoading,
     zipImportError,
     zipImportPreview,
     zipImportSets,
@@ -1577,7 +1453,6 @@ export function useVocab() {
     practiceDialogSetId,
     practiceDialogCount,
     theme,
-    isOnline,
 
     // Computeds
     hasSets,
@@ -1620,8 +1495,6 @@ export function useVocab() {
     getQuizUserAnswerText,
     loadState,
     saveState,
-    scheduleSaveState,
-    updateOnlineStatus,
     clearStudyProgress,
     resetStudyView,
     returnHome,

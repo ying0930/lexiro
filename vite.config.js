@@ -9,10 +9,9 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
-      injectRegister: 'inline',
+      injectRegister: 'auto',
       includeAssets: ['icons/wordmem.svg'],
       manifest: {
-        id: '/',
         name: 'Wordmem',
         short_name: 'Wordmem',
         description: 'Wordmem vocabulary practice and backup app.',
@@ -22,7 +21,6 @@ export default defineConfig({
         background_color: '#f8fafc',
         theme_color: '#111827',
         orientation: 'portrait-primary',
-        categories: ['education', 'productivity'],
         icons: [
           {
             src: '/icons/wordmem.svg',
@@ -33,10 +31,8 @@ export default defineConfig({
         ],
       },
       workbox: {
-        skipWaiting: true,
-        clientsClaim: true,
         navigateFallback: '/index.html',
-        globPatterns: ['**/*.{js,css,html,svg,png,ico,webmanifest,woff2}'],
+        globPatterns: ['**/*.{js,css,html,svg,png,ico,webmanifest}'],
         cleanupOutdatedCaches: true,
         runtimeCaching: [
           {
@@ -44,10 +40,6 @@ export default defineConfig({
             handler: 'NetworkFirst',
             options: {
               cacheName: 'wordmem-pages',
-              networkTimeoutSeconds: 2,
-              cacheableResponse: {
-                statuses: [0, 200],
-              },
             },
           },
           {
@@ -57,9 +49,6 @@ export default defineConfig({
             handler: 'CacheFirst',
             options: {
               cacheName: 'wordmem-assets',
-              cacheableResponse: {
-                statuses: [0, 200],
-              },
               expiration: {
                 maxEntries: 80,
                 maxAgeSeconds: 60 * 60 * 24 * 365,

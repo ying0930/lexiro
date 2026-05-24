@@ -13,7 +13,6 @@ const {
   exportSelectedCount,
   exportSelectedWordCount,
   exportError,
-  exportLoading,
   zipImportInputKey,
   zipImportName,
   zipImportPreview,
@@ -175,13 +174,13 @@ function selectOption(id) {
                 <div
                   v-if="dropdownOpen"
                   :style="dropdownStyle"
-                  class="max-h-60 overflow-y-auto rounded-xl border border-ink-200 dark:border-ink-800 bg-white/90 dark:bg-ink-900/94 backdrop-blur-xl shadow-2xl p-1.5 space-y-0.5 text-left"
+                  class="max-h-60 overflow-y-auto rounded-xl border border-ink-200 dark:border-ink-800 bg-white dark:bg-ink-900 shadow-2xl p-1.5 space-y-0.5 text-left panel"
                 >
                   <!-- Default Placeholder Option -->
                   <button
                     type="button"
                     class="w-full text-left px-3 py-2 text-xs font-semibold rounded-lg transition-colors"
-                    :class="!driveSelectedFileId ? 'bg-ink-100 dark:bg-ink-800 text-emerald-600 dark:text-emerald-400' : 'text-ink-500 dark:text-ink-400 hover:bg-ink-50 dark:hover:bg-ink-850'"
+                    :class="!driveSelectedFileId ? 'bg-ink-100 dark:bg-ink-800 text-emerald-600 dark:text-emerald-400' : 'text-ink-50 hover:bg-ink-50 dark:hover:bg-ink-850'"
                     @click="selectOption('')"
                   >
                     請選擇備份檔
@@ -464,7 +463,7 @@ function selectOption(id) {
             已勾選 {{ exportSelectedCount }} 個單字集，包含 {{ exportSelectedWordCount }} 個單字。
           </p>
           <p v-else></p>
-          <Button variant="default" :disabled="!exportSelectedCount" :loading="exportLoading" @click="exportSelectedSetsToZip" class="gap-2">
+          <Button variant="default" :disabled="!exportSelectedCount" @click="exportSelectedSetsToZip" class="gap-2">
             <Download class="h-4 w-4" />
             <span>下載 ZIP</span>
           </Button>

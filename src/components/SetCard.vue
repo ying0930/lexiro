@@ -14,7 +14,7 @@ defineEmits(['flashcards', 'quiz', 'spelling', 'delete', 'edit'])
 
 <template>
   <Card
-    class="set-card motion-card p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
+    class="p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
     :glow="false"
   >
     <div class="flex items-start justify-between gap-4">
@@ -28,10 +28,7 @@ defineEmits(['flashcards', 'quiz', 'spelling', 'delete', 'edit'])
       </div>
       
       <div class="flex items-center gap-1 shrink-0">
-        <span v-if="active" class="relative mr-1 inline-flex">
-          <span class="absolute inset-0 rounded-full bg-emerald-400/30 animate-ping"></span>
-          <Badge variant="success" class="relative text-[10px] py-0.5 px-2">進行中</Badge>
-        </span>
+        <Badge v-if="active" variant="success" class="text-[10px] py-0.5 px-2 mr-1">進行中</Badge>
         
         <Button
           variant="ghost"
