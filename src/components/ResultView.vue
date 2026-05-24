@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, nextTick } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { BookOpenText, RotateCcw, ClipboardCopy, SpellCheck2 } from 'lucide-vue-next'
 import { useVocab } from '../composables/useVocab.js'
 import Badge from './ui/badge/Badge.vue'
@@ -17,10 +17,27 @@ const {
   copyQuestionExplainPrompt,
 } = useVocab()
 
+const renderLimit = ref(15)
+const displayedRows = computed(() => resultRows.value.slice(0, renderLimit.value))
+
+const sentinel = ref(null)
+let observer = null
+
 onMounted(() => {
   nextTick(() => {
     document.getElementById('completion-panel')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
   })
+  
+  observer = new IntersectionObserver(([entry]) => {
+    if (entry.isIntersecting && renderLimit.value < resultRows.value.length) {
+      renderLimit.value += 15
+    }
+  }, { rootMargin: '400px' })
+  if (sentinel.value) observer.observe(sentinel.value)
+})
+
+onUnmounted(() => {
+  if (observer) observer.disconnect()
 })
 </script>
 
@@ -96,7 +113,7 @@ onMounted(() => {
     <!-- Detailed Results Rows List -->
     <div class="space-y-4">
       <Card
-        v-for="row in resultRows"
+        v-for="row in displayedRows"
         :key="`${row.entry.item.id}-${row.index}`"
         class="p-6 text-left"
         :glow="false"
@@ -154,6 +171,7 @@ onMounted(() => {
           </div>
         </div>
       </Card>
+      <div ref="sentinel" class="h-1 -translate-y-4 shadow-none opacity-0"></div>
     </div>
   </section>
 </template>

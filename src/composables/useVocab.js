@@ -391,62 +391,76 @@ function getQuizUserAnswerText(entry, selectedIndex) {
 }
 
 function loadState() {
+  const raw = localStorage.getItem(STORAGE_KEY)
+  if (!raw) return
+  
+  // Fast path: restore UI view first
+  let parsed = {}
   try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    if (!raw) return
-    const parsed = JSON.parse(raw)
-    if (!Array.isArray(parsed.sets)) return
-
-    const sanitizedSets = parsed.sets
-      .map((set, index) => {
-        try {
-          return normalizeSet(set, set?.id ?? `saved-${index + 1}`)
-        } catch {
-          return null
-        }
-      })
-      .filter(Boolean)
-
-    sets.value = sanitizedSets
-    const validSetIds = new Set(sanitizedSets.map((set) => set.id))
+    parsed = JSON.parse(raw)
     const savedView = typeof parsed.currentView === 'string' ? parsed.currentView : 'home'
-    const savedSession = normalizeSession(parsed.currentSession, validSetIds, savedView)
-    practiceCounts.value = parsed.practiceCounts && typeof parsed.practiceCounts === 'object' && !Array.isArray(parsed.practiceCounts)
-      ? parsed.practiceCounts
-      : {}
-
-    currentSession.value = savedSession
     currentView.value = savedView
-    flashcardIndex.value = Number.isInteger(parsed.flashcardIndex) && parsed.flashcardIndex >= 0 ? parsed.flashcardIndex : 0
+  } catch (e) {
+    return
+  }
 
-    if (savedSession) {
-      activeSetId.value = validSetIds.has(parsed.activeSetId) ? parsed.activeSetId : savedSession.sourceSetId
-    } else {
-      activeSetId.value = validSetIds.has(parsed.activeSetId) ? parsed.activeSetId : sanitizedSets[0]?.id ?? null
-      currentView.value = 'home'
-      flashcardIndex.value = 0
-      practiceCounts.value = {}
-    }
+  // Defer heavy parsing
+  setTimeout(() => {
+    try {
+      if (!Array.isArray(parsed.sets)) return
 
-    // Verify and restore Google Drive login status on page refresh/initialization
-    if (hasDriveToken()) {
-      driveSignedIn.value = true
-      const expiresAt = Number(localStorage.getItem('wordmem_drive_token_expires_at') || '0')
-      driveAccountLabel.value = expiresAt ? `Google Drive 已授權，約 ${new Date(expiresAt).toLocaleTimeString()} 前有效` : 'Google Drive 已授權'
-    } else {
-      driveSignedIn.value = false
-      driveAccountLabel.value = ''
+      const sanitizedSets = parsed.sets
+        .map((set, index) => {
+          try {
+            return normalizeSet(set, set?.id ?? `saved-${index + 1}`)
+          } catch {
+            return null
+          }
+        })
+        .filter(Boolean)
+
+      sets.value = sanitizedSets
+      const validSetIds = new Set(sanitizedSets.map((set) => set.id))
+      const savedView = currentView.value
+      const savedSession = normalizeSession(parsed.currentSession, validSetIds, savedView)
+      practiceCounts.value = parsed.practiceCounts && typeof parsed.practiceCounts === 'object' && !Array.isArray(parsed.practiceCounts)
+        ? parsed.practiceCounts
+        : {}
+
+      currentSession.value = savedSession
+      flashcardIndex.value = Number.isInteger(parsed.flashcardIndex) && parsed.flashcardIndex >= 0 ? parsed.flashcardIndex : 0
+
+      if (savedSession) {
+        activeSetId.value = validSetIds.has(parsed.activeSetId) ? parsed.activeSetId : savedSession.sourceSetId
+      } else {
+        activeSetId.value = validSetIds.has(parsed.activeSetId) ? parsed.activeSetId : sanitizedSets[0]?.id ?? null
+        currentView.value = 'home'
+        flashcardIndex.value = 0
+        practiceCounts.value = {}
+      }
+    } catch {
+      // Ignored
     }
-  } catch {
-    sets.value = []
-    activeSetId.value = null
-    currentView.value = 'home'
-    currentSession.value = null
-    flashcardIndex.value = 0
-    practiceCounts.value = {}
+  }, 0)
+
+  // Verify and restore Google Drive login status on page refresh/initialization
+  if (hasDriveToken()) {
+    driveSignedIn.value = true
+    const expiresAt = Number(localStorage.getItem('wordmem_drive_token_expires_at') || '0')
+    driveAccountLabel.value = expiresAt ? `Google Drive 已授權，約 ${new Date(expiresAt).toLocaleTimeString()} 前有效` : 'Google Drive 已授權'
+  } else {
     driveSignedIn.value = false
     driveAccountLabel.value = ''
   }
+}
+
+let saveTimer = null
+function scheduleSave() {
+  if (saveTimer) return
+  saveTimer = setTimeout(() => {
+    saveState()
+    saveTimer = null
+  }, 500)
 }
 
 function saveState() {
@@ -1394,7 +1408,7 @@ watch(importJson, (value) => {
   importError.value = result.error
 })
 
-watch([sets, activeSetId, currentView, currentSession, flashcardIndex], saveState, { deep: true })
+watch([sets, activeSetId, currentView, currentSession, flashcardIndex], scheduleSave, { deep: true })
 
 export function useVocab() {
   return {

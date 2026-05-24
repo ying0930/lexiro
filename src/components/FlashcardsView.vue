@@ -1,4 +1,5 @@
 <script setup>
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useVocab } from '../composables/useVocab.js'
 import Badge from './ui/badge/Badge.vue'
 import Card from './ui/card/Card.vue'
@@ -10,6 +11,25 @@ const {
   totalItems,
   sessionEntries,
 } = useVocab()
+
+const renderLimit = ref(10)
+const displayedEntries = computed(() => sessionEntries.value.slice(0, renderLimit.value))
+
+const sentinel = ref(null)
+let observer = null
+
+onMounted(() => {
+  observer = new IntersectionObserver(([entry]) => {
+    if (entry.isIntersecting && renderLimit.value < sessionEntries.value.length) {
+      renderLimit.value += 10
+    }
+  }, { rootMargin: '400px' })
+  if (sentinel.value) observer.observe(sentinel.value)
+})
+
+onUnmounted(() => {
+  if (observer) observer.disconnect()
+})
 </script>
 
 <template>
@@ -32,11 +52,12 @@ const {
 
     <div class="space-y-6">
       <FlashcardView
-        v-for="(entry, entryIndex) in sessionEntries"
+        v-for="(entry, entryIndex) in displayedEntries"
         :key="entry.item.id"
         :item="entry.item"
         :index="entryIndex"
       />
+      <div ref="sentinel" class="h-1 -translate-y-4 shadow-none opacity-0"></div>
     </div>
   </section>
 </template>

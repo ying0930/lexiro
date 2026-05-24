@@ -1,4 +1,5 @@
 <script setup>
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useVocab } from '../composables/useVocab.js'
 import Card from './ui/card/Card.vue'
 import Progress from './ui/progress/Progress.vue'
@@ -19,6 +20,25 @@ const {
   showToast,
   submitCurrentRound,
 } = useVocab()
+
+const renderLimit = ref(10)
+const displayedEntries = computed(() => sessionEntries.value.slice(0, renderLimit.value))
+
+const sentinel = ref(null)
+let observer = null
+
+onMounted(() => {
+  observer = new IntersectionObserver(([entry]) => {
+    if (entry.isIntersecting && renderLimit.value < sessionEntries.value.length) {
+      renderLimit.value += 10
+    }
+  }, { rootMargin: '400px' })
+  if (sentinel.value) observer.observe(sentinel.value)
+})
+
+onUnmounted(() => {
+  if (observer) observer.disconnect()
+})
 </script>
 
 <template>
@@ -49,7 +69,7 @@ const {
     <div class="space-y-6">
       <template v-if="currentView === 'quiz'">
         <QuizCard
-          v-for="(entry, entryIndex) in sessionEntries"
+          v-for="(entry, entryIndex) in displayedEntries"
           :key="entry.item.id"
           :entry="entry"
           :index="entryIndex"
@@ -64,7 +84,7 @@ const {
 
       <template v-else>
         <SpellingCard
-          v-for="(entry, entryIndex) in sessionEntries"
+          v-for="(entry, entryIndex) in displayedEntries"
           :key="entry.item.id"
           :entry="entry"
           :index="entryIndex"
@@ -76,6 +96,8 @@ const {
           @toast="showToast"
         />
       </template>
+
+      <div ref="sentinel" class="h-1 -translate-y-4 shadow-none opacity-0"></div>
 
       <!-- Submit Bar -->
       <Card class="p-6" :glow="false">
