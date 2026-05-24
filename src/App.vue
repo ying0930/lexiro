@@ -70,6 +70,7 @@ onBeforeUnmount(() => {
 <template>
   <div class="min-h-screen bg-ink-50/50 dark:bg-ink-950 text-ink-950 dark:text-ink-50 transition-colors duration-300 pb-20 font-sans relative overflow-x-hidden">
     <div class="ambient-field" aria-hidden="true"></div>
+    <div class="liquid-caustics" aria-hidden="true"></div>
     
     <!-- Premium Header Shell -->
     <AppHeader />

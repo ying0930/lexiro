@@ -22,7 +22,7 @@ const {
 <template>
   <!-- Premium Header Shell -->
   <header class="sticky top-0 z-40 px-4 sm:px-6 py-4 bg-transparent transition-all duration-300">
-    <div class="mx-auto flex max-w-5xl items-center justify-between gap-4 px-6 py-3 rounded-2xl border border-white/40 dark:border-white/10 bg-white/40 dark:bg-ink-900/40 backdrop-blur-xl shadow-md shadow-black/5 dark:shadow-none transition-all duration-300">
+    <div class="liquid-shell mx-auto flex max-w-5xl items-center justify-between gap-4 px-6 py-3 rounded-2xl border border-white/40 dark:border-white/10 bg-white/40 dark:bg-ink-900/40 backdrop-blur-xl shadow-md shadow-black/5 dark:shadow-none transition-all duration-300">
       
       <!-- Header Info -->
       <div class="flex items-center gap-3">
