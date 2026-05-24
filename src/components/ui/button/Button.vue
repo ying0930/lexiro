@@ -13,7 +13,7 @@ const props = defineProps({
 
 const classes = computed(() =>
   cn(
-    'inline-flex items-center justify-center gap-2.5 whitespace-nowrap text-sm font-medium rounded-xl transition-all duration-200 active:scale-95 outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/20 focus-visible:border-emerald-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-ink-950 disabled:opacity-50 disabled:pointer-events-none disabled:cursor-not-allowed disabled:filter disabled:grayscale-[30%]',
+    'inline-flex items-center justify-center gap-2.5 whitespace-nowrap text-sm font-medium rounded-xl transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 active:scale-95 outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/20 focus-visible:border-emerald-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-ink-950 disabled:opacity-50 disabled:pointer-events-none disabled:cursor-not-allowed disabled:filter disabled:grayscale-[30%]',
     {
       'button-primary text-white dark:text-ink-950 shadow-md shadow-emerald-500/5': props.variant === 'default',
       'border border-ink-200 dark:border-ink-800 bg-white dark:bg-ink-900 text-ink-700 dark:text-ink-300 hover:bg-ink-50 dark:hover:bg-ink-850': props.variant === 'outline' || props.variant === 'secondary',

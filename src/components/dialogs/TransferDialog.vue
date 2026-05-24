@@ -13,6 +13,7 @@ const {
   exportSelectedCount,
   exportSelectedWordCount,
   exportError,
+  exportLoading,
   zipImportInputKey,
   zipImportName,
   zipImportPreview,
@@ -463,7 +464,7 @@ function selectOption(id) {
             已勾選 {{ exportSelectedCount }} 個單字集，包含 {{ exportSelectedWordCount }} 個單字。
           </p>
           <p v-else></p>
-          <Button variant="default" :disabled="!exportSelectedCount" @click="exportSelectedSetsToZip" class="gap-2">
+          <Button variant="default" :disabled="!exportSelectedCount" :loading="exportLoading" @click="exportSelectedSetsToZip" class="gap-2">
             <Download class="h-4 w-4" />
             <span>下載 ZIP</span>
           </Button>

@@ -1,5 +1,5 @@
 <script setup>
-import { ArrowLeft, PencilLine, Trash2, Sun, Moon } from 'lucide-vue-next'
+import { ArrowLeft, Moon, PencilLine, Sun, Trash2, Wifi, WifiOff } from 'lucide-vue-next'
 import { useVocab } from '../composables/useVocab.js'
 import Badge from './ui/badge/Badge.vue'
 import Button from './ui/button/Button.vue'
@@ -11,6 +11,7 @@ const {
   totalWordCount,
   activeSet,
   theme,
+  isOnline,
   exitCurrentView,
   editActiveSet,
   deleteActiveSet,
@@ -49,8 +50,17 @@ const {
         </div>
       </div>
 
-      <!-- Header Actions -->
+        <!-- Header Actions -->
       <div class="flex items-center gap-2 shrink-0">
+        <span
+          class="hidden sm:inline-flex items-center gap-1.5 rounded-xl border px-2.5 py-1.5 text-[11px] font-bold transition-all duration-300"
+          :class="isOnline ? 'border-emerald-200 bg-emerald-500/10 text-emerald-700 dark:border-emerald-900/40 dark:text-emerald-400' : 'border-amber-200 bg-amber-500/10 text-amber-700 dark:border-amber-900/40 dark:text-amber-300'"
+        >
+          <Wifi v-if="isOnline" class="h-3.5 w-3.5" />
+          <WifiOff v-else class="h-3.5 w-3.5" />
+          <span>{{ isOnline ? '線上' : '離線' }}</span>
+        </span>
+
         <!-- Active Set Quick Access -->
         <template v-if="currentView !== 'home' && activeSet">
           <Badge variant="secondary" class="hidden sm:inline-flex rounded-xl px-3 py-1.5 text-xs font-semibold bg-ink-100 dark:bg-ink-800 border-none">
