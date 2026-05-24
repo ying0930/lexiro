@@ -174,7 +174,7 @@ function selectOption(id) {
                 <div
                   v-if="dropdownOpen"
                   :style="dropdownStyle"
-                  class="max-h-60 overflow-y-auto rounded-xl border border-ink-200 dark:border-ink-800 bg-white dark:bg-ink-900 shadow-2xl p-1.5 space-y-0.5 text-left panel"
+                  class="max-h-60 overflow-y-auto rounded-xl border border-ink-200 dark:border-ink-800 bg-white dark:bg-ink-900 shadow-2xl p-1.5 space-y-0.5 text-left"
                 >
                   <!-- Default Placeholder Option -->
                   <button

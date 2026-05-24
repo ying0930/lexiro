@@ -198,31 +198,6 @@ textarea {
   overflow: hidden;
 }
 
-.panel::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: -150%;
-  width: 50%;
-  height: 100%;
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    rgba(255, 255, 255, 0.08) 30%,
-    rgba(255, 255, 255, 0.22) 50%,
-    rgba(255, 255, 255, 0.08) 70%,
-    transparent 100%
-  );
-  transform: skewX(-20deg);
-  pointer-events: none;
-  z-index: 10;
-}
-
-.panel:hover::after {
-  left: 150%;
-  transition: left 0.85s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
 /* Premium Page Transition (iOS-like buttery slide-fade) */
 .page-enter-active,
 .page-leave-active {
