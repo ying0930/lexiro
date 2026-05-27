@@ -8,10 +8,12 @@ import SetEditorDialog from '@/components/dialogs/SetEditorDialog.vue'
 import TransferDialog from '@/components/dialogs/TransferDialog.vue'
 import Toast from '@/components/ui/toast/Toast.vue'
 import { useSessionStore } from '@/stores/session'
+import { useSetsStore } from '@/stores/sets'
 import { useUIStore } from '@/stores/ui'
 
 const uiStore = useUIStore()
 const sessionStore = useSessionStore()
+const setsStore = useSetsStore()
 
 const isAnimationsPaused = ref(false)
 function handleVisibilityChange() {
@@ -19,6 +21,7 @@ function handleVisibilityChange() {
 }
 
 onMounted(() => {
+  setsStore.loadState()
   sessionStore.loadState()
   uiStore.initTheme()
 

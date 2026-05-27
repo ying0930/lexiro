@@ -10,6 +10,7 @@ import type {
 } from '@/types'
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { STORAGE_KEY } from '@/constants'
 import { i18n } from '@/lib/i18n'
 import { normalizeSession, toSessionEntries } from '@/lib/validation'
@@ -19,6 +20,7 @@ import { useUIStore } from './ui'
 const t = i18n.global.t
 
 export const useSessionStore = defineStore('session', () => {
+  const router = useRouter()
   const currentSession = ref<PracticeSession | null>(null)
   const flashcardIndex = ref(0)
   const currentView = ref<string>('home')
@@ -148,6 +150,7 @@ export const useSessionStore = defineStore('session', () => {
 
   function returnHome() {
     currentView.value = 'home'
+    router.push({ name: 'home' })
   }
 
   function shuffleEntries(entries: SessionEntry[]): SessionEntry[] {
@@ -214,6 +217,7 @@ export const useSessionStore = defineStore('session', () => {
     const setsStore = useSetsStore()
     if (isResumableSession(setId, 'flashcard')) {
       currentView.value = 'flashcard'
+      router.push({ name: 'flashcard', params: { setId } })
       window.scrollTo({ top: 0, behavior: 'smooth' })
       return
     }
@@ -221,7 +225,13 @@ export const useSessionStore = defineStore('session', () => {
     flashcardIndex.value = 0
     currentSession.value = createSession('flashcard', toSessionEntries(setsStore.activeSet?.items ?? []), false, setId)
     currentView.value = 'flashcard'
+    router.push({ name: 'flashcard', params: { setId } })
     window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  function navigateToMode(mode: PracticeMode, setId: string) {
+    const name = mode === 'quiz' ? 'quiz' : mode === 'spelling' ? 'spelling' : 'flashcard'
+    router.push({ name, params: { setId } })
   }
 
   async function startRound(mode: PracticeMode, setId: string, reviewEntries: SessionEntry[] | null = null) {
@@ -233,6 +243,7 @@ export const useSessionStore = defineStore('session', () => {
       const confirmed = await uiStore.showConfirm(t('confirm.resumeTitle'), t('confirm.resumeMessage'))
       if (confirmed) {
         currentView.value = mode
+        navigateToMode(mode, setId)
         window.scrollTo({ top: 0, behavior: 'smooth' })
         return
       }
@@ -240,6 +251,7 @@ export const useSessionStore = defineStore('session', () => {
       const entries = buildPracticeEntries(setId, toSessionEntries(setsStore.activeSet?.items ?? []))
       currentSession.value = createSession(mode, entries, false, setId)
       currentView.value = mode
+      navigateToMode(mode, setId)
       window.scrollTo({ top: 0, behavior: 'smooth' })
       return
     }
@@ -250,6 +262,7 @@ export const useSessionStore = defineStore('session', () => {
 
     currentSession.value = createSession(mode, entries, Boolean(reviewEntries), setId)
     currentView.value = mode
+    navigateToMode(mode, setId)
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
@@ -339,6 +352,7 @@ export const useSessionStore = defineStore('session', () => {
       currentSession.value.status = 'completed'
     }
     currentView.value = 'result'
+    router.push({ name: 'result' })
   }
 
   function handleQuizDraftChange(entryIndex: number, payload: { selectedIndex: number | null, answered?: boolean }) {

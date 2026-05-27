@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { storeToRefs } from 'pinia'
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useSessionStore } from '@/stores/session'
 import { useSetsStore } from '@/stores/sets'
@@ -9,22 +10,16 @@ import Button from './ui/button/Button.vue'
 import Card from './ui/card/Card.vue'
 import Progress from './ui/progress/Progress.vue'
 
-const { activeSet } = useSetsStore()
-const {
-  currentView,
-  currentSession,
-  totalItems,
-  progressCount,
-  progressPercent,
-  sessionEntries,
-  handleQuizDraftChange,
-  handleSpellingDraftChange,
-  submitCurrentRound,
-} = useSessionStore()
-const { showToast } = useUIStore()
+const setsStore = useSetsStore()
+const sessionStore = useSessionStore()
+const uiStore = useUIStore()
+const { activeSet } = storeToRefs(setsStore)
+const { currentView, currentSession, totalItems, progressCount, progressPercent, sessionEntries } = storeToRefs(sessionStore)
+const { handleQuizDraftChange, handleSpellingDraftChange, submitCurrentRound } = sessionStore
+const { showToast } = uiStore
 
 const renderLimit = ref(10)
-const displayedEntries = computed(() => sessionEntries.slice(0, renderLimit.value))
+const displayedEntries = computed(() => sessionEntries.value.slice(0, renderLimit.value))
 
 function quizDraft(draft: unknown) {
   return draft as { selectedIndex: number | null, answered?: boolean } | null
@@ -39,7 +34,7 @@ let observer: IntersectionObserver | null = null
 
 onMounted(() => {
   observer = new IntersectionObserver(([entry]) => {
-    if (entry.isIntersecting && renderLimit.value < sessionEntries.length) {
+    if (entry.isIntersecting && renderLimit.value < sessionEntries.value.length) {
       renderLimit.value += 10
     }
   }, { rootMargin: '400px' })

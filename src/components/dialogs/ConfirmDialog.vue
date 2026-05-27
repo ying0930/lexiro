@@ -1,14 +1,12 @@
 <script setup lang="ts">
+import { storeToRefs } from 'pinia'
 import { useUIStore } from '@/stores/ui'
 import Button from '../ui/button/Button.vue'
 import Dialog from '../ui/dialog/Dialog.vue'
 
-const {
-  confirmOpen,
-  confirmTitle,
-  confirmMessage,
-  resolveConfirm,
-} = useUIStore()
+const uiStore = useUIStore()
+const { confirmOpen, confirmTitle, confirmMessage } = storeToRefs(uiStore)
+const { resolveConfirm } = uiStore
 </script>
 
 <template>

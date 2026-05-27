@@ -1,22 +1,15 @@
 <script setup lang="ts">
 import { Plus, Trash2 } from 'lucide-vue-next'
+import { storeToRefs } from 'pinia'
 import { useSetsStore } from '@/stores/sets'
 import Button from '../ui/button/Button.vue'
 import Dialog from '../ui/dialog/Dialog.vue'
 import Input from '../ui/input/Input.vue'
 import Textarea from '../ui/textarea/Textarea.vue'
 
-const {
-  setEditorOpen,
-  setEditorMode,
-  setEditorName,
-  setEditorDraftItems,
-  setEditorError,
-  closeSetEditor,
-  removeEditorItem,
-  addEditorItem,
-  saveSetEditor,
-} = useSetsStore()
+const setsStore = useSetsStore()
+const { setEditorOpen, setEditorMode, setEditorName, setEditorDraftItems, setEditorError } = storeToRefs(setsStore)
+const { closeSetEditor, removeEditorItem, addEditorItem, saveSetEditor } = setsStore
 </script>
 
 <template>

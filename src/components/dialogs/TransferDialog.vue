@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Cloud, Download, LogIn, LogOut, RefreshCw, Upload } from 'lucide-vue-next'
+import { storeToRefs } from 'pinia'
 import { computed, nextTick, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useBackupStore } from '@/stores/backup'
@@ -10,61 +11,24 @@ import Dialog from '../ui/dialog/Dialog.vue'
 
 const { t } = useI18n()
 
-const {
-  transferOpen,
-  closeTransfer,
-} = useUIStore()
+const uiStore = useUIStore()
+const setsStore = useSetsStore()
+const backupStore = useBackupStore()
+const { transferOpen } = storeToRefs(uiStore)
+const { closeTransfer } = uiStore
 
-const {
-  sets,
-  exportSelectedIds,
-  exportAllSelected,
-  exportSelectedCount,
-  exportSelectedWordCount,
-  exportError,
-  importMode,
-  duplicateSummary,
-  importVersionDiffs,
-  importVersionChoices,
-  toggleExportAll,
-  exportSelectedSetsToZip,
-  setImportVersionChoice,
-} = useSetsStore()
+const { sets, exportSelectedIds, exportAllSelected, exportSelectedCount, exportSelectedWordCount, exportError, importMode, duplicateSummary, importVersionDiffs, importVersionChoices } = storeToRefs(setsStore)
+const { toggleExportAll, exportSelectedSetsToZip, setImportVersionChoice } = setsStore
 
-const {
-  zipImportInputKey,
-  zipImportName,
-  zipImportPreview,
-  zipImportSets,
-  zipImportError,
-  driveConfigured,
-  driveSignedIn,
-  driveAccountLabel,
-  driveBackupLoading,
-  driveImportLoading,
-  driveListLoading,
-  driveError,
-  driveBackups,
-  driveSelectedFileId,
-  driveImportPreview,
-  driveImportSets,
-  signInDrive,
-  signOutDrive,
-  backupSelectedSetsToDrive,
-  refreshDriveBackups,
-  selectDriveBackup,
-  applyDriveImport,
-  resetZipImportState,
-  handleZipImportChange,
-  applyZipImport,
-} = useBackupStore()
+const { zipImportInputKey, zipImportName, zipImportPreview, zipImportSets, zipImportError, driveConfigured, driveSignedIn, driveAccountLabel, driveBackupLoading, driveImportLoading, driveListLoading, driveError, driveBackups, driveSelectedFileId, driveImportPreview, driveImportSets } = storeToRefs(backupStore)
+const { signInDrive, signOutDrive, backupSelectedSetsToDrive, refreshDriveBackups, selectDriveBackup, applyDriveImport, resetZipImportState, handleZipImportChange, applyZipImport } = backupStore
 
 const dropdownOpen = ref(false)
 const triggerRef = ref<HTMLButtonElement | null>(null)
 const dropdownStyle = ref<Record<string, string>>({})
 
 const selectedBackupLabel = computed(() => {
-  const selected = driveBackups.find(file => file.id === driveSelectedFileId)
+  const selected = driveBackups.value.find(file => file.id === driveSelectedFileId.value)
   if (!selected)
     return t('backup.selectBackupPlaceholder')
   return `${selected.name} · ${new Date(selected.createdTime).toLocaleString()}`

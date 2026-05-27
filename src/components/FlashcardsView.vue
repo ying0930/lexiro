@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { storeToRefs } from 'pinia'
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useSessionStore } from '@/stores/session'
 import { useSetsStore } from '@/stores/sets'
@@ -6,18 +7,18 @@ import FlashcardView from './FlashcardView.vue'
 import Badge from './ui/badge/Badge.vue'
 import Card from './ui/card/Card.vue'
 
-const { activeSet } = useSetsStore()
-const { currentSession, sessionEntries, totalItems } = useSessionStore()
+const { activeSet } = storeToRefs(useSetsStore())
+const { currentSession, sessionEntries, totalItems } = storeToRefs(useSessionStore())
 
 const renderLimit = ref(10)
-const displayedEntries = computed(() => sessionEntries.slice(0, renderLimit.value))
+const displayedEntries = computed(() => sessionEntries.value.slice(0, renderLimit.value))
 
 const sentinel = ref<HTMLElement | null>(null)
 let observer: IntersectionObserver | null = null
 
 onMounted(() => {
   observer = new IntersectionObserver(([entry]) => {
-    if (entry.isIntersecting && renderLimit.value < sessionEntries.length) {
+    if (entry.isIntersecting && renderLimit.value < sessionEntries.value.length) {
       renderLimit.value += 10
     }
   }, { rootMargin: '400px' })

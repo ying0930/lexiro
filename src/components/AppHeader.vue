@@ -1,14 +1,21 @@
 <script setup lang="ts">
 import { ArrowLeft, Moon, PencilLine, Sun, Trash2 } from 'lucide-vue-next'
+import { storeToRefs } from 'pinia'
 import { useSessionStore } from '@/stores/session'
 import { useSetsStore } from '@/stores/sets'
 import { useUIStore } from '@/stores/ui'
 import Badge from './ui/badge/Badge.vue'
 import Button from './ui/button/Button.vue'
 
-const { currentView, exitCurrentView } = useSessionStore()
-const { hasSets, sets, totalWordCount, activeSet, editActiveSet, deleteActiveSet } = useSetsStore()
-const { theme, toggleTheme } = useUIStore()
+const sessionStore = useSessionStore()
+const setsStore = useSetsStore()
+const uiStore = useUIStore()
+const { currentView } = storeToRefs(sessionStore)
+const { exitCurrentView } = sessionStore
+const { hasSets, sets, totalWordCount, activeSet } = storeToRefs(setsStore)
+const { editActiveSet, deleteActiveSet } = setsStore
+const { theme } = storeToRefs(uiStore)
+const { toggleTheme } = uiStore
 </script>
 
 <template>

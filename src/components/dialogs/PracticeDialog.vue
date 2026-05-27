@@ -1,18 +1,15 @@
 <script setup lang="ts">
+import { storeToRefs } from 'pinia'
 import { useSessionStore } from '@/stores/session'
 import { useSetsStore } from '@/stores/sets'
 import Button from '../ui/button/Button.vue'
 import Dialog from '../ui/dialog/Dialog.vue'
 
-const {
-  practiceDialogOpen,
-  practiceDialogSetId,
-  practiceDialogCount,
-  closePracticeDialog,
-  confirmPracticeDialog,
-} = useSessionStore()
-
-const { sets } = useSetsStore()
+const sessionStore = useSessionStore()
+const setsStore = useSetsStore()
+const { practiceDialogOpen, practiceDialogSetId, practiceDialogCount } = storeToRefs(sessionStore)
+const { closePracticeDialog, confirmPracticeDialog } = sessionStore
+const { sets } = storeToRefs(setsStore)
 </script>
 
 <template>

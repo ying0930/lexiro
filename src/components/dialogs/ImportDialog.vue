@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ClipboardCopy } from 'lucide-vue-next'
+import { storeToRefs } from 'pinia'
 import { nextTick, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import prompts from '@/lib/prompts'
@@ -11,19 +12,11 @@ import Textarea from '../ui/textarea/Textarea.vue'
 
 const { t } = useI18n()
 
-const {
-  importOpen,
-  importStep,
-  importWords,
-  importJson,
-  importError,
-  importPreview,
-  closeImport,
-  nextImportStep,
-  importSet,
-} = useSetsStore()
-
-const { showToast } = useUIStore()
+const setsStore = useSetsStore()
+const uiStore = useUIStore()
+const { importOpen, importStep, importWords, importJson, importError, importPreview } = storeToRefs(setsStore)
+const { closeImport, nextImportStep, importSet } = setsStore
+const { showToast } = uiStore
 
 const importTextarea = ref<InstanceType<typeof Textarea> | null>(null)
 
@@ -42,7 +35,7 @@ async function copyToClipboard(text: string) {
 }
 
 function copyImportPrompt() {
-  const prompt = prompts.generateWordSet.replace('{{WORDS}}', importWords)
+  const prompt = prompts.generateWordSet.replace('{{WORDS}}', importWords.value)
   copyToClipboard(prompt)
   showToast(t('import.copied'))
 }

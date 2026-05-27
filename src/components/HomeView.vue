@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { FileQuestion, Plus, Upload } from 'lucide-vue-next'
+import { storeToRefs } from 'pinia'
 import { useSessionStore } from '@/stores/session'
 import { useSetsStore } from '@/stores/sets'
 import { useUIStore } from '@/stores/ui'
@@ -7,9 +8,13 @@ import SetCard from './SetCard.vue'
 import Button from './ui/button/Button.vue'
 import Card from './ui/card/Card.vue'
 
-const { hasSets, sets, isSetInProgress, requestDelete, openSetEditor, openImport } = useSetsStore()
-const { startFlashcards, openPracticeDialog } = useSessionStore()
-const { openTransfer } = useUIStore()
+const setsStore = useSetsStore()
+const sessionStore = useSessionStore()
+const uiStore = useUIStore()
+const { hasSets, sets } = storeToRefs(setsStore)
+const { isSetInProgress, requestDelete, openSetEditor, openImport } = setsStore
+const { startFlashcards, openPracticeDialog } = sessionStore
+const { openTransfer } = uiStore
 </script>
 
 <template>
