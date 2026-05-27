@@ -1,18 +1,25 @@
-<script setup>
-import { cn } from '../../../lib/utils'
+<script setup lang="ts">
 import { ref } from 'vue'
+import { cn } from '@/lib/cn'
 
-defineProps({
-  modelValue: { type: String, default: '' },
-  class: { type: String, default: '' },
-  placeholder: { type: String, default: '' },
-  rows: { type: Number, default: 4 },
-  disabled: { type: Boolean, default: false },
+withDefaults(defineProps<{
+  modelValue?: string
+  class?: string
+  placeholder?: string
+  rows?: number
+  disabled?: boolean
+}>(), {
+  modelValue: '',
+  class: '',
+  placeholder: '',
+  rows: 4,
+  disabled: false,
 })
+defineEmits<{
+  'update:modelValue': [value: string]
+}>()
 
-defineEmits(['update:modelValue'])
-
-const textarea = ref(null)
+const textarea = ref<HTMLTextAreaElement | null>(null)
 
 defineExpose({
   focus: () => textarea.value?.focus(),
@@ -32,6 +39,6 @@ defineExpose({
         $props.class,
       )
     "
-    @input="$emit('update:modelValue', $event.target.value)"
+    @input="$emit('update:modelValue', ($event.target as HTMLTextAreaElement).value)"
   />
 </template>

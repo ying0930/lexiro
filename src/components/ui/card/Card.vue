@@ -1,20 +1,19 @@
-<script setup>
-import { cn } from '../../../lib/utils'
+<script setup lang="ts">
+import { cn } from '@/lib/cn'
 
-defineProps({
-  class: { type: String, default: '' },
-  glow: { type: Boolean, default: true },
-})
+defineProps<{
+  glow?: boolean
+  class?: string
+}>()
 </script>
 
 <template>
   <div :class="cn('panel relative overflow-hidden transition-all duration-300', $props.class)">
-    <!-- 1. Ambient Glow Layers (Aria-hidden & Click-through-safe) -->
     <template v-if="glow">
-      <div class="pointer-events-none absolute -left-20 -top-20 h-72 w-72 rounded-full bg-emerald-500/10 blur-3xl dark:hidden" aria-hidden="true"></div>
-      <div class="pointer-events-none absolute -right-20 -bottom-20 h-72 w-72 rounded-full bg-indigo-500/10 blur-3xl dark:hidden" aria-hidden="true"></div>
+      <div class="pointer-events-none absolute -left-20 -top-20 h-72 w-72 rounded-full bg-emerald-500/10 blur-3xl dark:hidden" aria-hidden="true" />
+      <div class="pointer-events-none absolute -right-20 -bottom-20 h-72 w-72 rounded-full bg-indigo-500/10 blur-3xl dark:hidden" aria-hidden="true" />
     </template>
-    
+
     <slot />
   </div>
 </template>

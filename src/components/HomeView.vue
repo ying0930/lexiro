@@ -1,34 +1,28 @@
-<script setup>
-import { Upload, Plus, FileQuestion } from 'lucide-vue-next'
-import { useVocab } from '../composables/useVocab.js'
+<script setup lang="ts">
+import { FileQuestion, Plus, Upload } from 'lucide-vue-next'
+import { useSessionStore } from '@/stores/session'
+import { useSetsStore } from '@/stores/sets'
+import { useUIStore } from '@/stores/ui'
+import SetCard from './SetCard.vue'
 import Button from './ui/button/Button.vue'
 import Card from './ui/card/Card.vue'
-import SetCard from './SetCard.vue'
 
-const {
-  hasSets,
-  sets,
-  openTransfer,
-  openImport,
-  isSetInProgress,
-  startFlashcards,
-  openPracticeDialog,
-  requestDelete,
-  openSetEditor,
-} = useVocab()
+const { hasSets, sets, isSetInProgress, requestDelete, openSetEditor, openImport } = useSetsStore()
+const { startFlashcards, openPracticeDialog } = useSessionStore()
+const { openTransfer } = useUIStore()
 </script>
 
 <template>
   <section class="space-y-6">
     <!-- Top Toolbar -->
     <div v-if="hasSets" class="flex flex-wrap items-center justify-end gap-3 mb-2">
-      <Button variant="outline" @click="openTransfer" class="gap-2 px-5 py-2.5">
+      <Button variant="outline" class="gap-2 px-5 py-2.5" @click="openTransfer">
         <Upload class="h-4 w-4" />
-        <span>備份與匯入</span>
+        <span>{{ $t('home.backupAndImport') }}</span>
       </Button>
-      <Button variant="default" @click="openImport" class="gap-2 px-6 py-2.5">
+      <Button variant="default" class="gap-2 px-6 py-2.5" @click="openImport">
         <Plus class="h-4 w-4" />
-        <span>新增單字集</span>
+        <span>{{ $t('home.addSet') }}</span>
       </Button>
     </div>
 
@@ -40,21 +34,21 @@ const {
         </span>
         <div class="space-y-2 max-w-md">
           <h2 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-ink-950 dark:text-ink-50">
-            Wordmem 尚未載入單字集
+            {{ $t('home.title') }}
           </h2>
           <p class="text-sm leading-relaxed text-ink-500 dark:text-ink-400">
-            您可以點擊 <strong class="font-bold text-emerald-600 dark:text-emerald-400">新增單字集</strong> 按鈕，或匯入之前生成過的單字集。
+            {{ $t('home.description') }}
           </p>
         </div>
-        
+
         <div class="flex flex-col sm:flex-row items-center gap-3 w-full justify-center pt-2">
-          <Button variant="default" @click="openImport" class="gap-2 px-8 py-3">
+          <Button variant="default" class="gap-2 px-8 py-3" @click="openImport">
             <Plus class="h-4 w-4" />
-            <span>新增單字集</span>
+            <span>{{ $t('home.addSet') }}</span>
           </Button>
-          <Button variant="outline" @click="openTransfer" class="gap-2 px-8 py-3">
+          <Button variant="outline" class="gap-2 px-8 py-3" @click="openTransfer">
             <Upload class="h-4 w-4" />
-            <span>備份與匯入</span>
+            <span>{{ $t('home.backupAndImport') }}</span>
           </Button>
         </div>
       </Card>

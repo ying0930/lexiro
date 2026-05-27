@@ -1,28 +1,20 @@
-<script setup>
-import { ArrowLeft, PencilLine, Trash2, Sun, Moon } from 'lucide-vue-next'
-import { useVocab } from '../composables/useVocab.js'
+<script setup lang="ts">
+import { ArrowLeft, Moon, PencilLine, Sun, Trash2 } from 'lucide-vue-next'
+import { useSessionStore } from '@/stores/session'
+import { useSetsStore } from '@/stores/sets'
+import { useUIStore } from '@/stores/ui'
 import Badge from './ui/badge/Badge.vue'
 import Button from './ui/button/Button.vue'
 
-const {
-  currentView,
-  hasSets,
-  sets,
-  totalWordCount,
-  activeSet,
-  theme,
-  exitCurrentView,
-  editActiveSet,
-  deleteActiveSet,
-  toggleTheme,
-} = useVocab()
+const { currentView, exitCurrentView } = useSessionStore()
+const { hasSets, sets, totalWordCount, activeSet, editActiveSet, deleteActiveSet } = useSetsStore()
+const { theme, toggleTheme } = useUIStore()
 </script>
 
 <template>
   <!-- Premium Header Shell -->
   <header class="sticky top-0 z-40 px-4 sm:px-6 py-4 bg-transparent transition-all duration-300">
     <div class="mx-auto flex max-w-5xl items-center justify-between gap-4 px-6 py-3 rounded-2xl border border-white/40 dark:border-white/10 bg-white/40 dark:bg-ink-900/40 backdrop-blur-xl shadow-md shadow-black/5 dark:shadow-none transition-all duration-300">
-      
       <!-- Header Info -->
       <div class="flex items-center gap-3">
         <Button
@@ -76,7 +68,7 @@ const {
           </Button>
         </template>
 
-        <span class="w-px h-5 bg-ink-200 dark:bg-ink-800 mx-1 hidden sm:inline-block"></span>
+        <span class="w-px h-5 bg-ink-200 dark:bg-ink-800 mx-1 hidden sm:inline-block" />
 
         <!-- Dynamic Theme Switcher -->
         <Button
@@ -90,7 +82,6 @@ const {
           <Moon v-else class="h-4 w-4 text-indigo-600" />
         </Button>
       </div>
-
     </div>
   </header>
 </template>

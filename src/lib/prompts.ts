@@ -94,7 +94,7 @@ const PROMPTS = {
 3. 提供這些單字常見的搭配用法。
 
 以下是我的錯題列表：
-{{WRONG_QUESTIONS}}`
+{{WRONG_QUESTIONS}}`,
 }
 
 export default PROMPTS

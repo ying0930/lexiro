@@ -1,10 +1,13 @@
-<script setup>
+<script setup lang="ts">
 import { computed } from 'vue'
-import { cn } from '../../../lib/utils'
+import { cn } from '@/lib/cn'
 
-const props = defineProps({
-  modelValue: { type: Number, default: 0 },
-  class: { type: String, default: '' },
+const props = withDefaults(defineProps<{
+  modelValue?: number
+  class?: string
+}>(), {
+  modelValue: 0,
+  class: '',
 })
 
 const width = computed(() => `${Math.max(0, Math.min(100, props.modelValue))}%`)

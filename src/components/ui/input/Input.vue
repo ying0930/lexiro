@@ -1,15 +1,22 @@
-<script setup>
-import { cn } from '../../../lib/utils'
+<script setup lang="ts">
+import { cn } from '@/lib/cn'
 
-defineProps({
-  modelValue: { type: String, default: '' },
-  class: { type: String, default: '' },
-  placeholder: { type: String, default: '' },
-  type: { type: String, default: 'text' },
-  disabled: { type: Boolean, default: false },
+withDefaults(defineProps<{
+  modelValue?: string
+  class?: string
+  placeholder?: string
+  type?: string
+  disabled?: boolean
+}>(), {
+  modelValue: '',
+  class: '',
+  placeholder: '',
+  type: 'text',
+  disabled: false,
 })
-
-defineEmits(['update:modelValue'])
+defineEmits<{
+  'update:modelValue': [value: string]
+}>()
 </script>
 
 <template>
@@ -24,6 +31,6 @@ defineEmits(['update:modelValue'])
         $props.class,
       )
     "
-    @input="$emit('update:modelValue', $event.target.value)"
-  />
+    @input="$emit('update:modelValue', ($event.target as HTMLInputElement).value)"
+  >
 </template>

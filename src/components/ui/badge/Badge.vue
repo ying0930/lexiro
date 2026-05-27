@@ -1,10 +1,13 @@
-<script setup>
+<script setup lang="ts">
 import { computed } from 'vue'
-import { cn } from '../../../lib/utils'
+import { cn } from '@/lib/cn'
 
-const props = defineProps({
-  variant: { type: String, default: 'secondary' },
-  class: { type: String, default: '' },
+const props = withDefaults(defineProps<{
+  variant?: 'default' | 'secondary' | 'success' | 'destructive' | 'outline' | 'indigo'
+  class?: string
+}>(), {
+  variant: 'secondary',
+  class: '',
 })
 
 const classes = computed(() =>

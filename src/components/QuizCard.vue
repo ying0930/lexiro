@@ -1,25 +1,31 @@
-<script setup>
+<script setup lang="ts">
+import { Check, ClipboardCopy } from 'lucide-vue-next'
 import { computed, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { cn } from '@/lib/cn'
+import PROMPTS from '@/lib/prompts'
 import Badge from './ui/badge/Badge.vue'
-import Card from './ui/card/Card.vue'
 import Button from './ui/button/Button.vue'
-import { ClipboardCopy, Check } from 'lucide-vue-next'
-import PROMPTS from '../../prompts.js'
-import { cn } from '../lib/utils'
+import Card from './ui/card/Card.vue'
 
-const props = defineProps({
-  entry: { type: Object, required: true },
-  index: { type: Number, required: true },
-  total: { type: Number, required: true },
-  review: { type: Boolean, default: false },
-  draft: { type: Object, default: null },
-  batchMode: { type: Boolean, default: false },
-})
+const props = defineProps<{
+  entry: { item: { word: string, pos: string, meaning: string, example: string, question: { prompt: string, opts: string[], ans: number } } }
+  index: number
+  total: number
+  review?: boolean
+  draft: { selectedIndex: number | null, answered?: boolean } | null
+  batchMode?: boolean
+}>()
 
-const emit = defineEmits(['draft-change', 'toast'])
+const emit = defineEmits<{
+  'draft-change': [payload: { selectedIndex: number | null, answered: boolean }]
+  'toast': [message: string]
+}>()
+
+const { t } = useI18n()
 
 const labels = ['A', 'B', 'C', 'D']
-const selectedIndex = ref(null)
+const selectedIndex = ref<number | null>(null)
 const answered = ref(false)
 const copied = ref(false)
 
@@ -43,8 +49,9 @@ watch([selectedIndex, answered], () => {
   })
 })
 
-function choose(index) {
-  if (!props.batchMode && answered.value) return
+function choose(index: number) {
+  if (!props.batchMode && answered.value)
+    return
   selectedIndex.value = index
 }
 
@@ -68,17 +75,18 @@ async function copyExplanationPrompt() {
   try {
     await navigator.clipboard.writeText(text)
     copied.value = true
-    emit('toast', '已複製此題解析指令，請貼至 AI 平台獲得解析')
+    emit('toast', t('result.copiedAiPromptSingle', { word: props.entry.item.word }))
     setTimeout(() => {
       copied.value = false
     }, 2000)
-  } catch (err) {
-    emit('toast', '複製失敗')
+  }
+  catch (err) {
+    emit('toast', t('toast.copyFailed'))
     console.error('Failed to copy text: ', err)
   }
 }
 
-function optionClass(index) {
+function optionClass(index: number) {
   const isCorrect = index === props.entry.item.question.ans
   const isSelected = index === selectedIndex.value
 
@@ -105,30 +113,32 @@ function optionClass(index) {
     <div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-left">
       <div class="space-y-1">
         <div class="flex items-center gap-2">
-          <Badge :variant="review ? 'destructive' : 'indigo'" class="text-[10px] px-2 py-0.5 font-semibold">
-            {{ review ? '錯題複習' : '選擇練習' }}
+          <Badge :variant="review ? 'destructive' : 'secondary'" class="text-[10px] px-2 py-0.5 font-semibold">
+            {{ review ? '錯題複習' : $t('setCard.quiz') }}
           </Badge>
           <span class="text-xs font-semibold text-ink-400 dark:text-ink-500 uppercase tracking-wider">
-            第 {{ index + 1 }} / {{ total }} 題
+            {{ $t('result.question', { index: index + 1 }) }} / {{ total }} 題
           </span>
         </div>
       </div>
-      
+
       <div class="flex items-center gap-2 self-start sm:self-auto shrink-0">
         <Badge variant="secondary" class="rounded-lg px-2.5 py-1 text-[11px] font-semibold bg-ink-100 dark:bg-ink-800 border-none">
-          {{ batchMode ? '待送出' : answered ? '已完成' : '進行中' }}
+          {{ batchMode ? '待送出' : answered ? '已完成' : $t('home.inProgress') }}
         </Badge>
         <Button variant="outline" size="sm" class="h-8 gap-1.5 text-xs text-ink-600 dark:text-ink-400 px-3 hover:bg-ink-100 dark:hover:bg-ink-800" @click="copyExplanationPrompt">
           <Check v-if="copied" class="h-3.5 w-3.5 text-emerald-600" />
           <ClipboardCopy v-else class="h-3.5 w-3.5" />
-          <span>{{ copied ? '已複製' : 'AI 解析' }}</span>
+          <span>{{ copied ? '已複製' : $t('result.aiExplain') }}</span>
         </Button>
       </div>
     </div>
 
     <!-- Question Block (題幹) -->
     <div class="rounded-2xl bg-ink-100/50 dark:bg-ink-900/40 border border-ink-200/50 dark:border-ink-800/50 p-5 text-left">
-      <p class="text-xs font-bold uppercase tracking-widest text-ink-400 dark:text-ink-500">題幹</p>
+      <p class="text-xs font-bold uppercase tracking-widest text-ink-400 dark:text-ink-500">
+        題幹
+      </p>
       <p class="mt-3 text-[15px] leading-relaxed text-ink-800 dark:text-ink-200 font-medium sm:text-base">
         <template v-if="!answered && hasBlank">
           {{ promptParts[0] }}
@@ -148,7 +158,7 @@ function optionClass(index) {
     <div class="mt-6 grid gap-3 sm:grid-cols-2">
       <button
         v-for="(option, optionIndex) in entry.item.question.opts"
-        :key="`${entry.item.id}-${optionIndex}`"
+        :key="`${optionIndex}`"
         :class="optionClass(optionIndex)"
         :disabled="answered"
         @click="choose(optionIndex)"
@@ -161,16 +171,10 @@ function optionClass(index) {
     <!-- Explanation Block (Single Mode Answered) -->
     <div v-if="!batchMode && answered" class="mt-6 rounded-2xl border border-ink-200 dark:border-ink-800 bg-white dark:bg-ink-900 p-5 text-left transition-all duration-300">
       <p class="text-sm font-bold text-ink-950 dark:text-ink-50">
-        {{
-          selectedIndex === entry.item.question.ans
-            ? '答案正確'
-            : selectedIndex === null
-              ? '已略過此題'
-              : '答案錯誤'
-        }}
+        {{ selectedIndex === entry.item.question.ans ? $t('result.correct') : selectedIndex === null ? $t('result.skipped') : $t('result.wrong') }}
       </p>
       <p class="mt-2 text-sm leading-relaxed text-ink-600 dark:text-ink-400">
-        正解是 <span class="font-bold text-emerald-600 dark:text-emerald-400">{{ answerText }}</span>。
+        {{ $t('result.correctAnswer') }}：<span class="font-bold text-emerald-600 dark:text-emerald-400"> {{ answerText }}</span>。
         <span class="block mt-1 font-medium text-ink-800 dark:text-ink-200">{{ entry.item.meaning }}</span>
       </p>
     </div>

@@ -1,27 +1,42 @@
-<script setup>
-import { ref, computed, nextTick } from 'vue'
+<script setup lang="ts">
 import { Cloud, Download, LogIn, LogOut, RefreshCw, Upload } from 'lucide-vue-next'
-import { useVocab } from '../../composables/useVocab.js'
-import Dialog from '../ui/dialog/Dialog.vue'
+import { computed, nextTick, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { useBackupStore } from '@/stores/backup'
+import { useSetsStore } from '@/stores/sets'
+import { useUIStore } from '@/stores/ui'
 import Button from '../ui/button/Button.vue'
+import Dialog from '../ui/dialog/Dialog.vue'
+
+const { t } = useI18n()
 
 const {
   transferOpen,
+  closeTransfer,
+} = useUIStore()
+
+const {
   sets,
   exportSelectedIds,
   exportAllSelected,
   exportSelectedCount,
   exportSelectedWordCount,
   exportError,
-  zipImportInputKey,
-  zipImportName,
-  zipImportPreview,
-  zipImportError,
-  zipImportSets,
   importMode,
   duplicateSummary,
   importVersionDiffs,
   importVersionChoices,
+  toggleExportAll,
+  exportSelectedSetsToZip,
+  setImportVersionChoice,
+} = useSetsStore()
+
+const {
+  zipImportInputKey,
+  zipImportName,
+  zipImportPreview,
+  zipImportSets,
+  zipImportError,
   driveConfigured,
   driveSignedIn,
   driveAccountLabel,
@@ -33,28 +48,25 @@ const {
   driveSelectedFileId,
   driveImportPreview,
   driveImportSets,
-  closeTransfer,
-  toggleExportAll,
-  exportSelectedSetsToZip,
-  resetZipImportState,
-  handleZipImportChange,
-  applyZipImport,
   signInDrive,
   signOutDrive,
   backupSelectedSetsToDrive,
   refreshDriveBackups,
   selectDriveBackup,
   applyDriveImport,
-  setImportVersionChoice,
-} = useVocab()
+  resetZipImportState,
+  handleZipImportChange,
+  applyZipImport,
+} = useBackupStore()
 
 const dropdownOpen = ref(false)
-const triggerRef = ref(null)
-const dropdownStyle = ref({})
+const triggerRef = ref<HTMLButtonElement | null>(null)
+const dropdownStyle = ref<Record<string, string>>({})
 
 const selectedBackupLabel = computed(() => {
-  const selected = driveBackups.value.find(file => file.id === driveSelectedFileId.value)
-  if (!selected) return '請選擇備份檔'
+  const selected = driveBackups.find(file => file.id === driveSelectedFileId)
+  if (!selected)
+    return t('backup.selectBackupPlaceholder')
   return `${selected.name} · ${new Date(selected.createdTime).toLocaleString()}`
 })
 
@@ -66,17 +78,17 @@ function toggleDropdown() {
         const rect = triggerRef.value.getBoundingClientRect()
         dropdownStyle.value = {
           position: 'fixed',
-          top: `${rect.bottom + 6}px`, // 6px gap below button
+          top: `${rect.bottom + 6}px`,
           left: `${rect.left}px`,
           width: `${rect.width}px`,
-          zIndex: 9999
+          zIndex: '9999',
         }
       }
     })
   }
 }
 
-function selectOption(id) {
+function selectOption(id: string) {
   selectDriveBackup(id)
   dropdownOpen.value = false
 }
@@ -85,8 +97,8 @@ function selectOption(id) {
 <template>
   <Dialog
     :open="transferOpen"
-    title="備份與匯入"
-    description="下載 ZIP 離線備份 Wordmem 單字集，或手動備份到 Google Drive。"
+    :title="$t('backup.title')"
+    :description="$t('backup.description')"
     width-class="max-w-3xl"
     @close="closeTransfer"
   >
@@ -95,24 +107,30 @@ function selectOption(id) {
       <div class="rounded-2xl border border-ink-200 dark:border-ink-800 bg-ink-100/50 dark:bg-ink-900/40 p-5 text-left">
         <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
           <div>
-            <p class="text-sm font-bold text-ink-950 dark:text-ink-50">Google Drive</p>
-            <p class="mt-1 text-xs text-ink-400 dark:text-ink-500">手動備份到 Google Drive，或從既有備份導入。</p>
-            <p v-if="driveAccountLabel" class="mt-2 text-xs font-semibold text-emerald-700 dark:text-emerald-400">{{ driveAccountLabel }}</p>
+            <p class="text-sm font-bold text-ink-950 dark:text-ink-50">
+              {{ $t('backup.driveSection') }}
+            </p>
+            <p class="mt-1 text-xs text-ink-400 dark:text-ink-500">
+              {{ $t('backup.driveDescription') }}
+            </p>
+            <p v-if="driveAccountLabel" class="mt-2 text-xs font-semibold text-emerald-700 dark:text-emerald-400">
+              {{ driveAccountLabel }}
+            </p>
           </div>
           <div class="flex flex-wrap gap-2">
             <Button v-if="!driveSignedIn" variant="outline" size="sm" class="bg-white dark:bg-ink-900" :disabled="!driveConfigured" @click="signInDrive">
               <LogIn class="h-4 w-4" />
-              <span>登入 Google</span>
+              <span>{{ $t('backup.signIn') }}</span>
             </Button>
             <Button v-else variant="outline" size="sm" class="bg-white dark:bg-ink-900" @click="signOutDrive">
               <LogOut class="h-4 w-4" />
-              <span>登出/切換帳號</span>
+              <span>{{ $t('backup.signOut') }}</span>
             </Button>
           </div>
         </div>
 
         <p v-if="!driveConfigured" class="mt-4 rounded-xl bg-amber-50 dark:bg-amber-950/20 border border-amber-100 dark:border-amber-900/50 px-4 py-2.5 text-xs text-amber-700 dark:text-amber-300 font-semibold">
-          尚未設定 VITE_GOOGLE_CLIENT_ID。設定 Google OAuth Client ID 後才能使用 Drive 備份。
+          {{ $t('backup.driveNotConfigured') }}
         </p>
         <p v-if="driveError" class="mt-4 rounded-xl bg-red-50 dark:bg-red-950/20 border border-red-100 dark:border-red-900/50 px-4 py-2.5 text-xs text-red-600 dark:text-red-400 font-semibold">
           {{ driveError }}
@@ -127,7 +145,7 @@ function selectOption(id) {
             @click="backupSelectedSetsToDrive"
           >
             <Cloud class="h-4 w-4" />
-            <span>備份到 Drive</span>
+            <span>{{ $t('backup.backupToDrive') }}</span>
           </Button>
           <Button
             variant="outline"
@@ -137,13 +155,13 @@ function selectOption(id) {
             @click="refreshDriveBackups"
           >
             <RefreshCw class="h-4 w-4" />
-            <span>讀取 Drive 備份</span>
+            <span>{{ $t('backup.loadDriveBackups') }}</span>
           </Button>
         </div>
 
         <div v-if="driveBackups.length" class="mt-4 space-y-2">
-          <label class="text-xs font-bold text-ink-500 dark:text-ink-400">選擇 Drive 備份</label>
-          
+          <label class="text-xs font-bold text-ink-500 dark:text-ink-400">{{ $t('backup.selectDriveBackup') }}</label>
+
           <!-- Custom Dropdown Selector -->
           <div class="relative">
             <button
@@ -161,7 +179,7 @@ function selectOption(id) {
             <!-- Custom Options List (Teleported to body for highest z-index and no layout squeezing!) -->
             <Teleport to="body">
               <!-- Custom Click-Outside Overlay Catcher -->
-              <div v-if="dropdownOpen" class="fixed inset-0 z-[9998] bg-transparent" @click="dropdownOpen = false"></div>
+              <div v-if="dropdownOpen" class="fixed inset-0 z-[9998] bg-transparent" @click="dropdownOpen = false" />
 
               <Transition
                 enter-active-class="transition duration-100 ease-out"
@@ -183,7 +201,7 @@ function selectOption(id) {
                     :class="!driveSelectedFileId ? 'bg-ink-100 dark:bg-ink-800 text-emerald-600 dark:text-emerald-400' : 'text-ink-50 hover:bg-ink-50 dark:hover:bg-ink-850'"
                     @click="selectOption('')"
                   >
-                    請選擇備份檔
+                    {{ $t('backup.selectBackupPlaceholder') }}
                   </button>
 
                   <!-- Drive Backup Options -->
@@ -210,20 +228,24 @@ function selectOption(id) {
 
         <!-- Google Drive Import Settings (embedded directly in the card) -->
         <div v-if="driveImportSets && driveImportSets.length" class="mt-4 pt-4 border-t border-ink-200/30 dark:border-ink-800/30 space-y-4">
-          <p class="text-sm font-bold text-ink-950 dark:text-ink-50">導入設定</p>
+          <p class="text-sm font-bold text-ink-950 dark:text-ink-50">
+            {{ $t('backup.importSettings') }}
+          </p>
           <div class="grid gap-2 sm:grid-cols-2">
             <label class="flex cursor-pointer items-start gap-2 rounded-lg border border-ink-200 dark:border-ink-800 px-3 py-2 text-xs text-ink-600 dark:text-ink-300">
-              <input v-model="importMode" type="radio" value="append" class="mt-0.5 h-4 w-4 accent-emerald-500" />
-              <span><strong class="block text-ink-900 dark:text-ink-100">追加到本機</strong>同名單字集可逐一選擇版本。</span>
+              <input v-model="importMode" type="radio" value="append" class="mt-0.5 h-4 w-4 accent-emerald-500">
+              <span><strong class="block text-ink-900 dark:text-ink-100">{{ $t('backup.append') }}</strong>{{ $t('backup.appendDescription') }}</span>
             </label>
             <label class="flex cursor-pointer items-start gap-2 rounded-lg border border-ink-200 dark:border-ink-800 px-3 py-2 text-xs text-ink-600 dark:text-ink-300">
-              <input v-model="importMode" type="radio" value="overwrite" class="mt-0.5 h-4 w-4 accent-emerald-500" />
-              <span><strong class="block text-ink-900 dark:text-ink-100">覆蓋本機</strong>取代本機資料並重設目前進度。</span>
+              <input v-model="importMode" type="radio" value="overwrite" class="mt-0.5 h-4 w-4 accent-emerald-500">
+              <span><strong class="block text-ink-900 dark:text-ink-100">{{ $t('backup.overwrite') }}</strong>{{ $t('backup.overwriteDescription') }}</span>
             </label>
           </div>
 
           <div v-if="importMode === 'append' && importVersionDiffs.length" class="mt-4 space-y-3">
-            <p class="text-xs font-bold text-ink-500 dark:text-ink-400">同名單字集版本差異</p>
+            <p class="text-xs font-bold text-ink-500 dark:text-ink-400">
+              {{ $t('backup.versionDiff') }}
+            </p>
             <div
               v-for="diff in importVersionDiffs"
               :key="diff.setName"
@@ -231,9 +253,11 @@ function selectOption(id) {
             >
               <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div>
-                  <p class="text-sm font-bold text-ink-900 dark:text-ink-100">{{ diff.setName }}</p>
+                  <p class="text-sm font-bold text-ink-900 dark:text-ink-100">
+                    {{ diff.setName }}
+                  </p>
                   <p class="mt-1 text-xs text-ink-500 dark:text-ink-400">
-                    本機 {{ diff.localCount }} 個單字，匯入版本 {{ diff.importedCount }} 個單字
+                    {{ $t('backup.keepLocal') }} {{ $t('home.wordsCount', { count: diff.localCount }) }}，{{ $t('backup.useImported') }} {{ $t('home.wordsCount', { count: diff.importedCount }) }}
                   </p>
                 </div>
                 <div class="grid gap-1 text-xs text-ink-600 dark:text-ink-300">
@@ -245,8 +269,8 @@ function selectOption(id) {
                       :checked="importVersionChoices[diff.setName] !== 'imported'"
                       class="h-4 w-4 accent-emerald-500"
                       @change="setImportVersionChoice(diff.setName, 'local')"
-                    />
-                    <span>保留本機</span>
+                    >
+                    <span>{{ $t('backup.keepLocal') }}</span>
                   </label>
                   <label class="flex items-center gap-2">
                     <input
@@ -256,24 +280,24 @@ function selectOption(id) {
                       :checked="importVersionChoices[diff.setName] === 'imported'"
                       class="h-4 w-4 accent-emerald-500"
                       @change="setImportVersionChoice(diff.setName, 'imported')"
-                    />
-                    <span>使用匯入版本</span>
+                    >
+                    <span>{{ $t('backup.useImported') }}</span>
                   </label>
                 </div>
               </div>
 
               <div class="mt-3 grid gap-2 text-xs text-ink-500 dark:text-ink-400 sm:grid-cols-3">
                 <p>
-                  <strong class="text-emerald-700 dark:text-emerald-400">新增</strong>
-                  {{ diff.added.length ? diff.added.slice(0, 5).join('、') : '無' }}<span v-if="diff.added.length > 5"> 等 {{ diff.added.length }} 個</span>
+                  <strong class="text-emerald-700 dark:text-emerald-400">{{ $t('backup.added') }}</strong>
+                  {{ diff.added.length ? diff.added.slice(0, 5).join('、') : $t('backup.none') }}<span v-if="diff.added.length > 5"> 等 {{ diff.added.length }} 個</span>
                 </p>
                 <p>
-                  <strong class="text-red-600 dark:text-red-400">移除</strong>
-                  {{ diff.removed.length ? diff.removed.slice(0, 5).join('、') : '無' }}<span v-if="diff.removed.length > 5"> 等 {{ diff.removed.length }} 個</span>
+                  <strong class="text-red-600 dark:text-red-400">{{ $t('backup.removed') }}</strong>
+                  {{ diff.removed.length ? diff.removed.slice(0, 5).join('、') : $t('backup.none') }}<span v-if="diff.removed.length > 5"> 等 {{ diff.removed.length }} 個</span>
                 </p>
                 <p>
-                  <strong class="text-amber-700 dark:text-amber-300">修改</strong>
-                  {{ diff.changed.length ? diff.changed.slice(0, 5).join('、') : '無' }}<span v-if="diff.changed.length > 5"> 等 {{ diff.changed.length }} 個</span>
+                  <strong class="text-amber-700 dark:text-amber-300">{{ $t('backup.modified') }}</strong>
+                  {{ diff.changed.length ? diff.changed.slice(0, 5).join('、') : $t('backup.none') }}<span v-if="diff.changed.length > 5"> 等 {{ diff.changed.length }} 個</span>
                 </p>
               </div>
             </div>
@@ -296,7 +320,7 @@ function selectOption(id) {
             @click="applyDriveImport"
           >
             <Upload class="h-4 w-4" />
-            <span>從 Drive 導入</span>
+            <span>{{ $t('backup.applyDriveImport') }}</span>
           </Button>
         </div>
       </div>
@@ -305,8 +329,12 @@ function selectOption(id) {
       <div class="rounded-2xl border border-ink-200 dark:border-ink-800 bg-ink-100/50 dark:bg-ink-900/40 p-5 text-left">
         <div class="flex items-start justify-between gap-4">
           <div>
-            <p class="text-sm font-bold text-ink-950 dark:text-ink-50">匯入 ZIP</p>
-            <p class="mt-1 text-xs text-ink-400 dark:text-ink-500">選擇由 Wordmem 生成的 ZIP 備份檔案。</p>
+            <p class="text-sm font-bold text-ink-950 dark:text-ink-50">
+              {{ $t('backup.importZip') }}
+            </p>
+            <p class="mt-1 text-xs text-ink-400 dark:text-ink-500">
+              {{ $t('backup.importZipDescription') }}
+            </p>
           </div>
           <Button
             variant="outline"
@@ -315,7 +343,7 @@ function selectOption(id) {
             :disabled="!zipImportPreview && !zipImportError && !zipImportName"
             @click="resetZipImportState"
           >
-            清除
+            {{ $t('backup.clear') }}
           </Button>
         </div>
 
@@ -326,8 +354,10 @@ function selectOption(id) {
             accept=".zip"
             class="block w-full text-sm text-ink-500 file:mr-4 file:rounded-xl file:border-0 file:bg-ink-950 dark:file:bg-ink-50 file:px-4 file:py-2.5 file:text-xs file:font-semibold file:text-white dark:file:text-ink-950 file:transition-all file:cursor-pointer hover:file:opacity-90 file:active:scale-95"
             @change="handleZipImportChange"
-          />
-          <p v-if="zipImportName" class="text-xs text-ink-400 dark:text-ink-500 font-bold">已選擇檔案：{{ zipImportName }}</p>
+          >
+          <p v-if="zipImportName" class="text-xs text-ink-400 dark:text-ink-500 font-bold">
+            {{ $t('backup.selectedFile', { name: zipImportName }) }}
+          </p>
         </div>
 
         <p v-if="zipImportPreview" class="mt-3 rounded-xl bg-emerald-500/10 border border-emerald-100 dark:border-emerald-900/40 px-4 py-2.5 text-xs text-emerald-700 dark:text-emerald-400 font-semibold">
@@ -339,20 +369,24 @@ function selectOption(id) {
 
         <!-- ZIP Import Settings (embedded directly in the card) -->
         <div v-if="zipImportSets && zipImportSets.length" class="mt-4 pt-4 border-t border-ink-200/30 dark:border-ink-800/30 space-y-4">
-          <p class="text-sm font-bold text-ink-950 dark:text-ink-50">導入設定</p>
+          <p class="text-sm font-bold text-ink-950 dark:text-ink-50">
+            {{ $t('backup.importSettings') }}
+          </p>
           <div class="grid gap-2 sm:grid-cols-2">
             <label class="flex cursor-pointer items-start gap-2 rounded-lg border border-ink-200 dark:border-ink-800 px-3 py-2 text-xs text-ink-600 dark:text-ink-300">
-              <input v-model="importMode" type="radio" value="append" class="mt-0.5 h-4 w-4 accent-emerald-500" />
-              <span><strong class="block text-ink-900 dark:text-ink-100">追加到本機</strong>同名單字集可逐一選擇版本。</span>
+              <input v-model="importMode" type="radio" value="append" class="mt-0.5 h-4 w-4 accent-emerald-500">
+              <span><strong class="block text-ink-900 dark:text-ink-100">{{ $t('backup.append') }}</strong>{{ $t('backup.appendDescription') }}</span>
             </label>
             <label class="flex cursor-pointer items-start gap-2 rounded-lg border border-ink-200 dark:border-ink-800 px-3 py-2 text-xs text-ink-600 dark:text-ink-300">
-              <input v-model="importMode" type="radio" value="overwrite" class="mt-0.5 h-4 w-4 accent-emerald-500" />
-              <span><strong class="block text-ink-900 dark:text-ink-100">覆蓋本機</strong>取代本機資料並重設目前進度。</span>
+              <input v-model="importMode" type="radio" value="overwrite" class="mt-0.5 h-4 w-4 accent-emerald-500">
+              <span><strong class="block text-ink-900 dark:text-ink-100">{{ $t('backup.overwrite') }}</strong>{{ $t('backup.overwriteDescription') }}</span>
             </label>
           </div>
 
           <div v-if="importMode === 'append' && importVersionDiffs.length" class="mt-4 space-y-3">
-            <p class="text-xs font-bold text-ink-500 dark:text-ink-400">同名單字集版本差異</p>
+            <p class="text-xs font-bold text-ink-500 dark:text-ink-400">
+              {{ $t('backup.versionDiff') }}
+            </p>
             <div
               v-for="diff in importVersionDiffs"
               :key="diff.setName"
@@ -360,9 +394,11 @@ function selectOption(id) {
             >
               <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div>
-                  <p class="text-sm font-bold text-ink-900 dark:text-ink-100">{{ diff.setName }}</p>
+                  <p class="text-sm font-bold text-ink-900 dark:text-ink-100">
+                    {{ diff.setName }}
+                  </p>
                   <p class="mt-1 text-xs text-ink-500 dark:text-ink-400">
-                    本機有 {{ diff.localCount }} 個單字，匯入版本有 {{ diff.importedCount }} 個單字
+                    {{ $t('backup.keepLocal') }} {{ $t('home.wordsCount', { count: diff.localCount }) }}，{{ $t('backup.useImported') }} {{ $t('home.wordsCount', { count: diff.importedCount }) }}
                   </p>
                 </div>
                 <div class="grid gap-1 text-xs text-ink-600 dark:text-ink-300">
@@ -374,8 +410,8 @@ function selectOption(id) {
                       :checked="importVersionChoices[diff.setName] !== 'imported'"
                       class="h-4 w-4 accent-emerald-500"
                       @change="setImportVersionChoice(diff.setName, 'local')"
-                    />
-                    <span>保留本機</span>
+                    >
+                    <span>{{ $t('backup.keepLocal') }}</span>
                   </label>
                   <label class="flex items-center gap-2">
                     <input
@@ -385,24 +421,24 @@ function selectOption(id) {
                       :checked="importVersionChoices[diff.setName] === 'imported'"
                       class="h-4 w-4 accent-emerald-500"
                       @change="setImportVersionChoice(diff.setName, 'imported')"
-                    />
-                    <span>使用匯入版本</span>
+                    >
+                    <span>{{ $t('backup.useImported') }}</span>
                   </label>
                 </div>
               </div>
 
               <div class="mt-3 grid gap-2 text-xs text-ink-500 dark:text-ink-400 sm:grid-cols-3">
                 <p>
-                  <strong class="text-emerald-700 dark:text-emerald-400">新增</strong>
-                  {{ diff.added.length ? diff.added.slice(0, 5).join('、') : '無' }}<span v-if="diff.added.length > 5"> 等 {{ diff.added.length }} 個</span>
+                  <strong class="text-emerald-700 dark:text-emerald-400">{{ $t('backup.added') }}</strong>
+                  {{ diff.added.length ? diff.added.slice(0, 5).join('、') : $t('backup.none') }}<span v-if="diff.added.length > 5"> 等 {{ diff.added.length }} 個</span>
                 </p>
                 <p>
-                  <strong class="text-red-600 dark:text-red-400">移除</strong>
-                  {{ diff.removed.length ? diff.removed.slice(0, 5).join('、') : '無' }}<span v-if="diff.removed.length > 5"> 等 {{ diff.removed.length }} 個</span>
+                  <strong class="text-red-600 dark:text-red-400">{{ $t('backup.removed') }}</strong>
+                  {{ diff.removed.length ? diff.removed.slice(0, 5).join('、') : $t('backup.none') }}<span v-if="diff.removed.length > 5"> 等 {{ diff.removed.length }} 個</span>
                 </p>
                 <p>
-                  <strong class="text-amber-700 dark:text-amber-300">修改</strong>
-                  {{ diff.changed.length ? diff.changed.slice(0, 5).join('、') : '無' }}<span v-if="diff.changed.length > 5"> 等 {{ diff.changed.length }} 個</span>
+                  <strong class="text-amber-700 dark:text-amber-300">{{ $t('backup.modified') }}</strong>
+                  {{ diff.changed.length ? diff.changed.slice(0, 5).join('、') : $t('backup.none') }}<span v-if="diff.changed.length > 5"> 等 {{ diff.changed.length }} 個</span>
                 </p>
               </div>
             </div>
@@ -417,24 +453,26 @@ function selectOption(id) {
         </div>
 
         <div class="mt-4 pt-4 border-t border-ink-200/50 dark:border-ink-800/50 flex justify-end">
-          <Button variant="default" :disabled="!zipImportSets || !zipImportSets.length" @click="applyZipImport" class="gap-2">
+          <Button variant="default" :disabled="!zipImportSets || !zipImportSets.length" class="gap-2" @click="applyZipImport">
             <Upload class="h-4 w-4" />
-            <span>匯入此 ZIP</span>
+            <span>{{ $t('backup.applyImport') }}</span>
           </Button>
         </div>
       </div>
-
-
 
       <!-- 3. Export Section -->
       <div class="rounded-2xl border border-ink-200 dark:border-ink-800 bg-ink-100/50 dark:bg-ink-900/40 p-5 text-left">
         <div class="flex items-start justify-between gap-4">
           <div>
-            <p class="text-sm font-bold text-ink-950 dark:text-ink-50">匯出 Wordmem 備份</p>
-            <p class="mt-1 text-xs text-ink-400 dark:text-ink-500">勾選想要存檔的單字集，下載 ZIP 來離線備份。</p>
+            <p class="text-sm font-bold text-ink-950 dark:text-ink-50">
+              {{ $t('backup.exportSection') }}
+            </p>
+            <p class="mt-1 text-xs text-ink-400 dark:text-ink-500">
+              {{ $t('backup.exportDescription') }}
+            </p>
           </div>
           <Button variant="outline" size="sm" class="h-8 px-3 text-xs bg-white dark:bg-ink-900" :disabled="!sets.length" @click="toggleExportAll">
-            {{ exportAllSelected ? '取消全選' : '全選' }}
+            {{ exportAllSelected ? $t('backup.deselectAll') : $t('backup.selectAll') }}
           </Button>
         </div>
 
@@ -449,26 +487,28 @@ function selectOption(id) {
               type="checkbox"
               :value="set.id"
               class="h-4 w-4 accent-emerald-500 rounded border-ink-300"
-            />
+            >
             <div class="text-left">
               <p class="text-sm font-bold text-ink-900 dark:text-ink-100">{{ set.setName }}</p>
-              <p class="text-[11px] text-ink-400 dark:text-ink-500 font-semibold">{{ set.items.length }} 個單字</p>
+              <p class="text-[11px] text-ink-400 dark:text-ink-500 font-semibold">{{ $t('home.wordsCount', { count: set.items.length }) }}</p>
             </div>
           </label>
         </div>
-        <p v-else class="mt-4 text-xs text-ink-400 dark:text-ink-500 font-semibold">尚無任何單字集可供匯出。</p>
+        <p v-else class="mt-4 text-xs text-ink-400 dark:text-ink-500 font-semibold">
+          {{ $t('home.emptyState') }}
+        </p>
 
         <div class="mt-4 pt-4 border-t border-ink-200/50 dark:border-ink-800/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <p v-if="sets.length" class="text-xs text-ink-500 dark:text-ink-400 font-medium text-left">
-            已勾選 {{ exportSelectedCount }} 個單字集，包含 {{ exportSelectedWordCount }} 個單字。
+            {{ $t('backup.exported', { count: exportSelectedCount }) }}（{{ $t('home.wordsCount', { count: exportSelectedWordCount }) }}）
           </p>
-          <p v-else></p>
-          <Button variant="default" :disabled="!exportSelectedCount" @click="exportSelectedSetsToZip" class="gap-2">
+          <p v-else />
+          <Button variant="default" :disabled="!exportSelectedCount" class="gap-2" @click="exportSelectedSetsToZip">
             <Download class="h-4 w-4" />
-            <span>下載 ZIP</span>
+            <span>{{ $t('backup.downloadZip') }}</span>
           </Button>
         </div>
-        
+
         <p v-if="exportError" class="mt-3 rounded-xl bg-red-50 dark:bg-red-950/20 border border-red-100 dark:border-red-900/50 px-4 py-2 text-xs text-red-600 dark:text-red-400 font-semibold">
           {{ exportError }}
         </p>

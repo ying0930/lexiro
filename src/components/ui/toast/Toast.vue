@@ -1,7 +1,10 @@
-<script setup>
-defineProps({
-  message: { type: String, default: '' },
-  visible: { type: Boolean, default: false },
+<script setup lang="ts">
+withDefaults(defineProps<{
+  message: string
+  visible: boolean
+  class?: string
+}>(), {
+  class: '',
 })
 </script>
 
@@ -19,7 +22,7 @@ defineProps({
         v-if="visible"
         class="fixed inset-x-0 bottom-8 z-[70] mx-auto w-fit max-w-sm rounded-xl bg-ink-950/90 dark:bg-ink-50/90 text-white dark:text-ink-950 px-5 py-3 text-xs sm:text-sm font-medium shadow-xl backdrop-blur-md border border-ink-800/10 dark:border-ink-200/10 flex items-center justify-center gap-2"
       >
-        <span class="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+        <span class="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
         {{ message }}
       </div>
     </Transition>

@@ -1,14 +1,21 @@
-<script setup>
+<script setup lang="ts">
 import { computed } from 'vue'
-import { cn } from '../../../lib/utils'
+import { cn } from '@/lib/cn'
 
-const props = defineProps({
-  variant: { type: String, default: 'default' },
-  size: { type: String, default: 'default' },
-  class: { type: String, default: '' },
-  disabled: { type: Boolean, default: false },
-  loading: { type: Boolean, default: false },
-  type: { type: String, default: 'button' },
+const props = withDefaults(defineProps<{
+  variant?: 'default' | 'outline' | 'ghost' | 'link' | 'secondary' | 'destructive'
+  size?: 'default' | 'sm' | 'lg' | 'icon'
+  loading?: boolean
+  disabled?: boolean
+  class?: string
+  type?: 'button' | 'submit' | 'reset'
+}>(), {
+  variant: 'default',
+  size: 'default',
+  loading: false,
+  disabled: false,
+  class: '',
+  type: 'button',
 })
 
 const classes = computed(() =>
@@ -19,7 +26,7 @@ const classes = computed(() =>
       'border border-ink-200 dark:border-ink-800 bg-white dark:bg-ink-900 text-ink-700 dark:text-ink-300 hover:bg-ink-50 dark:hover:bg-ink-850': props.variant === 'outline' || props.variant === 'secondary',
       'text-ink-500 hover:bg-ink-100 dark:hover:bg-ink-800 hover:text-ink-950 dark:hover:text-ink-50': props.variant === 'ghost',
       'bg-red-50 dark:bg-red-950/20 text-red-600 dark:text-red-400 border border-red-100 dark:border-red-900/50 hover:bg-red-100/50 dark:hover:bg-red-950/40': props.variant === 'destructive',
-      
+
       'px-6 py-2.5': props.size === 'default',
       'px-4 py-1.5 text-xs rounded-lg': props.size === 'sm',
       'h-9 w-9 p-0': props.size === 'icon',
@@ -33,8 +40,8 @@ const classes = computed(() =>
 <template>
   <button :type="type" :disabled="disabled || loading" :class="classes">
     <svg v-if="loading" class="animate-spin h-4 w-4 text-current shrink-0" fill="none" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
     </svg>
     <slot />
   </button>

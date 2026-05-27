@@ -5,19 +5,21 @@ const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.file'
 const WORDMEM_FOLDER_NAME = 'Wordmem'
 const MAX_BACKUP_FILES = 10
 
-let gisScriptPromise = null
-let tokenClient = null
+let gisScriptPromise: Promise<void> | null = null
+let tokenClient: any = null
 let accessToken = localStorage.getItem('wordmem_drive_access_token') || ''
 let tokenExpiresAt = Number(localStorage.getItem('wordmem_drive_token_expires_at') || '0')
 
-function loadGoogleIdentityServices() {
-  if (window.google?.accounts?.oauth2) return Promise.resolve()
-  if (gisScriptPromise) return gisScriptPromise
+function loadGoogleIdentityServices(): Promise<void> {
+  if ((window as any).google?.accounts?.oauth2)
+    return Promise.resolve()
+  if (gisScriptPromise)
+    return gisScriptPromise
 
   gisScriptPromise = new Promise((resolve, reject) => {
     const existingScript = document.querySelector(`script[src="${GIS_SCRIPT_URL}"]`)
     if (existingScript) {
-      existingScript.addEventListener('load', resolve, { once: true })
+      existingScript.addEventListener('load', () => resolve(), { once: true })
       existingScript.addEventListener('error', () => reject(new Error('Google 登入服務載入失敗')), { once: true })
       return
     }
@@ -26,7 +28,7 @@ function loadGoogleIdentityServices() {
     script.src = GIS_SCRIPT_URL
     script.async = true
     script.defer = true
-    script.onload = resolve
+    script.onload = () => resolve()
     script.onerror = () => reject(new Error('Google 登入服務載入失敗'))
     document.head.appendChild(script)
   })
@@ -34,18 +36,19 @@ function loadGoogleIdentityServices() {
   return gisScriptPromise
 }
 
-function ensureClientId(clientId) {
+function ensureClientId(clientId: string): void {
   if (!clientId) {
     throw new Error('尚未設定 VITE_GOOGLE_CLIENT_ID，無法使用 Google Drive 備份。')
   }
 }
 
-async function getTokenClient(clientId) {
+async function getTokenClient(clientId: string): Promise<any> {
   ensureClientId(clientId)
-  if (tokenClient) return tokenClient
+  if (tokenClient)
+    return tokenClient
 
   await loadGoogleIdentityServices()
-  tokenClient = window.google.accounts.oauth2.initTokenClient({
+  tokenClient = (window as any).google.accounts.oauth2.initTokenClient({
     client_id: clientId,
     scope: DRIVE_SCOPE,
     callback: () => {},
@@ -54,11 +57,11 @@ async function getTokenClient(clientId) {
   return tokenClient
 }
 
-export function hasDriveToken() {
+export function hasDriveToken(): boolean {
   return Boolean(accessToken) && Date.now() < tokenExpiresAt
 }
 
-export async function requestDriveAccess(clientId, prompt = '') {
+export async function requestDriveAccess(clientId: string, prompt = ''): Promise<{ accessToken: string, expiresAt: number }> {
   ensureClientId(clientId)
 
   if (hasDriveToken()) {
@@ -71,7 +74,7 @@ export async function requestDriveAccess(clientId, prompt = '') {
   const client = await getTokenClient(clientId)
 
   return new Promise((resolve, reject) => {
-    client.callback = (response) => {
+    client.callback = (response: any) => {
       if (response.error) {
         reject(new Error(response.error_description || 'Google 授權失敗'))
         return
@@ -90,22 +93,22 @@ export async function requestDriveAccess(clientId, prompt = '') {
   })
 }
 
-export function revokeDriveAccess() {
+export function revokeDriveAccess(): void {
   localStorage.removeItem('wordmem_drive_access_token')
   localStorage.removeItem('wordmem_drive_token_expires_at')
-  if (!accessToken || !window.google?.accounts?.oauth2?.revoke) {
+  if (!accessToken || !(window as any).google?.accounts?.oauth2?.revoke) {
     accessToken = ''
     tokenExpiresAt = 0
     return
   }
 
-  window.google.accounts.oauth2.revoke(accessToken, () => {
+  (window as any).google.accounts.oauth2.revoke(accessToken, () => {
     accessToken = ''
     tokenExpiresAt = 0
   })
 }
 
-async function driveFetch(path, options = {}) {
+async function driveFetch(path: string, options: RequestInit = {}): Promise<Response> {
   if (!hasDriveToken()) {
     throw new Error('Google Drive 授權已過期，請重新登入。')
   }
@@ -114,7 +117,7 @@ async function driveFetch(path, options = {}) {
     ...options,
     headers: {
       Authorization: `Bearer ${accessToken}`,
-      ...(options.headers ?? {}),
+      ...(options.headers as Record<string, string> ?? {}),
     },
   })
 
@@ -123,7 +126,8 @@ async function driveFetch(path, options = {}) {
     try {
       const data = await response.json()
       message = data?.error?.message || message
-    } catch {
+    }
+    catch {
       message = response.statusText || message
     }
     throw new Error(message)
@@ -132,11 +136,11 @@ async function driveFetch(path, options = {}) {
   return response
 }
 
-function escapeDriveQueryValue(value) {
-  return value.replace(/\\/g, '\\\\').replace(/'/g, "\\'")
+function escapeDriveQueryValue(value: string): string {
+  return value.replace(/\\/g, '\\\\').replace(/'/g, '\\\'')
 }
 
-export async function ensureWordmemFolder() {
+export async function ensureWordmemFolder(): Promise<{ id: string, name: string }> {
   const folderName = escapeDriveQueryValue(WORDMEM_FOLDER_NAME)
   const params = new URLSearchParams({
     q: `name = '${folderName}' and mimeType = 'application/vnd.google-apps.folder' and trashed = false`,
@@ -146,7 +150,8 @@ export async function ensureWordmemFolder() {
 
   const listResponse = await driveFetch(`${DRIVE_API_BASE}/files?${params.toString()}`)
   const listData = await listResponse.json()
-  if (listData.files?.length) return listData.files[0]
+  if (listData.files?.length)
+    return listData.files[0]
 
   const createResponse = await driveFetch(`${DRIVE_API_BASE}/files?fields=id,name`, {
     method: 'POST',
@@ -160,7 +165,7 @@ export async function ensureWordmemFolder() {
   return createResponse.json()
 }
 
-export async function uploadBackupZip(blob, filename) {
+export async function uploadBackupZip(blob: Blob, filename: string): Promise<any> {
   const folder = await ensureWordmemFolder()
   const boundary = `wordmem-${Date.now()}`
   const metadata = {
@@ -191,7 +196,7 @@ export async function uploadBackupZip(blob, filename) {
   return response.json()
 }
 
-export async function listBackupFiles() {
+export async function listBackupFiles(): Promise<{ id: string, name: string, size: string, createdTime: string, modifiedTime: string }[]> {
   const folder = await ensureWordmemFolder()
   const folderId = escapeDriveQueryValue(folder.id)
   const params = new URLSearchParams({
@@ -203,26 +208,26 @@ export async function listBackupFiles() {
 
   const response = await driveFetch(`${DRIVE_API_BASE}/files?${params.toString()}`)
   const data = await response.json()
-  return (data.files ?? []).filter((file) => /^wordmem-backup-\d{8}-\d{4}\.zip$/i.test(file.name))
+  return (data.files ?? []).filter((file: any) => /^wordmem-backup-\d{8}-\d{4}\.zip$/i.test(file.name))
 }
 
-export async function deleteBackupFile(fileId) {
+export async function deleteBackupFile(fileId: string): Promise<void> {
   await driveFetch(`${DRIVE_API_BASE}/files/${encodeURIComponent(fileId)}`, {
     method: 'DELETE',
   })
 }
 
-export async function pruneOldBackupFiles(maxFiles = MAX_BACKUP_FILES) {
+export async function pruneOldBackupFiles(maxFiles = MAX_BACKUP_FILES): Promise<{ kept: any[], deleted: any[] }> {
   const files = await listBackupFiles()
   const oldFiles = files.slice(maxFiles)
-  await Promise.all(oldFiles.map((file) => deleteBackupFile(file.id)))
+  await Promise.all(oldFiles.map(file => deleteBackupFile(file.id)))
   return {
     kept: files.slice(0, maxFiles),
     deleted: oldFiles,
   }
 }
 
-export async function downloadBackupFile(fileId) {
+export async function downloadBackupFile(fileId: string): Promise<ArrayBuffer> {
   const response = await driveFetch(`${DRIVE_API_BASE}/files/${encodeURIComponent(fileId)}?alt=media`)
   return response.arrayBuffer()
 }

@@ -1,15 +1,17 @@
-<script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { useVocab } from '../composables/useVocab.js'
-import Card from './ui/card/Card.vue'
-import Progress from './ui/progress/Progress.vue'
+<script setup lang="ts">
+import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { useSessionStore } from '@/stores/session'
+import { useSetsStore } from '@/stores/sets'
+import { useUIStore } from '@/stores/ui'
 import QuizCard from './QuizCard.vue'
 import SpellingCard from './SpellingCard.vue'
 import Button from './ui/button/Button.vue'
+import Card from './ui/card/Card.vue'
+import Progress from './ui/progress/Progress.vue'
 
+const { activeSet } = useSetsStore()
 const {
   currentView,
-  activeSet,
   currentSession,
   totalItems,
   progressCount,
@@ -17,27 +19,37 @@ const {
   sessionEntries,
   handleQuizDraftChange,
   handleSpellingDraftChange,
-  showToast,
   submitCurrentRound,
-} = useVocab()
+} = useSessionStore()
+const { showToast } = useUIStore()
 
 const renderLimit = ref(10)
-const displayedEntries = computed(() => sessionEntries.value.slice(0, renderLimit.value))
+const displayedEntries = computed(() => sessionEntries.slice(0, renderLimit.value))
 
-const sentinel = ref(null)
-let observer = null
+function quizDraft(draft: unknown) {
+  return draft as { selectedIndex: number | null, answered?: boolean } | null
+}
+
+function spellingDraft(draft: unknown) {
+  return draft as { answer: string, submitted?: boolean } | null
+}
+
+const sentinel = ref<HTMLElement | null>(null)
+let observer: IntersectionObserver | null = null
 
 onMounted(() => {
   observer = new IntersectionObserver(([entry]) => {
-    if (entry.isIntersecting && renderLimit.value < sessionEntries.value.length) {
+    if (entry.isIntersecting && renderLimit.value < sessionEntries.length) {
       renderLimit.value += 10
     }
   }, { rootMargin: '400px' })
-  if (sentinel.value) observer.observe(sentinel.value)
+  if (sentinel.value)
+    observer.observe(sentinel.value)
 })
 
 onUnmounted(() => {
-  if (observer) observer.disconnect()
+  if (observer)
+    observer.disconnect()
 })
 </script>
 
@@ -47,17 +59,19 @@ onUnmounted(() => {
       <div class="mb-4 flex items-start justify-between gap-4">
         <div class="space-y-1">
           <p class="text-xs uppercase font-bold tracking-widest text-emerald-600 dark:text-emerald-400">
-            單字特訓中
+            {{ $t('practice.title') }}
           </p>
           <h3 class="text-lg font-bold tracking-tight text-ink-950 dark:text-ink-50">
             {{ activeSet.setName }}
           </h3>
           <p class="text-xs font-semibold text-ink-400 dark:text-ink-500">
-            {{ currentView === 'quiz' ? `選擇題 ${totalItems} 題` : `拼字測試 ${totalItems} 題` }}
+            {{ currentView === 'quiz' ? $t('practice.quiz') : $t('practice.spelling') }} {{ $t('practice.questions', { count: totalItems }) }}
           </p>
         </div>
         <div class="text-right">
-          <p class="text-[10px] uppercase font-bold tracking-wider text-ink-400 dark:text-ink-500">已作答進度</p>
+          <p class="text-[10px] uppercase font-bold tracking-wider text-ink-400 dark:text-ink-500">
+            {{ $t('practice.progress') }}
+          </p>
           <p class="text-xl font-extrabold text-ink-950 dark:text-ink-50">
             {{ progressCount }} <span class="text-xs text-ink-400">/ {{ totalItems }}</span>
           </p>
@@ -75,7 +89,7 @@ onUnmounted(() => {
           :index="entryIndex"
           :total="totalItems"
           :review="currentSession.review"
-          :draft="currentSession.drafts?.[entryIndex] ?? null"
+          :draft="quizDraft(currentSession.drafts?.[entryIndex] ?? null)"
           batch-mode
           @draft-change="(payload) => handleQuizDraftChange(entryIndex, payload)"
           @toast="showToast"
@@ -90,23 +104,23 @@ onUnmounted(() => {
           :index="entryIndex"
           :total="totalItems"
           :review="currentSession.review"
-          :draft="currentSession.drafts?.[entryIndex] ?? null"
+          :draft="spellingDraft(currentSession.drafts?.[entryIndex] ?? null)"
           batch-mode
           @draft-change="(payload) => handleSpellingDraftChange(entryIndex, payload)"
           @toast="showToast"
         />
       </template>
 
-      <div ref="sentinel" class="h-1 -translate-y-4 shadow-none opacity-0"></div>
+      <div ref="sentinel" class="h-1 -translate-y-4 shadow-none opacity-0" />
 
       <!-- Submit Bar -->
       <Card class="p-6" :glow="false">
         <div class="flex flex-col sm:flex-row sm:justify-between items-center gap-4">
           <p class="text-xs font-medium text-ink-500 dark:text-ink-400 text-left">
-            檢查無誤後，請點擊右方按鈕提交本輪全部的作答結果。
+            {{ $t('practice.submitHint') }}
           </p>
           <Button variant="default" class="w-full sm:w-auto px-8 py-3" @click="submitCurrentRound">
-            送出本輪答案
+            {{ $t('practice.submitAll') }}
           </Button>
         </div>
       </Card>
