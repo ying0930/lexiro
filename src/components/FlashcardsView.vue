@@ -5,7 +5,6 @@ import { useVirtualList } from '@/lib/useVirtualList'
 import { useSessionStore } from '@/stores/session'
 import { useSetsStore } from '@/stores/sets'
 import FlashcardView from './FlashcardView.vue'
-import Badge from './ui/badge/Badge.vue'
 import Card from './ui/card/Card.vue'
 
 const { activeSet } = storeToRefs(useSetsStore())
@@ -18,19 +17,13 @@ const { visibleItems, windowStart } = useVirtualList(sessionEntries, topSentinel
 
 <template>
   <section v-if="activeSet && currentSession" class="space-y-6">
-    <Card class="p-6 text-left" :glow="false">
-      <div class="flex items-start justify-between gap-4">
-        <div>
-          <p class="text-xs uppercase font-bold tracking-widest text-emerald-600 dark:text-emerald-400">
-            {{ $t('home.inProgress') }}
-          </p>
-          <h3 class="mt-1.5 text-lg font-bold tracking-tight text-ink-950 dark:text-ink-50">
-            {{ activeSet.setName }}
-          </h3>
+    <Card class="p-4 text-left" :glow="false">
+      <div class="flex items-center justify-between gap-4">
+        <div class="flex items-center gap-2 min-w-0">
+          <span class="text-xs font-bold text-emerald-600 dark:text-emerald-400 shrink-0">{{ $t('flashcard.title') }}</span>
+          <span class="text-xs text-ink-400 dark:text-ink-500 truncate">{{ activeSet.setName }}</span>
         </div>
-        <Badge variant="secondary" class="rounded-lg px-3 py-1.5 text-xs font-semibold bg-ink-100 dark:bg-ink-800 border-none">
-          {{ $t('flashcard.title') }}模式 · {{ totalItems }} 張
-        </Badge>
+        <span class="shrink-0 rounded-md bg-ink-100 dark:bg-ink-800 px-2 py-0.5 text-[10px] font-semibold text-ink-600 dark:text-ink-300">{{ totalItems }} 張</span>
       </div>
     </Card>
 

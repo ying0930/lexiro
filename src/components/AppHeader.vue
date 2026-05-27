@@ -22,7 +22,7 @@ const { toggleTheme } = uiStore
 
 <template>
   <!-- Premium Header Shell -->
-  <header class="fixed top-0 inset-x-0 z-40 border-b border-ink-200/50 dark:border-ink-800/50 bg-white/95 dark:bg-ink-950/95 backdrop-blur-sm">
+  <header class="fixed top-0 inset-x-0 z-40 border-b border-ink-200/50 dark:border-ink-800/50 bg-white/80 dark:bg-ink-950/80 backdrop-blur-xl">
     <div class="mx-auto flex max-w-5xl items-center justify-between gap-4 px-6 py-3">
       <!-- Header Info -->
       <div class="flex items-center gap-3">

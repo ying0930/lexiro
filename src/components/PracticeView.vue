@@ -27,29 +27,22 @@ const spellingDraft = computed<{ answer: string } | null>(() => currentDraft.val
 
 <template>
   <section v-if="activeSet && currentSession" class="space-y-6 min-h-[65vh]">
-    <Card class="p-6 text-left" :glow="false">
-      <div class="mb-4 flex items-start justify-between gap-4">
-        <div class="space-y-1">
-          <p class="text-xs uppercase font-bold tracking-widest text-emerald-600 dark:text-emerald-400">
-            {{ $t('practice.title') }}
-          </p>
-          <h3 class="text-lg font-bold tracking-tight text-ink-950 dark:text-ink-50">
-            {{ activeSet.setName }}
-          </h3>
-          <p class="text-xs font-semibold text-ink-400 dark:text-ink-500">
-            {{ currentView === 'quiz' ? $t('practice.quiz') : $t('practice.spelling') }} {{ $t('practice.questions', { count: totalItems }) }}
-          </p>
+    <Card class="p-4 text-left" :glow="false">
+      <div class="flex items-center justify-between gap-4">
+        <div class="flex items-center gap-2 min-w-0">
+          <span class="text-xs font-bold text-emerald-600 dark:text-emerald-400 shrink-0">{{ $t('practice.title') }}</span>
+          <span class="text-xs text-ink-400 dark:text-ink-500 truncate">{{ activeSet.setName }}</span>
+          <span class="shrink-0 rounded-md bg-ink-100 dark:bg-ink-800 px-2 py-0.5 text-[10px] font-semibold text-ink-600 dark:text-ink-300">
+            {{ currentView === 'quiz' ? $t('practice.quiz') : $t('practice.spelling') }} · {{ $t('practice.questions', { count: totalItems }) }}
+          </span>
         </div>
-        <div class="text-right">
-          <p class="text-[10px] uppercase font-bold tracking-wider text-ink-400 dark:text-ink-500">
-            {{ $t('practice.progress') }}
-          </p>
-          <p class="text-xl font-extrabold text-ink-950 dark:text-ink-50">
-            {{ currentIndex + 1 }} <span class="text-xs text-ink-400">/ {{ totalItems }}</span>
-          </p>
+        <div class="flex items-center gap-3 shrink-0">
+          <Progress :model-value="progressPercent" class="w-24 h-1.5" />
+          <span class="text-sm font-bold tabular-nums text-ink-950 dark:text-ink-50">
+            {{ currentIndex + 1 }}<span class="text-xs text-ink-400">/{{ totalItems }}</span>
+          </span>
         </div>
       </div>
-      <Progress :model-value="progressPercent" />
     </Card>
 
     <template v-if="currentEntry && currentView === 'quiz'">
