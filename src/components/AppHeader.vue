@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ArrowLeft, Moon, PencilLine, Sun, Trash2 } from 'lucide-vue-next'
 import { storeToRefs } from 'pinia'
+import { useRoute } from 'vue-router'
 import { useSessionStore } from '@/stores/session'
 import { useSetsStore } from '@/stores/sets'
 import { useUIStore } from '@/stores/ui'
@@ -10,8 +11,9 @@ import Button from './ui/button/Button.vue'
 const sessionStore = useSessionStore()
 const setsStore = useSetsStore()
 const uiStore = useUIStore()
-const { currentView } = storeToRefs(sessionStore)
+const route = useRoute()
 const { exitCurrentView } = sessionStore
+const isHome = () => route.name === 'home'
 const { hasSets, sets, totalWordCount, activeSet } = storeToRefs(setsStore)
 const { editActiveSet, deleteActiveSet } = setsStore
 const { theme } = storeToRefs(uiStore)
@@ -25,7 +27,7 @@ const { toggleTheme } = uiStore
       <!-- Header Info -->
       <div class="flex items-center gap-3">
         <Button
-          v-if="currentView !== 'home'"
+          v-if="!isHome()"
           variant="ghost"
           size="icon"
           class="h-9 w-9 shrink-0 hover:bg-ink-100 dark:hover:bg-ink-800"
@@ -37,7 +39,7 @@ const { toggleTheme } = uiStore
           <h1 class="text-xl sm:text-2xl font-extrabold tracking-tight text-ink-950 dark:text-ink-50">
             Wordmem
           </h1>
-          <p v-if="currentView === 'home'" class="text-xs text-ink-500 dark:text-ink-400 mt-0.5">
+          <p v-if="isHome()" class="text-xs text-ink-500 dark:text-ink-400 mt-0.5">
             <span v-if="hasSets" class="font-medium">
               {{ sets.length }} 個單字集，共 {{ totalWordCount }} 個單字
             </span>
@@ -51,7 +53,7 @@ const { toggleTheme } = uiStore
       <!-- Header Actions -->
       <div class="flex items-center gap-2 shrink-0">
         <!-- Active Set Quick Access -->
-        <template v-if="currentView !== 'home' && activeSet">
+        <template v-if="!isHome() && activeSet">
           <Badge variant="secondary" class="hidden sm:inline-flex rounded-xl px-3 py-1.5 text-xs font-semibold bg-ink-100 dark:bg-ink-800 border-none">
             {{ activeSet.setName }}
           </Badge>
