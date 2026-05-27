@@ -58,7 +58,7 @@ onUnmounted(() => {
     <AppHeader />
 
     <main class="mx-auto mt-8 max-w-5xl relative z-10">
-      <div class="px-6 min-h-[calc(100vh-10rem)]">
+      <div class="relative px-6 min-h-[calc(100vh-10rem)]">
         <router-view v-slot="{ Component }">
           <Transition name="page">
             <component :is="Component" />

@@ -170,9 +170,12 @@ function optionClass(index: number) {
         {{ $t('result.correctAnswer') }}：<span class="font-bold text-emerald-600 dark:text-emerald-400"> {{ answerText }}</span>。
         <span class="block mt-1 font-medium text-ink-800 dark:text-ink-200">{{ entry.item.meaning }}</span>
       </p>
+    </div>
 
-      <Button variant="default" class="mt-4 gap-2" @click="next">
-        <span>{{ index + 1 >= total ? $t('practice.submitAll') : $t('practice.next') }}</span>
+    <!-- Skip / Next -->
+    <div class="mt-6 flex justify-end">
+      <Button variant="default" class="gap-2" @click="next">
+        <span>{{ answered ? (index + 1 >= total ? $t('practice.submitAll') : $t('practice.next')) : $t('practice.skip') }}</span>
         <ArrowRight class="h-4 w-4" />
       </Button>
     </div>

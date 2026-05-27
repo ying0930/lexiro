@@ -29,6 +29,7 @@ export default {
     startTitle: '開始練習',
     countLabel: '練習題數',
     confirmStart: '開始',
+    skip: '跳過',
     next: '下一題',
   },
   flashcard: {
