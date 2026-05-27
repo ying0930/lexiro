@@ -13,6 +13,7 @@ function makeSet(name: string, words: Array<{ word: string, meaning?: string, ex
   return {
     id: `set-${name}`,
     setName: name,
+    difficulty: 2,
     items: words.map((w, i) => ({
       id: `w-${i}`,
       word: w.word,

@@ -16,6 +16,7 @@ export interface VocabItem {
 export interface VocabSet {
   id: string
   setName: string
+  difficulty: number
   items: VocabItem[]
 }
 

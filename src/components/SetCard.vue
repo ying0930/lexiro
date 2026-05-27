@@ -5,7 +5,7 @@ import Button from './ui/button/Button.vue'
 import Card from './ui/card/Card.vue'
 
 defineProps<{
-  set: { id: string, setName: string, items: any[] }
+  set: { id: string, setName: string, difficulty: number, items: any[] }
   active?: boolean
 }>()
 
@@ -35,7 +35,10 @@ const { t } = useI18n()
         </p>
       </div>
 
-      <div class="flex items-center gap-1 shrink-0">
+      <div class="flex items-center gap-2 shrink-0">
+        <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 leading-none">
+          難度 {{ set.difficulty }}
+        </span>
         <Button
           variant="ghost"
           size="icon"

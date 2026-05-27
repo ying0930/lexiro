@@ -5,8 +5,7 @@ const PROMPTS = {
 1. **中文意思 (meaning)**：若使用者提供的格式包含意思（例如「apple - 蘋果」或「apple: 蘋果」），請**務必使用使用者提供的意思**，不可自行更改。
 2. **自動生成內容**：
    - **例句 (example)**：請根據該單字的「詞性」與「使用者提供的意思」，撰寫一個自然的英文例句。
-   - **題目 (question)**：請根據該單字的意思，設計一題符合台灣高中難度的單選題，有情境，三句左右（包含 prompt, opts, ans）。
-3. **無提供意思時**：若使用者僅提供單字，則由你根據台灣高中難度自行決定最適合的意思並完成後續生成。
+{{DIFFICULTY_PROMPT}}
 
 【輸出規則】
 - 只輸出純 JSON object。
@@ -17,6 +16,7 @@ const PROMPTS = {
 
 【JSON 格式】
 {
+  "difficulty": {{DIFFICULTY_NUM}},
   "items": [
     {
       "id": "w-001",
@@ -34,6 +34,7 @@ const PROMPTS = {
 }
 
 【欄位要求】
+- difficulty：題目難度等級，請填入 {{DIFFICULTY_NUM}}。
 - items：陣列，每筆代表一個單字。
 - 每筆 item 必須包含：word、meaning、example、question。
 - pos 可填常見詞性縮寫，例如 n. / v. / adj. / adv.。
@@ -44,7 +45,6 @@ const PROMPTS = {
 【內容要求】
 - example 要自然、完整，且必須符合該單字在該題項中的意思。
 - question.prompt 請寫成英文情境句，約三句，一定使用 _____ 作為挖空。
-- 題目難度適合台灣高中生。
 - 不論使用者輸入順序，輸出時請按單字 **A-Z 字母順序**排列。
 
 【使用者輸入】

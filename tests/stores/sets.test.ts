@@ -19,6 +19,7 @@ const validItem = {
 const validSetData = {
   id: 'set-1',
   setName: 'Fruits',
+  difficulty: 2,
   items: [validItem],
 }
 
@@ -190,10 +191,10 @@ describe('parseImportJson', () => {
 describe('applyImportedSets (overwrite mode)', () => {
   it('replaces all local sets with target sets', () => {
     const local: VocabSet[] = [
-      { id: '1', setName: 'Old', items: [validItem] },
+      { id: '1', setName: 'Old', difficulty: 2, items: [validItem] },
     ]
     const target: VocabSet[] = [
-      { id: '2', setName: 'New', items: [validItem] },
+      { id: '2', setName: 'New', difficulty: 2, items: [validItem] },
     ]
     const result = applyImportedSets(local, target, 'overwrite', {})
     expect(result.imported).toHaveLength(1)
@@ -202,8 +203,8 @@ describe('applyImportedSets (overwrite mode)', () => {
 
   it('assigns unique ids to prevent collisions in overwrite mode', () => {
     const target: VocabSet[] = [
-      { id: 'dup', setName: 'A', items: [validItem] },
-      { id: 'dup', setName: 'B', items: [validItem] },
+      { id: 'dup', setName: 'A', difficulty: 2, items: [validItem] },
+      { id: 'dup', setName: 'B', difficulty: 2, items: [validItem] },
     ]
     const result = applyImportedSets([], target, 'overwrite', {})
     expect(result.imported[0].id).toBe('dup')
@@ -213,9 +214,9 @@ describe('applyImportedSets (overwrite mode)', () => {
 
 describe('applyImportedSets (append mode)', () => {
   const localItem = { ...validItem, word: 'existing-word' }
-  const localSet: VocabSet = { id: 'local-1', setName: 'Existing', items: [localItem] }
+  const localSet: VocabSet = { id: 'local-1', setName: 'Existing', difficulty: 2, items: [localItem] }
   const newItem = { ...validItem, word: 'new-word' }
-  const newSet: VocabSet = { id: 'import-1', setName: 'New Set', items: [newItem] }
+  const newSet: VocabSet = { id: 'import-1', setName: 'New Set', difficulty: 2, items: [newItem] }
 
   it('adds new sets that do not exist locally', () => {
     const result = applyImportedSets([localSet], [newSet], 'append', {})
@@ -225,28 +226,28 @@ describe('applyImportedSets (append mode)', () => {
   })
 
   it('skips duplicate sets by name when choice is local', () => {
-    const duplicate = { id: 'import-2', setName: 'Existing', items: [newItem] }
+    const duplicate = { id: 'import-2', setName: 'Existing', difficulty: 2, items: [newItem] }
     const result = applyImportedSets([localSet], [duplicate], 'append', {})
     expect(result.imported).toHaveLength(0)
     expect(result.skippedByName).toContain('Existing')
   })
 
   it('replaces local set by name when choice is imported', () => {
-    const duplicate = { id: 'import-2', setName: 'Existing', items: [newItem] }
+    const duplicate = { id: 'import-2', setName: 'Existing', difficulty: 2, items: [newItem] }
     const result = applyImportedSets([localSet], [duplicate], 'append', { Existing: 'imported' })
     expect(result.replacedVersions).toContain('Existing')
     expect(result.imported).toHaveLength(0)
   })
 
   it('skips duplicate sets by identical content with different name', () => {
-    const sameContent = { id: 'import-2', setName: 'Different Name', items: [localItem] }
+    const sameContent = { id: 'import-2', setName: 'Different Name', difficulty: 2, items: [localItem] }
     const result = applyImportedSets([localSet], [sameContent], 'append', {})
     expect(result.skippedByContent).toContain('Different Name')
     expect(result.imported).toHaveLength(0)
   })
 
   it('renames sets when id collides with existing', () => {
-    const colliding = { id: 'local-1', setName: 'Colliding', items: [newItem] }
+    const colliding = { id: 'local-1', setName: 'Colliding', difficulty: 2, items: [newItem] }
     const result = applyImportedSets([localSet], [colliding], 'append', {})
     expect(result.renamedIds).toHaveLength(1)
     expect(result.renamedIds[0].from).toBe('local-1')
@@ -271,7 +272,7 @@ describe('full workflow: parse → normalize → apply', () => {
 
   it('parses JSON, normalizes, and overwrites local sets', () => {
     const local: VocabSet[] = [
-      { id: '1', setName: 'Old', items: [validItem] },
+      { id: '1', setName: 'Old', difficulty: 2, items: [validItem] },
     ]
     const json = JSON.stringify({ id: '2', setName: 'New', items: [validItem] })
     const parsed = parseImportJson(json)

@@ -75,6 +75,7 @@ export function normalizeSet(data: unknown, fallbackId = `${Date.now()}`): Vocab
   return {
     id: isNonEmptyString(d.id) ? (d.id as string).trim() : fallbackId,
     setName: isNonEmptyString(d.setName) ? (d.setName as string).trim() : fallbackName,
+    difficulty: (d.difficulty as number) ?? 2,
     items: (d.items as unknown[]).map((item, index) => normalizeItem(item, index)),
   }
 }

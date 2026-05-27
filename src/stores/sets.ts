@@ -30,6 +30,7 @@ export const useSetsStore = defineStore('sets', () => {
   const importJson = ref('')
   const importError = ref('')
   const importPreview = ref('')
+  const importDifficulty = ref(2)
   const pendingDeleteId = ref<string | null>(null)
 
   const importMode = ref<ImportMode>('append')
@@ -137,6 +138,7 @@ export const useSetsStore = defineStore('sets', () => {
         const nextSet: VocabSet = {
           id: `${Date.now()}`,
           setName: setEditorName.value.trim(),
+          difficulty: importDifficulty.value,
           items,
         }
         sets.value = [...sets.value, nextSet]
@@ -185,6 +187,7 @@ export const useSetsStore = defineStore('sets', () => {
     importJson.value = ''
     importError.value = ''
     importPreview.value = ''
+    importDifficulty.value = 2
     importOpen.value = true
   }
 
@@ -352,6 +355,7 @@ export const useSetsStore = defineStore('sets', () => {
     importJson,
     importError,
     importPreview,
+    importDifficulty,
     pendingDeleteId,
     importMode,
     duplicateSummary,

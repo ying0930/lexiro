@@ -1,8 +1,9 @@
 <script setup lang="ts">
+import { onMounted, onUnmounted } from 'vue'
 import { X } from 'lucide-vue-next'
 import Button from '../button/Button.vue'
 
-withDefaults(defineProps<{
+const props = withDefaults(defineProps<{
   open: boolean
   title?: string
   description?: string
@@ -14,9 +15,20 @@ withDefaults(defineProps<{
   widthClass: 'max-w-lg',
   showClose: true,
 })
-defineEmits<{
+const emit = defineEmits<{
   close: []
 }>()
+
+function onKeydown(e: KeyboardEvent) {
+  if (!props.open)
+    return
+  if (e.key === 'Backspace' && e.target instanceof HTMLElement && e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA' && !e.target.isContentEditable) {
+    e.preventDefault()
+  }
+}
+
+onMounted(() => window.addEventListener('keydown', onKeydown))
+onUnmounted(() => window.removeEventListener('keydown', onKeydown))
 </script>
 
 <template>
