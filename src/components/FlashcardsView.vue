@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { storeToRefs } from 'pinia'
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+import { ref } from 'vue'
+import { useVirtualList } from '@/lib/useVirtualList'
 import { useSessionStore } from '@/stores/session'
 import { useSetsStore } from '@/stores/sets'
 import FlashcardView from './FlashcardView.vue'
@@ -10,35 +11,9 @@ import Card from './ui/card/Card.vue'
 const { activeSet } = storeToRefs(useSetsStore())
 const { currentSession, sessionEntries, totalItems } = storeToRefs(useSessionStore())
 
-const renderLimit = ref(10)
-const displayedEntries = computed(() => sessionEntries.value.slice(0, renderLimit.value))
-
-const sentinel = ref<HTMLElement | null>(null)
-let observer: IntersectionObserver | null = null
-
-function setupObserver() {
-  if (observer)
-    observer.disconnect()
-  renderLimit.value = 10
-  observer = new IntersectionObserver(([entry]) => {
-    if (entry.isIntersecting && renderLimit.value < sessionEntries.value.length) {
-      renderLimit.value += 10
-    }
-  }, { rootMargin: '400px' })
-  if (sentinel.value)
-    observer.observe(sentinel.value)
-}
-
-onMounted(setupObserver)
-
-onUnmounted(() => {
-  if (observer)
-    observer.disconnect()
-})
-
-watch(() => sessionEntries.value.length, () => {
-  setupObserver()
-})
+const topSentinel = ref<HTMLElement | null>(null)
+const bottomSentinel = ref<HTMLElement | null>(null)
+const { visibleItems, windowStart } = useVirtualList(sessionEntries, topSentinel, bottomSentinel)
 </script>
 
 <template>
@@ -60,13 +35,14 @@ watch(() => sessionEntries.value.length, () => {
     </Card>
 
     <div class="space-y-6">
+      <div ref="topSentinel" class="h-1" />
       <FlashcardView
-        v-for="(entry, entryIndex) in displayedEntries"
+        v-for="(entry, i) in visibleItems"
         :key="entry.item.id"
         :item="entry.item"
-        :index="entryIndex"
+        :index="windowStart + i"
       />
-      <div ref="sentinel" class="h-1 -translate-y-4 shadow-none opacity-0" />
+      <div ref="bottomSentinel" class="h-1 -translate-y-4 shadow-none opacity-0" />
     </div>
   </section>
 </template>

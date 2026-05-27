@@ -39,6 +39,7 @@
 │   │   ├── import.ts                   # Import parsing, diffing, merge
 │   │   ├── persist.ts                  # Async IndexedDB + debounce persistence
 │   │   ├── prompts.ts                  # AI prompt templates
+│   │   ├── useVirtualList.ts           # Sliding window virtual list composable
 │   │   ├── validation.ts              # Normalize/validate helpers
 │   │   └── worker.ts                   # Web Worker wrapper (ZIP ops)
 │   ├── workers/

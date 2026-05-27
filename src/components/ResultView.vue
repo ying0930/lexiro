@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { BookOpenText, ClipboardCopy, RotateCcw, SpellCheck2 } from 'lucide-vue-next'
-import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import prompts from '@/lib/prompts'
+import { useVirtualList } from '@/lib/useVirtualList'
 import { useSessionStore } from '@/stores/session'
 import { useSetsStore } from '@/stores/sets'
 import { useUIStore } from '@/stores/ui'
@@ -21,11 +22,10 @@ const {
 const { t } = useI18n()
 const { showToast } = useUIStore()
 
-const renderLimit = ref(15)
-const displayedRows = computed(() => resultRows.slice(0, renderLimit.value))
-
-const sentinel = ref<HTMLElement | null>(null)
-let observer: IntersectionObserver | null = null
+const resultRowsRef = computed(() => resultRows)
+const topSentinel = ref<HTMLElement | null>(null)
+const bottomSentinel = ref<HTMLElement | null>(null)
+const { visibleItems } = useVirtualList(resultRowsRef, topSentinel, bottomSentinel)
 
 function formatQuestionOptions(question: { opts: string[] }) {
   return question.opts.map((option, index) => `- (${String.fromCharCode(65 + index)}) ${option}`).join('\n')
@@ -109,33 +109,10 @@ async function copyAllWrongQuestionsPrompt() {
   }
 }
 
-function setupObserver() {
-  if (observer)
-    observer.disconnect()
-  renderLimit.value = 15
-  observer = new IntersectionObserver(([entry]) => {
-    if (entry.isIntersecting && renderLimit.value < resultRows.length) {
-      renderLimit.value += 15
-    }
-  }, { rootMargin: '400px' })
-  if (sentinel.value)
-    observer.observe(sentinel.value)
-}
-
 onMounted(() => {
   nextTick(() => {
     document.getElementById('completion-panel')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
   })
-  setupObserver()
-})
-
-onUnmounted(() => {
-  if (observer)
-    observer.disconnect()
-})
-
-watch(() => resultRows.length, () => {
-  setupObserver()
 })
 </script>
 
@@ -209,8 +186,9 @@ watch(() => resultRows.length, () => {
 
     <!-- Detailed Results Rows List -->
     <div class="space-y-4">
+      <div ref="topSentinel" class="h-1" />
       <Card
-        v-for="row in displayedRows"
+        v-for="row in visibleItems"
         :key="`${row.entry.item.id}-${row.index}`"
         class="p-6 text-left"
         :glow="false"
@@ -266,7 +244,7 @@ watch(() => resultRows.length, () => {
           </div>
         </div>
       </Card>
-      <div ref="sentinel" class="h-1 -translate-y-4 shadow-none opacity-0" />
+      <div ref="bottomSentinel" class="h-1 -translate-y-4 shadow-none opacity-0" />
     </div>
   </section>
 </template>

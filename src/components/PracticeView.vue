@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { storeToRefs } from 'pinia'
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+import { ref } from 'vue'
+import { useVirtualList } from '@/lib/useVirtualList'
 import { useSessionStore } from '@/stores/session'
 import { useSetsStore } from '@/stores/sets'
 import { useUIStore } from '@/stores/ui'
@@ -18,8 +19,9 @@ const { currentView, currentSession, totalItems, progressCount, progressPercent,
 const { handleQuizDraftChange, handleSpellingDraftChange, submitCurrentRound } = sessionStore
 const { showToast } = uiStore
 
-const renderLimit = ref(10)
-const displayedEntries = computed(() => sessionEntries.value.slice(0, renderLimit.value))
+const topSentinel = ref<HTMLElement | null>(null)
+const bottomSentinel = ref<HTMLElement | null>(null)
+const { visibleItems, windowStart } = useVirtualList(sessionEntries, topSentinel, bottomSentinel)
 
 function quizDraft(draft: unknown) {
   return draft as { selectedIndex: number | null, answered?: boolean } | null
@@ -28,33 +30,6 @@ function quizDraft(draft: unknown) {
 function spellingDraft(draft: unknown) {
   return draft as { answer: string, submitted?: boolean } | null
 }
-
-const sentinel = ref<HTMLElement | null>(null)
-let observer: IntersectionObserver | null = null
-
-function setupObserver() {
-  if (observer)
-    observer.disconnect()
-  renderLimit.value = 10
-  observer = new IntersectionObserver(([entry]) => {
-    if (entry.isIntersecting && renderLimit.value < sessionEntries.value.length) {
-      renderLimit.value += 10
-    }
-  }, { rootMargin: '400px' })
-  if (sentinel.value)
-    observer.observe(sentinel.value)
-}
-
-onMounted(setupObserver)
-
-onUnmounted(() => {
-  if (observer)
-    observer.disconnect()
-})
-
-watch(() => sessionEntries.value.length, () => {
-  setupObserver()
-})
 </script>
 
 <template>
@@ -85,37 +60,39 @@ watch(() => sessionEntries.value.length, () => {
     </Card>
 
     <div class="space-y-6">
+      <div ref="topSentinel" class="h-1" />
+
       <template v-if="currentView === 'quiz'">
         <QuizCard
-          v-for="(entry, entryIndex) in displayedEntries"
+          v-for="(entry, i) in visibleItems"
           :key="entry.item.id"
           :entry="entry"
-          :index="entryIndex"
+          :index="windowStart + i"
           :total="totalItems"
           :review="currentSession.review"
-          :draft="quizDraft(currentSession.drafts?.[entryIndex] ?? null)"
+          :draft="quizDraft(currentSession.drafts?.[windowStart + i] ?? null)"
           batch-mode
-          @draft-change="(payload) => handleQuizDraftChange(entryIndex, payload)"
+          @draft-change="(payload) => handleQuizDraftChange(windowStart + i, payload)"
           @toast="showToast"
         />
       </template>
 
       <template v-else>
         <SpellingCard
-          v-for="(entry, entryIndex) in displayedEntries"
+          v-for="(entry, i) in visibleItems"
           :key="entry.item.id"
           :entry="entry"
-          :index="entryIndex"
+          :index="windowStart + i"
           :total="totalItems"
           :review="currentSession.review"
-          :draft="spellingDraft(currentSession.drafts?.[entryIndex] ?? null)"
+          :draft="spellingDraft(currentSession.drafts?.[windowStart + i] ?? null)"
           batch-mode
-          @draft-change="(payload) => handleSpellingDraftChange(entryIndex, payload)"
+          @draft-change="(payload) => handleSpellingDraftChange(windowStart + i, payload)"
           @toast="showToast"
         />
       </template>
 
-      <div ref="sentinel" class="h-1 -translate-y-4 shadow-none opacity-0" />
+      <div ref="bottomSentinel" class="h-1 -translate-y-4 shadow-none opacity-0" />
 
       <!-- Submit Bar -->
       <Card class="p-6" :glow="false">
