@@ -28,17 +28,21 @@
 │   │   ├── SetCard.vue                 # Set card in home list
 │   │   └── SpellingCard.vue            # Practice mode: spelling
 │   ├── constants/
-│   │   ├── backup.ts                   # Drive MIME types, prefixes
+│   │   ├── backup.ts                   # Export version, ZIP filename, save delay
 │   │   ├── index.ts
-│   │   └── storage.ts                  # LS keys, defaults, limits
+│   │   └── storage.ts                  # Storage keys, theme key
 │   ├── lib/
 │   │   ├── cn.ts                       # clsx + twMerge utility
 │   │   ├── file.ts                     # ZIP build/parse, download
 │   │   ├── googleDrive.ts              # OAuth + Drive API v3
 │   │   ├── i18n.ts                     # vue-i18n instance + plugin
 │   │   ├── import.ts                   # Import parsing, diffing, merge
+│   │   ├── persist.ts                  # Async IndexedDB + debounce persistence
 │   │   ├── prompts.ts                  # AI prompt templates
-│   │   └── validation.ts              # Normalize/validate helpers
+│   │   ├── validation.ts              # Normalize/validate helpers
+│   │   └── worker.ts                   # Web Worker wrapper (ZIP ops)
+│   ├── workers/
+│   │   └── backup.worker.ts            # ZIP build/parse off the main thread
 │   ├── locales/
 │   │   └── zh-TW.ts                    # 68 i18n keys (Traditional Chinese)
 │   ├── router/
@@ -77,7 +81,7 @@
 - **State**: 4 Pinia setup stores (`sets`, `session`, `backup`, `ui`)
 - **UI**: Vue 3.5 `<script setup lang="ts">` + Tailwind v4 + lucide-vue-next
 - **Routing**: vue-router 4 (5 routes)
-- **i18n**: vue-i18n 11 (traditional Chinese, 68 keys)
-- **Storage**: IndexedDB via `idb-keyval` + localStorage fallback
-- **Export**: ZIP via fflate (sets); Google Drive via GIS + Drive API v3
+- **i18n**: vue-i18n 11 (traditional Chinese, ~150 keys)
+- **Storage**: IndexedDB via `idb-keyval` + localStorage fallback (debounced writes)
+- **Export**: ZIP via fflate in Web Worker (sets); Google Drive via GIS + Drive API v3
 - **Testing**: Vitest (174 tests, 4 files)
