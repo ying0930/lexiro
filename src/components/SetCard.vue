@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { BookOpenText, PencilLine, Play, SpellCheck2, Trash2 } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
-import Badge from './ui/badge/Badge.vue'
 import Button from './ui/button/Button.vue'
 import Card from './ui/card/Card.vue'
 
@@ -37,10 +36,6 @@ const { t } = useI18n()
       </div>
 
       <div class="flex items-center gap-1 shrink-0">
-        <Badge v-if="active" variant="success" class="text-[10px] py-0.5 px-2 mr-1">
-          {{ $t('home.inProgress') }}
-        </Badge>
-
         <Button
           variant="ghost"
           size="icon"
