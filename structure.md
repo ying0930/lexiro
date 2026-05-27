@@ -33,6 +33,7 @@
 │   │   └── storage.ts                  # Storage keys, theme key
 │   ├── lib/
 │   │   ├── cn.ts                       # clsx + twMerge utility
+│   │   ├── difficulty-prompts.ts       # Per-level AI prompt chunks (Lv1–4)
 │   │   ├── file.ts                     # ZIP build/parse, download
 │   │   ├── googleDrive.ts              # OAuth + Drive API v3
 │   │   ├── i18n.ts                     # vue-i18n instance + plugin
@@ -45,7 +46,7 @@
 │   ├── workers/
 │   │   └── backup.worker.ts            # ZIP build/parse off the main thread
 │   ├── locales/
-│   │   └── zh-TW.ts                    # 68 i18n keys (Traditional Chinese)
+│   │   └── zh-TW.ts                    # 74 i18n keys (Traditional Chinese)
 │   ├── router/
 │   │   └── index.ts                    # 5 routes
 │   ├── stores/
