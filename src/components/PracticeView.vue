@@ -1,13 +1,11 @@
 <script setup lang="ts">
 import { storeToRefs } from 'pinia'
-import { ref } from 'vue'
-import { useVirtualList } from '@/lib/useVirtualList'
+import { computed } from 'vue'
 import { useSessionStore } from '@/stores/session'
 import { useSetsStore } from '@/stores/sets'
 import { useUIStore } from '@/stores/ui'
 import QuizCard from './QuizCard.vue'
 import SpellingCard from './SpellingCard.vue'
-import Button from './ui/button/Button.vue'
 import Card from './ui/card/Card.vue'
 import Progress from './ui/progress/Progress.vue'
 
@@ -15,21 +13,16 @@ const setsStore = useSetsStore()
 const sessionStore = useSessionStore()
 const uiStore = useUIStore()
 const { activeSet } = storeToRefs(setsStore)
-const { currentView, currentSession, totalItems, progressCount, progressPercent, sessionEntries } = storeToRefs(sessionStore)
-const { handleQuizDraftChange, handleSpellingDraftChange, submitCurrentRound } = sessionStore
+const { currentView, currentSession, currentIndex, currentEntry, totalItems, progressPercent } = storeToRefs(sessionStore)
+const { handleQuizDraftChange, handleSpellingDraftChange, advanceToNext } = sessionStore
 const { showToast } = uiStore
 
-const topSentinel = ref<HTMLElement | null>(null)
-const bottomSentinel = ref<HTMLElement | null>(null)
-const { visibleItems, windowStart } = useVirtualList(sessionEntries, topSentinel, bottomSentinel)
+const currentDraft = computed(() => {
+  return currentSession.value?.drafts[currentIndex.value] ?? null
+})
 
-function quizDraft(draft: unknown) {
-  return draft as { selectedIndex: number | null, answered?: boolean } | null
-}
-
-function spellingDraft(draft: unknown) {
-  return draft as { answer: string, submitted?: boolean } | null
-}
+const quizDraft = computed<{ selectedIndex: number | null } | null>(() => currentDraft.value as { selectedIndex: number | null } | null)
+const spellingDraft = computed<{ answer: string } | null>(() => currentDraft.value as { answer: string } | null)
 </script>
 
 <template>
@@ -52,59 +45,39 @@ function spellingDraft(draft: unknown) {
             {{ $t('practice.progress') }}
           </p>
           <p class="text-xl font-extrabold text-ink-950 dark:text-ink-50">
-            {{ progressCount }} <span class="text-xs text-ink-400">/ {{ totalItems }}</span>
+            {{ currentIndex + 1 }} <span class="text-xs text-ink-400">/ {{ totalItems }}</span>
           </p>
         </div>
       </div>
       <Progress :model-value="progressPercent" />
     </Card>
 
-    <div class="space-y-6">
-      <div ref="topSentinel" class="h-1" />
+    <template v-if="currentEntry && currentView === 'quiz'">
+      <QuizCard
+        :key="`quiz-${currentIndex}`"
+        :entry="currentEntry"
+        :index="currentIndex"
+        :total="totalItems"
+        :review="currentSession.review"
+        :draft="quizDraft"
+        @draft-change="(payload) => handleQuizDraftChange(currentIndex, payload)"
+        @next="advanceToNext"
+        @toast="showToast"
+      />
+    </template>
 
-      <template v-if="currentView === 'quiz'">
-        <QuizCard
-          v-for="(entry, i) in visibleItems"
-          :key="entry.item.id"
-          :entry="entry"
-          :index="windowStart + i"
-          :total="totalItems"
-          :review="currentSession.review"
-          :draft="quizDraft(currentSession.drafts?.[windowStart + i] ?? null)"
-          batch-mode
-          @draft-change="(payload) => handleQuizDraftChange(windowStart + i, payload)"
-          @toast="showToast"
-        />
-      </template>
-
-      <template v-else>
-        <SpellingCard
-          v-for="(entry, i) in visibleItems"
-          :key="entry.item.id"
-          :entry="entry"
-          :index="windowStart + i"
-          :total="totalItems"
-          :review="currentSession.review"
-          :draft="spellingDraft(currentSession.drafts?.[windowStart + i] ?? null)"
-          batch-mode
-          @draft-change="(payload) => handleSpellingDraftChange(windowStart + i, payload)"
-          @toast="showToast"
-        />
-      </template>
-
-      <div ref="bottomSentinel" class="h-1 -translate-y-4 shadow-none opacity-0" />
-
-      <!-- Submit Bar -->
-      <Card class="p-6" :glow="false">
-        <div class="flex flex-col sm:flex-row sm:justify-between items-center gap-4">
-          <p class="text-xs font-medium text-ink-500 dark:text-ink-400 text-left">
-            {{ $t('practice.submitHint') }}
-          </p>
-          <Button variant="default" class="w-full sm:w-auto px-8 py-3" @click="submitCurrentRound">
-            {{ $t('practice.submitAll') }}
-          </Button>
-        </div>
-      </Card>
-    </div>
+    <template v-else-if="currentEntry">
+      <SpellingCard
+        :key="`spelling-${currentIndex}`"
+        :entry="currentEntry"
+        :index="currentIndex"
+        :total="totalItems"
+        :review="currentSession.review"
+        :draft="spellingDraft"
+        @draft-change="(payload) => handleSpellingDraftChange(currentIndex, payload)"
+        @next="advanceToNext"
+        @toast="showToast"
+      />
+    </template>
   </section>
 </template>

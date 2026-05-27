@@ -33,9 +33,10 @@ export const useSessionStore = defineStore('session', () => {
 
   const sessionEntries = computed(() => currentSession.value?.entries ?? [])
   const totalItems = computed(() => sessionEntries.value.length)
+  const currentIndex = computed(() => currentSession.value?.index ?? 0)
   const currentEntry = computed(() => {
     const entries = sessionEntries.value
-    const idx = currentSession.value?.index ?? 0
+    const idx = currentIndex.value
     return entries[idx] ?? null
   })
 
@@ -343,22 +344,37 @@ export const useSessionStore = defineStore('session', () => {
     router.push({ name: 'result' })
   }
 
-  function handleQuizDraftChange(entryIndex: number, payload: { selectedIndex: number | null, answered?: boolean }) {
+  function advanceToNext() {
+    if (!currentSession.value)
+      return
+    const nextIndex = currentSession.value.index + 1
+    if (nextIndex < currentSession.value.entries.length) {
+      currentSession.value.index = nextIndex
+      saveState()
+    }
+    else {
+      submitCurrentRound()
+    }
+  }
+
+  function handleQuizDraftChange(entryIndex: number, payload: { selectedIndex: number | null }) {
     if (!currentSession.value)
       return
     currentSession.value.drafts[entryIndex] = {
       selectedIndex: payload.selectedIndex ?? null,
-      answered: Boolean(payload.answered),
+      answered: true,
     }
+    saveState()
   }
 
-  function handleSpellingDraftChange(entryIndex: number, payload: { answer: string, submitted?: boolean }) {
+  function handleSpellingDraftChange(entryIndex: number, payload: { answer: string }) {
     if (!currentSession.value)
       return
     currentSession.value.drafts[entryIndex] = {
       answer: payload.answer ?? '',
-      submitted: Boolean(payload.submitted),
+      submitted: true,
     }
+    saveState()
   }
 
   function restartCurrentMode() {
@@ -398,6 +414,7 @@ export const useSessionStore = defineStore('session', () => {
     practiceDialogCount,
     sessionEntries,
     totalItems,
+    currentIndex,
     currentEntry,
     progressCount,
     progressPercent,
@@ -417,6 +434,7 @@ export const useSessionStore = defineStore('session', () => {
     closePracticeDialog,
     submitCurrentRound,
     finishRound,
+    advanceToNext,
     handleQuizDraftChange,
     handleSpellingDraftChange,
     restartCurrentMode,

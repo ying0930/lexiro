@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Check, ClipboardCopy } from 'lucide-vue-next'
+import { ArrowRight, Check, ClipboardCopy } from 'lucide-vue-next'
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { cn } from '@/lib/cn'
@@ -13,12 +13,12 @@ const props = defineProps<{
   index: number
   total: number
   review?: boolean
-  draft: { selectedIndex: number | null, answered?: boolean } | null
-  batchMode?: boolean
+  draft: { selectedIndex: number | null } | null
 }>()
 
 const emit = defineEmits<{
-  'draft-change': [payload: { selectedIndex: number | null, answered: boolean }]
+  'draft-change': [payload: { selectedIndex: number | null }]
+  'next': []
   'toast': [message: string]
 }>()
 
@@ -34,25 +34,24 @@ const promptParts = computed(() => props.entry.item.question.prompt.split('_____
 const hasBlank = computed(() => props.entry.item.question.prompt.includes('_____'))
 
 watch(
-  [() => props.entry, () => props.draft?.selectedIndex, () => props.draft?.answered],
-  ([, selected, ans]) => {
-    selectedIndex.value = selected ?? null
-    answered.value = props.batchMode ? false : Boolean(ans)
+  () => props.draft?.selectedIndex,
+  (val) => {
+    selectedIndex.value = val ?? null
+    answered.value = val !== null && val !== undefined
   },
   { immediate: true },
 )
 
-watch([selectedIndex, answered], () => {
-  emit('draft-change', {
-    selectedIndex: selectedIndex.value,
-    answered: answered.value,
-  })
-})
-
 function choose(index: number) {
-  if (!props.batchMode && answered.value)
+  if (answered.value)
     return
+  answered.value = true
   selectedIndex.value = index
+  emit('draft-change', { selectedIndex: index })
+}
+
+function next() {
+  emit('next')
 }
 
 async function copyExplanationPrompt() {
@@ -92,17 +91,11 @@ function optionClass(index: number) {
 
   return cn(
     'flex w-full items-start gap-3 rounded-xl border px-4 py-3.5 text-left text-sm font-medium transition-all duration-200 outline-none',
-    // Normal Interactive State
     !answered.value && 'border-ink-200 dark:border-ink-800 bg-white dark:bg-ink-900 text-ink-700 dark:text-ink-300 hover:bg-ink-50 dark:hover:bg-ink-850 active:scale-[98%] focus-visible:ring-2 focus-visible:ring-emerald-500/20',
-    // Selected State (Not Submitted)
     !answered.value && isSelected && 'border-indigo-200 dark:border-indigo-900/50 bg-indigo-500/5 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 ring-2 ring-indigo-500/20',
-    // Answered / Submitted State
     answered.value && 'cursor-default',
-    // Correct Option Highlighting
     answered.value && isCorrect && 'border-emerald-200 dark:border-emerald-900/50 bg-emerald-500/5 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-400 font-semibold ring-2 ring-emerald-500/10',
-    // Selected and Incorrect Option Highlighting
     answered.value && isSelected && !isCorrect && 'border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-950/20 text-red-600 dark:text-red-400 ring-2 ring-red-500/10',
-    // Unselected and Incorrect Option Highlighting
     answered.value && !isSelected && !isCorrect && 'border-ink-200 dark:border-ink-800 bg-ink-50/50 dark:bg-ink-900 text-ink-400 dark:text-ink-500 opacity-60',
   )
 }
@@ -114,22 +107,22 @@ function optionClass(index: number) {
       <div class="space-y-1">
         <div class="flex items-center gap-2">
           <Badge :variant="review ? 'destructive' : 'secondary'" class="text-[10px] px-2 py-0.5 font-semibold">
-            {{ review ? '錯題複習' : $t('setCard.quiz') }}
+            {{ review ? $t('result.review') : $t('setCard.quiz') }}
           </Badge>
           <span class="text-xs font-semibold text-ink-400 dark:text-ink-500 uppercase tracking-wider">
-            {{ $t('result.question', { index: index + 1 }) }} / {{ total }} 題
+            {{ $t('result.question', { index: index + 1 }) }} / {{ total }}
           </span>
         </div>
       </div>
 
       <div class="flex items-center gap-2 self-start sm:self-auto shrink-0">
         <Badge variant="secondary" class="rounded-lg px-2.5 py-1 text-[11px] font-semibold bg-ink-100 dark:bg-ink-800 border-none">
-          {{ batchMode ? '待送出' : answered ? '已完成' : $t('home.inProgress') }}
+          {{ answered ? $t('result.completed_short') : $t('home.inProgress') }}
         </Badge>
         <Button variant="outline" size="sm" class="h-8 gap-1.5 text-xs text-ink-600 dark:text-ink-400 px-3 hover:bg-ink-100 dark:hover:bg-ink-800" @click="copyExplanationPrompt">
           <Check v-if="copied" class="h-3.5 w-3.5 text-emerald-600" />
           <ClipboardCopy v-else class="h-3.5 w-3.5" />
-          <span>{{ copied ? '已複製' : $t('result.aiExplain') }}</span>
+          <span>{{ copied ? $t('toast.copied') : $t('result.aiExplain') }}</span>
         </Button>
       </div>
     </div>
@@ -168,15 +161,20 @@ function optionClass(index: number) {
       </button>
     </div>
 
-    <!-- Explanation Block (Single Mode Answered) -->
-    <div v-if="!batchMode && answered" class="mt-6 rounded-2xl border border-ink-200 dark:border-ink-800 bg-white dark:bg-ink-900 p-5 text-left transition-all duration-300">
+    <!-- Explanation Block (shown immediately after answering) -->
+    <div v-if="answered" class="mt-6 rounded-2xl border border-ink-200 dark:border-ink-800 bg-white dark:bg-ink-900 p-5 text-left transition-all duration-300">
       <p class="text-sm font-bold text-ink-950 dark:text-ink-50">
-        {{ selectedIndex === entry.item.question.ans ? $t('result.correct') : selectedIndex === null ? $t('result.skipped') : $t('result.wrong') }}
+        {{ selectedIndex === entry.item.question.ans ? $t('result.correct') : $t('result.wrong') }}
       </p>
       <p class="mt-2 text-sm leading-relaxed text-ink-600 dark:text-ink-400">
         {{ $t('result.correctAnswer') }}：<span class="font-bold text-emerald-600 dark:text-emerald-400"> {{ answerText }}</span>。
         <span class="block mt-1 font-medium text-ink-800 dark:text-ink-200">{{ entry.item.meaning }}</span>
       </p>
+
+      <Button variant="default" class="mt-4 gap-2" @click="next">
+        <span>{{ index + 1 >= total ? $t('practice.submitAll') : $t('practice.next') }}</span>
+        <ArrowRight class="h-4 w-4" />
+      </Button>
     </div>
   </Card>
 </template>

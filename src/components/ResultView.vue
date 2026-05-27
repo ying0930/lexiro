@@ -1,9 +1,8 @@
 <script setup lang="ts">
 import { BookOpenText, ClipboardCopy, RotateCcw, SpellCheck2 } from 'lucide-vue-next'
-import { computed, nextTick, onMounted, ref } from 'vue'
+import { computed, nextTick, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import prompts from '@/lib/prompts'
-import { useVirtualList } from '@/lib/useVirtualList'
 import { useSessionStore } from '@/stores/session'
 import { useSetsStore } from '@/stores/sets'
 import { useUIStore } from '@/stores/ui'
@@ -22,10 +21,7 @@ const {
 const { t } = useI18n()
 const { showToast } = useUIStore()
 
-const resultRowsRef = computed(() => resultRows)
-const topSentinel = ref<HTMLElement | null>(null)
-const bottomSentinel = ref<HTMLElement | null>(null)
-const { visibleItems } = useVirtualList(resultRowsRef, topSentinel, bottomSentinel)
+const wrongRows = computed(() => resultRows.filter(row => !row.record?.isCorrect))
 
 function formatQuestionOptions(question: { opts: string[] }) {
   return question.opts.map((option, index) => `- (${String.fromCharCode(65 + index)}) ${option}`).join('\n')
@@ -184,11 +180,10 @@ onMounted(() => {
       </p>
     </Card>
 
-    <!-- Detailed Results Rows List -->
-    <div class="space-y-4">
-      <div ref="topSentinel" class="h-1" />
+    <!-- Wrong/Skipped Results Rows List -->
+    <div v-if="wrongRows.length" class="space-y-4">
       <Card
-        v-for="row in visibleItems"
+        v-for="row in wrongRows"
         :key="`${row.entry.item.id}-${row.index}`"
         class="p-6 text-left"
         :glow="false"
@@ -213,10 +208,10 @@ onMounted(() => {
               <span>{{ $t('result.aiExplain') }}</span>
             </Button>
             <Badge
-              :variant="row.record?.isCorrect ? 'success' : row.record?.skipped ? 'secondary' : 'destructive'"
+              :variant="row.record?.skipped ? 'secondary' : 'destructive'"
               class="rounded-lg px-3 py-1 text-xs font-bold"
             >
-              {{ row.record?.isCorrect ? $t('result.correct') : row.record?.skipped ? $t('result.skipped') : $t('result.wrong') }}
+              {{ row.record?.skipped ? $t('result.skipped') : $t('result.wrong') }}
             </Badge>
           </div>
         </div>
@@ -244,7 +239,6 @@ onMounted(() => {
           </div>
         </div>
       </Card>
-      <div ref="bottomSentinel" class="h-1 -translate-y-4 shadow-none opacity-0" />
     </div>
   </section>
 </template>

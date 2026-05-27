@@ -38,26 +38,33 @@ export default defineConfig({
       },
       workbox: {
         navigateFallback: '/index.html',
+        navigateFallbackAllowlist: [/./],
         globPatterns: ['**/*.{js,css,html,svg,png,ico,webmanifest}'],
         cleanupOutdatedCaches: true,
         runtimeCaching: [
           {
-            urlPattern: ({ request, sameOrigin }) => sameOrigin && request.destination === 'document',
-            handler: 'NetworkFirst',
+            urlPattern: ({ request, sameOrigin }) => (
+              sameOrigin && ['script', 'style'].includes(request.destination)
+            ),
+            handler: 'StaleWhileRevalidate',
             options: {
-              cacheName: 'wordmem-pages',
+              cacheName: 'wordmem-scripts',
+              expiration: {
+                maxEntries: 60,
+                maxAgeSeconds: 60 * 60 * 24 * 30,
+              },
             },
           },
           {
             urlPattern: ({ request, sameOrigin }) => (
-              sameOrigin && ['script', 'style', 'image', 'font'].includes(request.destination)
+              sameOrigin && ['image', 'font'].includes(request.destination)
             ),
             handler: 'CacheFirst',
             options: {
               cacheName: 'wordmem-assets',
               expiration: {
                 maxEntries: 80,
-                maxAgeSeconds: 60 * 60 * 24 * 365,
+                maxAgeSeconds: 60 * 60 * 24 * 30,
               },
             },
           },

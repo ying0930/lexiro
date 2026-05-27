@@ -29,6 +29,7 @@ export default {
     startTitle: '開始練習',
     countLabel: '練習題數',
     confirmStart: '開始',
+    next: '下一題',
   },
   flashcard: {
     title: '單字卡',
@@ -38,7 +39,9 @@ export default {
   },
   result: {
     completed: '測驗已完成！',
+    completed_short: '已完成',
     reviewCompleted: '本輪錯題複習完成！',
+    review: '錯題複習',
     score: '{score} 分',
     correct: '正確',
     wrong: '錯誤',
@@ -52,6 +55,7 @@ export default {
     switchQuiz: '選擇',
     switchSpelling: '拼字',
     aiExplain: 'AI 詳解',
+    check: '檢查答案',
     question: '第 {index} 題',
     yourAnswer: '您的作答',
     correctAnswer: '正確答案',
@@ -159,6 +163,7 @@ export default {
     dark: '深色',
   },
   toast: {
+    copied: '已複製',
     copyFailed: '複製失敗',
   },
 }
