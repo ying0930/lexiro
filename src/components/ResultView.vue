@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { BookOpenText, ClipboardCopy, RotateCcw, SpellCheck2 } from 'lucide-vue-next'
-import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import prompts from '@/lib/prompts'
 import { useSessionStore } from '@/stores/session'
@@ -109,11 +109,10 @@ async function copyAllWrongQuestionsPrompt() {
   }
 }
 
-onMounted(() => {
-  nextTick(() => {
-    document.getElementById('completion-panel')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
-  })
-
+function setupObserver() {
+  if (observer)
+    observer.disconnect()
+  renderLimit.value = 15
   observer = new IntersectionObserver(([entry]) => {
     if (entry.isIntersecting && renderLimit.value < resultRows.length) {
       renderLimit.value += 15
@@ -121,11 +120,22 @@ onMounted(() => {
   }, { rootMargin: '400px' })
   if (sentinel.value)
     observer.observe(sentinel.value)
+}
+
+onMounted(() => {
+  nextTick(() => {
+    document.getElementById('completion-panel')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  })
+  setupObserver()
 })
 
 onUnmounted(() => {
   if (observer)
     observer.disconnect()
+})
+
+watch(() => resultRows.length, () => {
+  setupObserver()
 })
 </script>
 

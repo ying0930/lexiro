@@ -13,6 +13,7 @@ import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { STORAGE_KEY } from '@/constants'
 import { i18n } from '@/lib/i18n'
+import { loadFromStorage, scheduleSave } from '@/lib/persist'
 import { normalizeSession, toSessionEntries } from '@/lib/validation'
 import { useSetsStore } from './sets'
 import { useUIStore } from './ui'
@@ -84,29 +85,16 @@ export const useSessionStore = defineStore('session', () => {
   })
 
   function saveState() {
-    const { sets } = useSetsStore()
-    const raw = localStorage.getItem(STORAGE_KEY)
-    let existing: Record<string, unknown> = {}
-    try {
-      existing = raw ? JSON.parse(raw) : {}
-    }
-    catch { /* empty */ }
-
-    localStorage.setItem(
-      STORAGE_KEY,
-      JSON.stringify({
-        ...existing,
-        sets,
-        currentView: currentView.value,
-        currentSession: currentSession.value,
-        flashcardIndex: flashcardIndex.value,
-        practiceCounts: practiceCounts.value,
-      }),
-    )
+    scheduleSave(STORAGE_KEY, {
+      currentView: currentView.value,
+      currentSession: currentSession.value,
+      flashcardIndex: flashcardIndex.value,
+      practiceCounts: practiceCounts.value,
+    })
   }
 
-  function loadState() {
-    const raw = localStorage.getItem(STORAGE_KEY)
+  async function loadState() {
+    const raw = await loadFromStorage(STORAGE_KEY)
     if (!raw)
       return
 

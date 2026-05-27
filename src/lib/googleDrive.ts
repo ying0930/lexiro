@@ -61,6 +61,21 @@ export function hasDriveToken(): boolean {
   return Boolean(accessToken) && Date.now() < tokenExpiresAt
 }
 
+function isTokenExpiringSoon(thresholdMs = 5 * 60 * 1000): boolean {
+  return Boolean(accessToken) && tokenExpiresAt - Date.now() < thresholdMs
+}
+
+async function silentRefreshToken(clientId: string): Promise<void> {
+  if (!accessToken || !isTokenExpiringSoon())
+    return
+  try {
+    await requestDriveAccess(clientId, '')
+  }
+  catch {
+    // Silent refresh failed, will be handled by the caller
+  }
+}
+
 export async function requestDriveAccess(clientId: string, prompt = ''): Promise<{ accessToken: string, expiresAt: number }> {
   ensureClientId(clientId)
 
@@ -109,6 +124,10 @@ export function revokeDriveAccess(): void {
 }
 
 async function driveFetch(path: string, options: RequestInit = {}): Promise<Response> {
+  const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID as string
+  if (clientId)
+    await silentRefreshToken(clientId)
+
   if (!hasDriveToken()) {
     throw new Error('Google Drive 授權已過期，請重新登入。')
   }

@@ -94,7 +94,7 @@ export const useBackupStore = defineStore('backup', () => {
     try {
       await ensureDriveSignedIn()
       const filename = buildExportFileName()
-      await uploadBackupZip(buildExportZipBlob(setsStore.exportSelectedSets), filename)
+      await uploadBackupZip(await buildExportZipBlob(setsStore.exportSelectedSets), filename)
       const pruneResult = await pruneOldBackupFiles(10)
       driveBackups.value = pruneResult.kept
       let toastMsg = t('backup.backupSuccess', { filename })
@@ -146,12 +146,12 @@ export const useBackupStore = defineStore('backup', () => {
     try {
       await ensureDriveSignedIn()
       const buffer = await downloadBackupFile(fileId)
-      const { sets: normalizedSets, exportedAt } = parseBackupZipBuffer(buffer)
-      driveImportSets.value = normalizedSets
-      driveImportExportedAt.value = exportedAt
-      driveImportPreview.value = formatBackupPreview(normalizedSets, exportedAt)
+      const parsed = await parseBackupZipBuffer(buffer)
+      driveImportSets.value = parsed.sets
+      driveImportExportedAt.value = parsed.exportedAt
+      driveImportPreview.value = formatBackupPreview(parsed.sets, parsed.exportedAt)
       const setsStore = useSetsStore()
-      setsStore.refreshDiffs(normalizedSets)
+      setsStore.refreshDiffs(parsed.sets)
     }
     catch (error) {
       driveError.value = (error as Error).message || '讀取 Google Drive 備份失敗'
@@ -213,10 +213,10 @@ export const useBackupStore = defineStore('backup', () => {
 
     try {
       const buffer = await file.arrayBuffer()
-      const { sets: normalizedSets, exportedAt } = parseBackupZipBuffer(buffer)
-      zipImportSets.value = normalizedSets
-      zipImportPreview.value = formatBackupPreview(normalizedSets, exportedAt)
-      setsStore.refreshDiffs(normalizedSets)
+      const parsed = await parseBackupZipBuffer(buffer)
+      zipImportSets.value = parsed.sets
+      zipImportPreview.value = formatBackupPreview(parsed.sets, parsed.exportedAt)
+      setsStore.refreshDiffs(parsed.sets)
     }
     catch (error) {
       zipImportError.value = (error as Error).message || '匯入失敗'

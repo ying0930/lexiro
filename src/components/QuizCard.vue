@@ -34,12 +34,12 @@ const promptParts = computed(() => props.entry.item.question.prompt.split('_____
 const hasBlank = computed(() => props.entry.item.question.prompt.includes('_____'))
 
 watch(
-  [() => props.entry, () => props.draft],
-  () => {
-    selectedIndex.value = props.draft?.selectedIndex ?? null
-    answered.value = props.batchMode ? false : Boolean(props.draft?.answered)
+  [() => props.entry, () => props.draft?.selectedIndex, () => props.draft?.answered],
+  ([, selected, ans]) => {
+    selectedIndex.value = selected ?? null
+    answered.value = props.batchMode ? false : Boolean(ans)
   },
-  { immediate: true, deep: true },
+  { immediate: true },
 )
 
 watch([selectedIndex, answered], () => {

@@ -5,6 +5,7 @@ import { STORAGE_KEY } from '@/constants'
 import { buildExportFileName, buildExportZipBlob, downloadBlob } from '@/lib/file'
 import { i18n } from '@/lib/i18n'
 import { applyImportedSets, parseImportJson, refreshImportVersionDiffs, summarizeDuplicateResult } from '@/lib/import'
+import { loadFromStorage, scheduleSave } from '@/lib/persist'
 import { createBlankEditorItem, createEditorItems, normalizeItem, normalizeSet } from '@/lib/validation'
 import { useSessionStore } from './session'
 import { useUIStore } from './ui'
@@ -54,17 +55,14 @@ export const useSetsStore = defineStore('sets', () => {
   const exportError = ref('')
 
   function saveState() {
-    localStorage.setItem(
-      STORAGE_KEY,
-      JSON.stringify({
-        sets: sets.value,
-        activeSetId: activeSetId.value,
-      }),
-    )
+    scheduleSave(STORAGE_KEY, {
+      sets: sets.value,
+      activeSetId: activeSetId.value,
+    })
   }
 
-  function loadState() {
-    const raw = localStorage.getItem(STORAGE_KEY)
+  async function loadState() {
+    const raw = await loadFromStorage(STORAGE_KEY)
     if (!raw)
       return
 
@@ -259,7 +257,7 @@ export const useSetsStore = defineStore('sets', () => {
     exportSelectedIds.value = exportAllSelected.value ? [] : sets.value.map(s => s.id)
   }
 
-  function exportSelectedSetsToZip() {
+  async function exportSelectedSetsToZip() {
     const uiStore = useUIStore()
     exportError.value = ''
     if (!exportSelectedSets.value.length) {
@@ -267,7 +265,8 @@ export const useSetsStore = defineStore('sets', () => {
       return
     }
 
-    downloadBlob(buildExportZipBlob(exportSelectedSets.value), buildExportFileName())
+    const blob = await buildExportZipBlob(exportSelectedSets.value)
+    downloadBlob(blob, buildExportFileName())
     uiStore.showToast(t('backup.exported', { count: exportSelectedSets.value.length }))
   }
 

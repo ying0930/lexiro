@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { storeToRefs } from 'pinia'
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useSessionStore } from '@/stores/session'
 import { useSetsStore } from '@/stores/sets'
 import FlashcardView from './FlashcardView.vue'
@@ -16,7 +16,10 @@ const displayedEntries = computed(() => sessionEntries.value.slice(0, renderLimi
 const sentinel = ref<HTMLElement | null>(null)
 let observer: IntersectionObserver | null = null
 
-onMounted(() => {
+function setupObserver() {
+  if (observer)
+    observer.disconnect()
+  renderLimit.value = 10
   observer = new IntersectionObserver(([entry]) => {
     if (entry.isIntersecting && renderLimit.value < sessionEntries.value.length) {
       renderLimit.value += 10
@@ -24,11 +27,17 @@ onMounted(() => {
   }, { rootMargin: '400px' })
   if (sentinel.value)
     observer.observe(sentinel.value)
-})
+}
+
+onMounted(setupObserver)
 
 onUnmounted(() => {
   if (observer)
     observer.disconnect()
+})
+
+watch(() => sessionEntries.value.length, () => {
+  setupObserver()
 })
 </script>
 

@@ -1,8 +1,4 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import FlashcardsView from '@/components/FlashcardsView.vue'
-import HomeView from '@/components/HomeView.vue'
-import PracticeView from '@/components/PracticeView.vue'
-import ResultView from '@/components/ResultView.vue'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -10,30 +6,30 @@ const router = createRouter({
     {
       path: '/',
       name: 'home',
-      component: HomeView,
+      component: () => import('@/components/HomeView.vue'),
     },
     {
       path: '/flashcard/:setId',
       name: 'flashcard',
-      component: FlashcardsView,
+      component: () => import('@/components/FlashcardsView.vue'),
       props: true,
     },
     {
       path: '/quiz/:setId',
       name: 'quiz',
-      component: PracticeView,
+      component: () => import('@/components/PracticeView.vue'),
       props: { mode: 'quiz' },
     },
     {
       path: '/spelling/:setId',
       name: 'spelling',
-      component: PracticeView,
+      component: () => import('@/components/PracticeView.vue'),
       props: { mode: 'spelling' },
     },
     {
       path: '/result',
       name: 'result',
-      component: ResultView,
+      component: () => import('@/components/ResultView.vue'),
     },
   ],
 })

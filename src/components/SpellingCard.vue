@@ -48,12 +48,12 @@ const normalizedWord = computed(() => props.entry.item.word.trim().toLowerCase()
 const isCorrect = computed(() => normalizedAnswer.value === normalizedWord.value)
 
 watch(
-  [() => props.entry, () => props.draft],
-  () => {
-    answer.value = props.draft?.answer ?? ''
-    submitted.value = props.batchMode ? false : Boolean(props.draft?.submitted)
+  [() => props.entry, () => props.draft?.answer, () => props.draft?.submitted],
+  ([, ans, sub]) => {
+    answer.value = ans ?? ''
+    submitted.value = props.batchMode ? false : Boolean(sub)
   },
-  { immediate: true, deep: true },
+  { immediate: true },
 )
 
 watch([answer, submitted], () => {

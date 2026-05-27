@@ -1,6 +1,6 @@
 import type { BackupPayload, VocabSet } from '@/types'
-import { strFromU8, strToU8, unzipSync, zipSync } from 'fflate'
-import { APP_NAME, EXPORT_VERSION, ZIP_INTERNAL_FILENAME } from '@/constants'
+import { APP_NAME, EXPORT_VERSION } from '@/constants'
+import { buildExportZipBuffer, parseBackupZipBufferInWorker } from '@/lib/worker'
 import { normalizeExportPayload } from './validation'
 
 export function buildExportPayload(selectedSets: VocabSet[]): BackupPayload {
@@ -19,11 +19,10 @@ export function buildExportFileName(): string {
   return `wordmem-backup-${datePart}-${timePart}.zip`
 }
 
-export function buildExportZipBlob(selectedSets: VocabSet[]): Blob {
+export async function buildExportZipBlob(selectedSets: VocabSet[]): Promise<Blob> {
   const payload = buildExportPayload(selectedSets)
-  const jsonText = JSON.stringify(payload, null, 2)
-  const zipped = zipSync({ [ZIP_INTERNAL_FILENAME]: strToU8(jsonText) }, { level: 0 })
-  return new Blob([zipped as BlobPart], { type: 'application/zip' })
+  const buffer = await buildExportZipBuffer(payload)
+  return new Blob([buffer], { type: 'application/zip' })
 }
 
 export function downloadBlob(blob: Blob, filename: string): void {
@@ -43,23 +42,8 @@ export interface ParsedZip {
   exportedAt: string
 }
 
-export function parseBackupZipBuffer(buffer: ArrayBuffer): ParsedZip {
-  const entries = unzipSync(new Uint8Array(buffer))
-  const entryNames = Object.keys(entries)
-  const jsonEntry
-    = entryNames.find(name => name.toLowerCase().endsWith(ZIP_INTERNAL_FILENAME))
-      || entryNames.find(name => name.toLowerCase().endsWith('.json'))
-  if (!jsonEntry)
-    throw new Error('找不到 JSON 檔案')
-
-  let parsed: unknown
-  try {
-    parsed = JSON.parse(strFromU8(entries[jsonEntry]))
-  }
-  catch {
-    throw new Error('JSON 格式錯誤')
-  }
-
+export async function parseBackupZipBuffer(buffer: ArrayBuffer): Promise<ParsedZip> {
+  const parsed = await parseBackupZipBufferInWorker(buffer)
   return {
     payload: parsed,
     sets: normalizeExportPayload(parsed),
