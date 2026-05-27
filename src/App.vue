@@ -59,7 +59,7 @@ onUnmounted(() => {
 
     <main class="mx-auto mt-8 max-w-5xl px-6 relative z-10">
       <router-view v-slot="{ Component }">
-        <Transition name="page" mode="out-in">
+        <Transition name="page">
           <component :is="Component" />
         </Transition>
       </router-view>

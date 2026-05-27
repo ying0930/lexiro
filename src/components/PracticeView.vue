@@ -26,7 +26,7 @@ const spellingDraft = computed<{ answer: string } | null>(() => currentDraft.val
 </script>
 
 <template>
-  <section v-if="activeSet && currentSession" class="space-y-6">
+  <section v-if="activeSet && currentSession" class="space-y-6 min-h-[65vh]">
     <Card class="p-6 text-left" :glow="false">
       <div class="mb-4 flex items-start justify-between gap-4">
         <div class="space-y-1">
@@ -54,7 +54,6 @@ const spellingDraft = computed<{ answer: string } | null>(() => currentDraft.val
 
     <template v-if="currentEntry && currentView === 'quiz'">
       <QuizCard
-        :key="`quiz-${currentIndex}`"
         :entry="currentEntry"
         :index="currentIndex"
         :total="totalItems"
@@ -68,7 +67,6 @@ const spellingDraft = computed<{ answer: string } | null>(() => currentDraft.val
 
     <template v-else-if="currentEntry">
       <SpellingCard
-        :key="`spelling-${currentIndex}`"
         :entry="currentEntry"
         :index="currentIndex"
         :total="totalItems"

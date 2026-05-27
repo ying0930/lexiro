@@ -107,7 +107,7 @@ async function copyAllWrongQuestionsPrompt() {
 
 onMounted(() => {
   nextTick(() => {
-    document.getElementById('completion-panel')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    document.getElementById('completion-panel')?.scrollIntoView({ behavior: 'instant', block: 'start' })
   })
 })
 </script>

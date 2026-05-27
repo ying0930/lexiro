@@ -45,12 +45,13 @@ export const useSessionStore = defineStore('session', () => {
       return 0
     if (currentView.value === 'flashcard')
       return flashcardIndex.value + 1
-    return currentSession.value.drafts.filter((draft) => {
-      if (!draft)
-        return false
-      const d = draft as Record<string, unknown>
-      return (d.selectedIndex !== null && d.selectedIndex !== undefined) || typeof d.answer === 'string'
-    }).length
+    const drafts = currentSession.value.drafts
+    const currentDraft = drafts[currentIndex.value]
+    const answered = currentDraft && (
+      ('selectedIndex' in currentDraft && currentDraft.selectedIndex != null) ||
+      ('answer' in currentDraft && typeof currentDraft.answer === 'string')
+    )
+    return currentIndex.value + (answered ? 1 : 0)
   })
 
   const progressPercent = computed(() => {
