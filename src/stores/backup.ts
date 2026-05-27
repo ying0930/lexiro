@@ -18,7 +18,7 @@ import { useUIStore } from './ui'
 const t = i18n.global.t
 
 export const useBackupStore = defineStore('backup', () => {
-  const driveConfigured = Boolean(import.meta.env.VITE_GOOGLE_CLIENT_ID)
+  const driveConfigured = ref(Boolean(import.meta.env.VITE_GOOGLE_CLIENT_ID))
   const driveSignedIn = ref(false)
   const driveAccountLabel = ref('')
   const driveBackupLoading = ref(false)
@@ -41,7 +41,7 @@ export const useBackupStore = defineStore('backup', () => {
   // Drive auth
   async function ensureDriveSignedIn(prompt?: string | null): Promise<{ accessToken: string, expiresAt: number }> {
     driveError.value = ''
-    if (!driveConfigured) {
+    if (!driveConfigured.value) {
       driveError.value = t('backup.driveNotConfigured')
       throw new Error(driveError.value)
     }
