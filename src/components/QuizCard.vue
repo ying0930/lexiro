@@ -1,10 +1,7 @@
 <script setup lang="ts">
-import { ArrowRight, Check, ClipboardCopy } from 'lucide-vue-next'
+import { ArrowRight } from 'lucide-vue-next'
 import { computed, ref, watch } from 'vue'
-import { useI18n } from 'vue-i18n'
 import { cn } from '@/lib/cn'
-import PROMPTS from '@/lib/prompts'
-import Badge from './ui/badge/Badge.vue'
 import Button from './ui/button/Button.vue'
 import Card from './ui/card/Card.vue'
 
@@ -22,12 +19,9 @@ const emit = defineEmits<{
   'toast': [message: string]
 }>()
 
-const { t } = useI18n()
-
 const labels = ['A', 'B', 'C', 'D']
 const selectedIndex = ref<number | null>(null)
 const answered = ref(false)
-const copied = ref(false)
 
 const answerText = computed(() => props.entry.item.question.opts[props.entry.item.question.ans])
 const promptParts = computed(() => props.entry.item.question.prompt.split('_____'))
@@ -54,37 +48,6 @@ function next() {
   emit('next')
 }
 
-async function copyExplanationPrompt() {
-  const q = props.entry.item.question
-  const questionStr = q.prompt
-  const optionsStr = q.opts.map((opt, i) => `${labels[i]}. ${opt}`).join('\n')
-  const userAnswerStr = selectedIndex.value !== null ? q.opts[selectedIndex.value] : '未作答'
-  const correctAnswerStr = q.opts[q.ans]
-  const meaningStr = props.entry.item.meaning || ''
-  const exampleStr = props.entry.item.example || ''
-
-  const text = PROMPTS.explainQuestion
-    .replace('{{QUESTION}}', questionStr)
-    .replace('{{OPTIONS}}', optionsStr)
-    .replace('{{USER_ANSWER}}', userAnswerStr)
-    .replace('{{CORRECT_ANSWER}}', correctAnswerStr)
-    .replace('{{MEANING}}', meaningStr)
-    .replace('{{EXAMPLE}}', exampleStr)
-
-  try {
-    await navigator.clipboard.writeText(text)
-    copied.value = true
-    emit('toast', t('result.copiedAiPromptSingle', { word: props.entry.item.word }))
-    setTimeout(() => {
-      copied.value = false
-    }, 2000)
-  }
-  catch (err) {
-    emit('toast', t('toast.copyFailed'))
-    console.error('Failed to copy text: ', err)
-  }
-}
-
 function optionClass(index: number) {
   const isCorrect = index === props.entry.item.question.ans
   const isSelected = index === selectedIndex.value
@@ -103,30 +66,6 @@ function optionClass(index: number) {
 
 <template>
   <Card class="p-6 sm:p-8" :glow="false">
-    <div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-left">
-      <div class="space-y-1">
-        <div class="flex items-center gap-2">
-          <Badge :variant="review ? 'destructive' : 'secondary'" class="text-[10px] px-2 py-0.5 font-semibold">
-            {{ review ? $t('result.review') : $t('setCard.quiz') }}
-          </Badge>
-          <span class="text-xs font-semibold text-ink-400 dark:text-ink-500 uppercase tracking-wider">
-            {{ $t('result.question', { index: index + 1 }) }} / {{ total }}
-          </span>
-        </div>
-      </div>
-
-      <div class="flex items-center gap-2 self-start sm:self-auto shrink-0">
-        <Badge variant="secondary" class="rounded-lg px-2.5 py-1 text-[11px] font-semibold bg-ink-100 dark:bg-ink-800 border-none">
-          {{ answered ? $t('result.completed_short') : $t('home.inProgress') }}
-        </Badge>
-        <Button variant="outline" size="sm" class="h-8 gap-1.5 text-xs text-ink-600 dark:text-ink-400 px-3 hover:bg-ink-100 dark:hover:bg-ink-800" @click="copyExplanationPrompt">
-          <Check v-if="copied" class="h-3.5 w-3.5 text-emerald-600" />
-          <ClipboardCopy v-else class="h-3.5 w-3.5" />
-          <span>{{ copied ? $t('toast.copied') : $t('result.aiExplain') }}</span>
-        </Button>
-      </div>
-    </div>
-
     <!-- Question Block (題幹) -->
     <div class="rounded-2xl bg-ink-100/50 dark:bg-ink-900/40 border border-ink-200/50 dark:border-ink-800/50 p-5 text-left">
       <p class="text-xs font-bold uppercase tracking-widest text-ink-400 dark:text-ink-500">
