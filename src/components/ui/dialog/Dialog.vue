@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted } from 'vue'
 import { X } from 'lucide-vue-next'
+import { onMounted, onUnmounted } from 'vue'
 import Button from '../button/Button.vue'
 
 const props = withDefaults(defineProps<{
@@ -15,7 +15,7 @@ const props = withDefaults(defineProps<{
   widthClass: 'max-w-lg',
   showClose: true,
 })
-const emit = defineEmits<{
+defineEmits<{
   close: []
 }>()
 

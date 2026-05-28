@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { ArrowLeft, Moon, PencilLine, Sun, Trash2 } from 'lucide-vue-next'
-import { computed } from 'vue'
 import { storeToRefs } from 'pinia'
-import { useRoute } from 'vue-router'
+import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useRoute } from 'vue-router'
 import { useSessionStore } from '@/stores/session'
 import { useSetsStore } from '@/stores/sets'
 import { useUIStore } from '@/stores/ui'
@@ -27,8 +27,10 @@ const isHome = () => route.name === 'home'
 const isPractice = () => route.name === 'quiz' || route.name === 'spelling'
 
 const practiceLabel = computed(() => {
-  if (route.name === 'quiz') return t('practice.quiz')
-  if (route.name === 'spelling') return t('practice.spelling')
+  if (route.name === 'quiz')
+    return t('practice.quiz')
+  if (route.name === 'spelling')
+    return t('practice.spelling')
   return ''
 })
 </script>

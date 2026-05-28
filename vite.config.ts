@@ -1,10 +1,16 @@
+import { existsSync, mkdirSync, writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import tailwindcss from '@tailwindcss/vite'
 import vue from '@vitejs/plugin-vue'
 import { defineConfig } from 'vite'
 import { VitePWA } from 'vite-plugin-pwa'
 
+const appVersion = Date.now().toString()
+
 export default defineConfig({
+  define: {
+    __APP_VERSION__: JSON.stringify(appVersion),
+  },
   resolve: {
     alias: {
       '@': resolve(__dirname, 'src'),
@@ -13,6 +19,16 @@ export default defineConfig({
   plugins: [
     vue(),
     tailwindcss(),
+    {
+      name: 'generate-version',
+      closeBundle() {
+        const distDir = resolve(__dirname, 'dist')
+        if (!existsSync(distDir)) {
+          mkdirSync(distDir, { recursive: true })
+        }
+        writeFileSync(resolve(distDir, 'version.json'), JSON.stringify({ version: appVersion }))
+      },
+    },
     VitePWA({
       registerType: 'autoUpdate',
       injectRegister: 'auto',

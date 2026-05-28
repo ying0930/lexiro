@@ -28,7 +28,8 @@ function escapeRegExp(text: string) {
 
 const wordHint = computed(() => {
   const word = props.entry.item.word
-  if (word.length <= 1) return word
+  if (word.length <= 1)
+    return word
   return `${word[0]}${'＿'.repeat(word.length - 2)}${word[word.length - 1]}`
 })
 

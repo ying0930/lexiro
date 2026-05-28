@@ -174,4 +174,10 @@ export default {
     copied: '已複製',
     copyFailed: '複製失敗',
   },
+  version: {
+    title: '發現新版本',
+    description: 'Wordmem 有可用的新版本。為了確保資料同步與取得最新功能，建議重新整理網頁。',
+    updateBtn: '立即重新整理',
+    laterBtn: '稍後再說',
+  },
 }

@@ -48,8 +48,8 @@ export const useSessionStore = defineStore('session', () => {
     const drafts = currentSession.value.drafts
     const currentDraft = drafts[currentIndex.value]
     const answered = currentDraft && (
-      ('selectedIndex' in currentDraft && currentDraft.selectedIndex != null) ||
-      ('answer' in currentDraft && typeof currentDraft.answer === 'string')
+      ('selectedIndex' in currentDraft && currentDraft.selectedIndex != null)
+      || ('answer' in currentDraft && typeof currentDraft.answer === 'string')
     )
     return currentIndex.value + (answered ? 1 : 0)
   })
