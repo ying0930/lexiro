@@ -1,9 +1,10 @@
+import { MAX_BACKUP_FILES } from '@/constants'
+
 const GIS_SCRIPT_URL = 'https://accounts.google.com/gsi/client'
 const DRIVE_API_BASE = 'https://www.googleapis.com/drive/v3'
 const DRIVE_UPLOAD_BASE = 'https://www.googleapis.com/upload/drive/v3'
 const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.file'
 const WORDMEM_FOLDER_NAME = 'Wordmem'
-const MAX_BACKUP_FILES = 10
 
 let gisScriptPromise: Promise<void> | null = null
 let tokenClient: any = null

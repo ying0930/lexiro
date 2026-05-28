@@ -91,12 +91,12 @@ function next() {
     <!-- Answer Input Block -->
     <div v-if="!submitted" class="mt-6 space-y-2 text-left">
       <label class="text-xs font-bold uppercase tracking-wider text-ink-500 dark:text-ink-400">
-        請輸入完整英文單字
+        {{ $t('spelling.inputLabel') }}
       </label>
       <div class="flex gap-3">
         <Input
           v-model="answer"
-          placeholder="例如：apple"
+          :placeholder="$t('spelling.placeholder')"
           class="flex-1 font-mono text-base tracking-wide"
           @keydown.enter.prevent="submit"
         />
@@ -105,7 +105,7 @@ function next() {
         </Button>
       </div>
       <p class="text-[11px] text-ink-400 dark:text-ink-500 leading-relaxed font-medium">
-        判定將忽略大小寫與前後空白。留空送出將被視為略過。
+        {{ $t('spelling.inputHint') }}
       </p>
     </div>
 

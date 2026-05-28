@@ -1,11 +1,12 @@
 <script setup lang="ts">
+import type { VocabItem } from '@/types'
 import { BookOpenText, PencilLine, Play, SpellCheck2, Trash2 } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
 import Button from './ui/button/Button.vue'
 import Card from './ui/card/Card.vue'
 
 defineProps<{
-  set: { id: string, setName: string, difficulty: number, items: any[] }
+  set: { id: string, setName: string, difficulty: number, items: VocabItem[] }
   active?: boolean
 }>()
 

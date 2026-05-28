@@ -69,7 +69,7 @@ function optionClass(index: number) {
     <!-- Question Block (題幹) -->
     <div class="rounded-2xl bg-ink-100/50 dark:bg-ink-900/40 border border-ink-200/50 dark:border-ink-800/50 p-5 text-left">
       <p class="text-xs font-bold uppercase tracking-widest text-ink-400 dark:text-ink-500">
-        題幹
+        {{ $t('practice.quizPromptLabel') }}
       </p>
       <p class="mt-3 text-[15px] leading-relaxed text-ink-800 dark:text-ink-200 font-medium sm:text-base">
         <template v-if="!answered && hasBlank">

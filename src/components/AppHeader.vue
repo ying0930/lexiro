@@ -23,8 +23,8 @@ const { editActiveSet, deleteActiveSet } = setsStore
 const { theme } = storeToRefs(uiStore)
 const { toggleTheme } = uiStore
 
-const isHome = () => route.name === 'home'
-const isPractice = () => route.name === 'quiz' || route.name === 'spelling'
+const isHome = computed(() => route.name === 'home')
+const isPractice = computed(() => route.name === 'quiz' || route.name === 'spelling')
 
 const practiceLabel = computed(() => {
   if (route.name === 'quiz')
@@ -43,7 +43,7 @@ const practiceLabel = computed(() => {
     <div class="mx-auto flex max-w-5xl items-center justify-between gap-4 px-6 py-3">
       <div class="flex items-center gap-3 min-w-0">
         <Button
-          v-if="!isHome()"
+          v-if="!isHome"
           variant="ghost"
           size="icon"
           class="h-9 w-9 shrink-0 hover:bg-white/60 dark:hover:bg-white/10"
@@ -55,29 +55,29 @@ const practiceLabel = computed(() => {
           <h1 class="text-xl sm:text-2xl font-extrabold tracking-tight text-ink-950 dark:text-ink-50">
             Wordmem
           </h1>
-          <p v-if="isHome()" class="text-xs text-ink-500 dark:text-ink-400 mt-0.5">
+          <p v-if="isHome" class="text-xs text-ink-500 dark:text-ink-400 mt-0.5">
             <span v-if="hasSets" class="font-medium">
-              {{ sets.length }} 個單字集，共 {{ totalWordCount }} 個單字
+              {{ $t('appHeader.stats', { setCount: sets.length, wordCount: totalWordCount }) }}
             </span>
             <span v-else class="font-medium">
-              點擊新增按鈕以載入你的專屬單字集。
+              {{ $t('appHeader.emptyHint') }}
             </span>
           </p>
           <p v-else-if="activeSet" class="text-xs text-ink-500 dark:text-ink-400 mt-0.5 truncate">
-            {{ activeSet.setName }}<span v-if="isPractice()"> · {{ practiceLabel }} · 共 {{ totalItems }} 題</span>
+            {{ activeSet.setName }}<span v-if="isPractice">{{ $t('appHeader.practiceStats', { label: practiceLabel, count: totalItems }) }}</span>
           </p>
         </div>
       </div>
 
       <div class="flex items-center gap-2 shrink-0">
-        <template v-if="isPractice() && currentSession">
+        <template v-if="isPractice && currentSession">
           <Progress :model-value="progressPercent" class="w-20 h-1" />
           <span class="text-sm font-bold tabular-nums text-ink-950 dark:text-ink-50">
             {{ currentIndex + 1 }}<span class="text-xs text-ink-400">/{{ totalItems }}</span>
           </span>
         </template>
 
-        <template v-else-if="!isHome() && activeSet">
+        <template v-else-if="!isHome && activeSet">
           <Badge variant="secondary" class="hidden sm:inline-flex rounded-xl px-3 py-1.5 text-xs font-semibold bg-white/60 dark:bg-white/10 border-none">
             {{ activeSet.setName }}
           </Badge>

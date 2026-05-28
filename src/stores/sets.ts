@@ -150,7 +150,7 @@ export const useSetsStore = defineStore('sets', () => {
       else {
         const targetIndex = sets.value.findIndex(s => s.id === setEditorId.value)
         if (targetIndex === -1)
-          throw new Error('找不到要編輯的單字集')
+          throw new Error(t('editor.notFound'))
 
         const nextSet: VocabSet = {
           ...sets.value[targetIndex],

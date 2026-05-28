@@ -220,8 +220,7 @@ export const useSessionStore = defineStore('session', () => {
   }
 
   function navigateToMode(mode: PracticeMode, setId: string) {
-    const name = mode === 'quiz' ? 'quiz' : mode === 'spelling' ? 'spelling' : 'flashcard'
-    router.push({ name, params: { setId } })
+    router.push({ name: mode, params: { setId } })
   }
 
   async function startRound(mode: PracticeMode, setId: string, reviewEntries: SessionEntry[] | null = null) {

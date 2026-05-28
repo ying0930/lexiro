@@ -86,7 +86,7 @@ export const useBackupStore = defineStore('backup', () => {
     driveError.value = ''
 
     if (!setsStore.sets.length) {
-      driveError.value = '沒有可備份的單字集'
+      driveError.value = t('backup.noSetsToBackup')
       return
     }
 
@@ -123,7 +123,7 @@ export const useBackupStore = defineStore('backup', () => {
       }
     }
     catch (error) {
-      driveError.value = (error as Error).message || '讀取 Google Drive 備份列表失敗'
+      driveError.value = (error as Error).message || t('backup.loadListFailed')
     }
     finally {
       driveListLoading.value = false
@@ -154,7 +154,7 @@ export const useBackupStore = defineStore('backup', () => {
       setsStore.refreshDiffs(parsed.sets)
     }
     catch (error) {
-      driveError.value = (error as Error).message || '讀取 Google Drive 備份失敗'
+      driveError.value = (error as Error).message || t('backup.loadBackupFailed')
       driveImportSets.value = null
     }
     finally {
@@ -166,7 +166,7 @@ export const useBackupStore = defineStore('backup', () => {
     const setsStore = useSetsStore()
     driveError.value = ''
     if (!driveImportSets.value || !driveImportSets.value.length) {
-      driveError.value = '請先選擇 Google Drive 備份檔'
+      driveError.value = t('backup.selectBackupFirst')
       return
     }
 
@@ -180,7 +180,7 @@ export const useBackupStore = defineStore('backup', () => {
       uiStore.closeTransfer()
     }
     catch (error) {
-      driveError.value = (error as Error).message || '從 Google Drive 導入失敗'
+      driveError.value = (error as Error).message || t('backup.importDriveFailed')
     }
     finally {
       driveImportLoading.value = false
@@ -194,7 +194,7 @@ export const useBackupStore = defineStore('backup', () => {
     zipImportSets.value = null
     zipImportName.value = ''
     const setsStore = useSetsStore()
-    setsStore.duplicateSummary = null as any
+    setsStore.duplicateSummary = null
     setsStore.resetImportVersionDiffs()
     if (resetInput) {
       zipImportInputKey.value += 1
@@ -219,7 +219,7 @@ export const useBackupStore = defineStore('backup', () => {
       setsStore.refreshDiffs(parsed.sets)
     }
     catch (error) {
-      zipImportError.value = (error as Error).message || '匯入失敗'
+      zipImportError.value = (error as Error).message || t('backup.importZipFailed')
     }
   }
 
@@ -246,7 +246,7 @@ export const useBackupStore = defineStore('backup', () => {
     driveImportSets.value = null
     driveImportExportedAt.value = ''
     const setsStore = useSetsStore()
-    setsStore.duplicateSummary = null as any
+    setsStore.duplicateSummary = null
     setsStore.resetImportVersionDiffs()
   }
 

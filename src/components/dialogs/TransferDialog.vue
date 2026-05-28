@@ -18,7 +18,25 @@ const { closeTransfer } = uiStore
 const { sets, exportSelectedIds, exportAllSelected, exportSelectedCount, exportSelectedWordCount, exportError } = storeToRefs(setsStore)
 const { toggleExportAll, exportSelectedSetsToZip } = setsStore
 
-const { zipImportInputKey, zipImportName, zipImportPreview, zipImportSets, zipImportError, driveConfigured, driveSignedIn, driveAccountLabel, driveBackupLoading, driveImportLoading, driveListLoading, driveError, driveImportPreview, driveImportSets } = storeToRefs(backupStore)
+const {
+  zipImportInputKey,
+  zipImportName,
+  zipImportPreview,
+  zipImportSets,
+  zipImportError,
+} = storeToRefs(backupStore)
+
+const {
+  driveConfigured,
+  driveSignedIn,
+  driveAccountLabel,
+  driveBackupLoading,
+  driveImportLoading,
+  driveListLoading,
+  driveError,
+  driveImportPreview,
+  driveImportSets,
+} = storeToRefs(backupStore)
 const { signInDrive, signOutDrive, backupToDrive, refreshDriveBackups, applyDriveImport, resetZipImportState, handleZipImportChange, applyZipImport } = backupStore
 </script>
 

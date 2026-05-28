@@ -31,6 +31,7 @@ export default {
     confirmStart: '開始',
     skip: '跳過',
     next: '下一題',
+    quizPromptLabel: '題幹',
   },
   flashcard: {
     title: '單字卡',
@@ -72,6 +73,7 @@ export default {
     edit: '編輯單字集',
     setName: '單字集名稱',
     nameRequired: '請輸入單字集名稱',
+    notFound: '找不到要編輯的單字集',
     word: '單字',
     pos: '詞性',
     meaning: '字義',
@@ -154,6 +156,12 @@ export default {
     backupSuccess: '已備份到 Google Drive：{filename}',
     backupFailed: '備份到 Google Drive 失敗',
     backupDeleted: '已刪除 {count} 個舊備份',
+    noSetsToBackup: '沒有可備份的單字集',
+    loadListFailed: '讀取 Google Drive 備份列表失敗',
+    loadBackupFailed: '讀取 Google Drive 備份失敗',
+    selectBackupFirst: '請先選擇 Google Drive 備份檔',
+    importDriveFailed: '從 Google Drive 導入失敗',
+    importZipFailed: '匯入失敗',
   },
   confirm: {
     deleteTitle: '刪除單字集',
@@ -179,5 +187,15 @@ export default {
     description: 'Wordmem 有可用的新版本。為了確保資料同步與取得最新功能，建議重新整理網頁。',
     updateBtn: '立即重新整理',
     laterBtn: '稍後再說',
+  },
+  spelling: {
+    inputLabel: '請輸入完整英文單字',
+    inputHint: '判定將忽略大小寫與前後空白。留空送出將被視為略過。',
+    placeholder: '例如：apple',
+  },
+  appHeader: {
+    stats: '{setCount} 個單字集，共 {wordCount} 個單字',
+    emptyHint: '點擊新增按鈕以載入你的專屬單字集。',
+    practiceStats: ' · {label} · 共 {count} 題',
   },
 }

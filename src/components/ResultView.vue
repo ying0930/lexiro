@@ -62,11 +62,12 @@ async function copyAllWrongQuestionsPrompt() {
   if (!resultSummary || resultSummary.wrongCount === 0)
     return
 
-  const wrongRows = resultRows.filter(row => !row.record?.isCorrect)
-  if (wrongRows.length === 0)
+  const rows = wrongRows.value
+  if (rows.length === 0)
     return
 
-  const wrongQuestionsText = wrongRows.map((row, idx) => {
+  // AI prompt template – intentional zh-TW
+  const wrongQuestionsText = rows.map((row, idx) => {
     const mode = resultSummary.mode
     const entry = row.entry
     const record = row.record

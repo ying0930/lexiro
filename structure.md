@@ -10,7 +10,8 @@
 │   │   │   ├── ImportSettings.vue      # Shared import configuration & diff selector
 │   │   │   ├── PracticeDialog.vue      # Mode selection dialog
 │   │   │   ├── SetEditorDialog.vue     # Add/edit set dialog
-│   │   │   └── TransferDialog.vue      # Google Drive transfer dialog
+│   │   │   ├── TransferDialog.vue      # Google Drive transfer dialog
+│   │   │   └── VersionUpdateDialog.vue # Version update reminder dialog
 │   │   ├── ui/
 │   │   │   ├── badge/Badge.vue
 │   │   │   ├── button/Button.vue
@@ -49,7 +50,7 @@
 │   ├── workers/
 │   │   └── backup.worker.ts            # ZIP build/parse off the main thread
 │   ├── locales/
-│   │   └── zh-TW.ts                    # 74 i18n keys (Traditional Chinese)
+│   │   └── zh-TW.ts                    # ~180 i18n keys (Traditional Chinese)
 │   ├── router/
 │   │   └── index.ts                    # 5 routes
 │   ├── stores/

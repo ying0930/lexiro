@@ -4,6 +4,14 @@ function isNonEmptyString(value: unknown): value is string {
   return typeof value === 'string' && value.trim().length > 0
 }
 
+function generateId(prefix?: string): string {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return crypto.randomUUID()
+  }
+  const suffix = Math.random().toString(36).substring(2, 11)
+  return prefix ? `${prefix}-${Date.now()}-${suffix}` : `${Date.now()}`
+}
+
 export function normalizeQuestion(question: unknown, itemIndex: number): Question {
   if (!question || typeof question !== 'object' || Array.isArray(question)) {
     throw new Error(`第 ${itemIndex + 1} 筆的 question 格式錯誤`)
@@ -48,7 +56,7 @@ export function normalizeItem(item: unknown, itemIndex: number): VocabItem {
   }
 
   return {
-    id: isNonEmptyString(it.id) ? (it.id as string).trim() : (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `item-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`),
+    id: isNonEmptyString(it.id) ? (it.id as string).trim() : generateId('item'),
     word: (it.word as string).trim(),
     pos: isNonEmptyString(it.pos) ? (it.pos as string).trim() : '',
     meaning: (it.meaning as string).trim(),
@@ -57,7 +65,7 @@ export function normalizeItem(item: unknown, itemIndex: number): VocabItem {
   }
 }
 
-export function normalizeSet(data: unknown, fallbackId = (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}`)): VocabSet {
+export function normalizeSet(data: unknown, fallbackId = generateId()): VocabSet {
   if (!data || typeof data !== 'object' || Array.isArray(data)) {
     throw new Error('最外層必須是單一 JSON object')
   }
@@ -151,7 +159,7 @@ export function createEditorQuestion(question: Question | null | undefined): Edi
 
 export function createEditorItem(item?: VocabItem | null, index = 0): EditorItem {
   return {
-    id: isNonEmptyString(item?.id) ? (item.id as string).trim() : (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `editor-${Date.now()}-${index}`),
+    id: isNonEmptyString(item?.id) ? (item.id as string).trim() : generateId(`editor-${index}`),
     word: item?.word ?? '',
     pos: item?.pos ?? '',
     meaning: item?.meaning ?? '',
