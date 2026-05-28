@@ -80,13 +80,13 @@ export const useBackupStore = defineStore('backup', () => {
   }
 
   // Drive backup
-  async function backupSelectedSetsToDrive() {
+  async function backupToDrive() {
     const uiStore = useUIStore()
     const setsStore = useSetsStore()
     driveError.value = ''
 
-    if (!setsStore.exportSelectedSets.length) {
-      setsStore.exportError = t('backup.selectAtLeastOne')
+    if (!setsStore.sets.length) {
+      driveError.value = '沒有可備份的單字集'
       return
     }
 
@@ -94,7 +94,7 @@ export const useBackupStore = defineStore('backup', () => {
     try {
       await ensureDriveSignedIn()
       const filename = buildExportFileName()
-      await uploadBackupZip(await buildExportZipBlob(setsStore.exportSelectedSets), filename)
+      await uploadBackupZip(await buildExportZipBlob(setsStore.sets), filename)
       const pruneResult = await pruneOldBackupFiles(10)
       driveBackups.value = pruneResult.kept
       let toastMsg = t('backup.backupSuccess', { filename })
@@ -272,7 +272,7 @@ export const useBackupStore = defineStore('backup', () => {
     ensureDriveSignedIn,
     signInDrive,
     signOutDrive,
-    backupSelectedSetsToDrive,
+    backupToDrive,
     refreshDriveBackups,
     selectDriveBackup,
     applyDriveImport,

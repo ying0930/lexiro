@@ -21,7 +21,7 @@ const { sets, exportSelectedIds, exportAllSelected, exportSelectedCount, exportS
 const { toggleExportAll, exportSelectedSetsToZip, setImportVersionChoice } = setsStore
 
 const { zipImportInputKey, zipImportName, zipImportPreview, zipImportSets, zipImportError, driveConfigured, driveSignedIn, driveAccountLabel, driveBackupLoading, driveImportLoading, driveListLoading, driveError, driveBackups, driveSelectedFileId, driveImportPreview, driveImportSets } = storeToRefs(backupStore)
-const { signInDrive, signOutDrive, backupSelectedSetsToDrive, refreshDriveBackups, selectDriveBackup, applyDriveImport, resetZipImportState, handleZipImportChange, applyZipImport } = backupStore
+const { signInDrive, signOutDrive, backupToDrive, refreshDriveBackups, selectDriveBackup, applyDriveImport, resetZipImportState, handleZipImportChange, applyZipImport } = backupStore
 
 const dropdownOpen = ref(false)
 const triggerRef = ref<HTMLButtonElement | null>(null)
@@ -103,10 +103,10 @@ function selectOption(id: string) {
         <div class="mt-4 grid gap-3 sm:grid-cols-2">
           <Button
             variant="default"
-            :disabled="!exportSelectedCount || !driveConfigured"
+            :disabled="!sets.length || !driveConfigured"
             :loading="driveBackupLoading"
             class="gap-2"
-            @click="backupSelectedSetsToDrive"
+            @click="backupToDrive"
           >
             <Cloud class="h-4 w-4" />
             <span>{{ $t('backup.backupToDrive') }}</span>

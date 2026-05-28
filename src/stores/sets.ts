@@ -82,6 +82,7 @@ export const useSetsStore = defineStore('sets', () => {
           .filter((set: VocabSet | null): set is VocabSet => set !== null)
 
         sets.value = sanitizedSets
+        exportSelectedIds.value = sanitizedSets.map((s: VocabSet) => s.id)
         const validSetIds = new Set(sanitizedSets.map((s: VocabSet) => s.id))
         if (parsed.activeSetId && validSetIds.has(parsed.activeSetId)) {
           activeSetId.value = parsed.activeSetId
@@ -142,6 +143,7 @@ export const useSetsStore = defineStore('sets', () => {
           items,
         }
         sets.value = [...sets.value, nextSet]
+        exportSelectedIds.value = [...exportSelectedIds.value, nextSet.id]
         activeSetId.value = nextSet.id
         uiStore.showToast(t('editor.created', { name: nextSet.setName, count: nextSet.items.length }))
       }
@@ -296,6 +298,7 @@ export const useSetsStore = defineStore('sets', () => {
 
     if (mode === 'overwrite') {
       sets.value = result.imported
+      exportSelectedIds.value = result.imported.map(s => s.id)
       activeSetId.value = result.imported[0]?.id ?? null
       sessionStore.resetStudyView()
       saveState()
@@ -320,6 +323,7 @@ export const useSetsStore = defineStore('sets', () => {
 
     const newSets = result.imported.filter(imp => !result.replacedVersions.includes(imp.setName))
     sets.value = [...nextSets, ...newSets]
+    exportSelectedIds.value = [...exportSelectedIds.value, ...newSets.map(s => s.id)]
 
     if (result.replacedVersions.length && sessionStore.currentSession && replacedSetIds.has(sessionStore.currentSession.sourceSetId)) {
       sessionStore.resetStudyView()
