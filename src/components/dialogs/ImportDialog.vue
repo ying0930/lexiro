@@ -111,7 +111,7 @@ function copyImportPrompt() {
           {{ $t('import.step2') }}
         </p>
         <p class="mt-1.5 text-xs leading-relaxed text-ink-500 dark:text-ink-400 font-medium">
-          {{ $t('import.step2') }}
+          {{ $t('import.step2Hint') }}
         </p>
       </div>
 
