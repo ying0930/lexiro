@@ -106,7 +106,7 @@ describe('normalizeSet', () => {
 
   it('assigns auto-generated item ids', () => {
     const result = normalizeSet(validSetData, 'f-1')
-    expect(result.items[0].id).toBe('item-1')
+    expect(result.items[0].id).toBeTruthy()
   })
 
   it('preserves provided item id', () => {

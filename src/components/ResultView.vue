@@ -2,6 +2,7 @@
 import { BookOpenText, ClipboardCopy, RotateCcw, SpellCheck2 } from 'lucide-vue-next'
 import { computed, nextTick, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { copyToClipboard } from '@/lib/clipboard'
 import prompts from '@/lib/prompts'
 import { useSessionStore } from '@/stores/session'
 import { useSetsStore } from '@/stores/sets'
@@ -25,13 +26,6 @@ const wrongRows = computed(() => resultRows.filter(row => !row.record?.isCorrect
 
 function formatQuestionOptions(question: { opts: string[] }) {
   return question.opts.map((option, index) => `- (${String.fromCharCode(65 + index)}) ${option}`).join('\n')
-}
-
-async function copyToClipboard(text: string) {
-  if (!navigator.clipboard?.writeText) {
-    return Promise.reject(new Error('clipboard unavailable'))
-  }
-  return navigator.clipboard.writeText(text)
 }
 
 async function copyQuestionExplainPrompt(entry: any, record: any = null, mode = 'quiz') {

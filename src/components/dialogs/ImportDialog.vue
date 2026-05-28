@@ -3,6 +3,7 @@ import { ClipboardCopy } from 'lucide-vue-next'
 import { storeToRefs } from 'pinia'
 import { computed, nextTick, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { copyToClipboard } from '@/lib/clipboard'
 import { DIFFICULTY_PROMPTS } from '@/lib/difficulty-prompts'
 import { parseImportJson } from '@/lib/import'
 import prompts from '@/lib/prompts'
@@ -49,12 +50,6 @@ watch(importJson, (val) => {
     setsStore.importError = result.error
   }
 })
-
-async function copyToClipboard(text: string) {
-  if (!navigator.clipboard?.writeText)
-    throw new Error('clipboard unavailable')
-  await navigator.clipboard.writeText(text)
-}
 
 function copyImportPrompt() {
   const prompt = prompts.generateWordSet

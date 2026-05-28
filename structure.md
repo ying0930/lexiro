@@ -5,7 +5,9 @@
 │   ├── components/
 │   │   ├── dialogs/
 │   │   │   ├── ConfirmDialog.vue       # Confirmation modal (delete etc.)
+│   │   │   ├── DriveBackupSelector.vue # Custom Google Drive backup selector
 │   │   │   ├── ImportDialog.vue        # Import/merge dialog
+│   │   │   ├── ImportSettings.vue      # Shared import configuration & diff selector
 │   │   │   ├── PracticeDialog.vue      # Mode selection dialog
 │   │   │   ├── SetEditorDialog.vue     # Add/edit set dialog
 │   │   │   └── TransferDialog.vue      # Google Drive transfer dialog
@@ -32,6 +34,7 @@
 │   │   ├── index.ts
 │   │   └── storage.ts                  # Storage keys, theme key
 │   ├── lib/
+│   │   ├── clipboard.ts                # Shared clipboard copy utility
 │   │   ├── cn.ts                       # clsx + twMerge utility
 │   │   ├── difficulty-prompts.ts       # Per-level AI prompt chunks (Lv1–4)
 │   │   ├── file.ts                     # ZIP build/parse, download
