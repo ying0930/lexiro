@@ -48,7 +48,7 @@ export function normalizeItem(item: unknown, itemIndex: number): VocabItem {
   }
 
   return {
-    id: isNonEmptyString(it.id) ? (it.id as string).trim() : `item-${itemIndex + 1}`,
+    id: isNonEmptyString(it.id) ? (it.id as string).trim() : (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `item-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`),
     word: (it.word as string).trim(),
     pos: isNonEmptyString(it.pos) ? (it.pos as string).trim() : '',
     meaning: (it.meaning as string).trim(),
@@ -57,7 +57,7 @@ export function normalizeItem(item: unknown, itemIndex: number): VocabItem {
   }
 }
 
-export function normalizeSet(data: unknown, fallbackId = `${Date.now()}`): VocabSet {
+export function normalizeSet(data: unknown, fallbackId = (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}`)): VocabSet {
   if (!data || typeof data !== 'object' || Array.isArray(data)) {
     throw new Error('最外層必須是單一 JSON object')
   }
@@ -151,7 +151,7 @@ export function createEditorQuestion(question: Question | null | undefined): Edi
 
 export function createEditorItem(item?: VocabItem | null, index = 0): EditorItem {
   return {
-    id: isNonEmptyString(item?.id) ? (item.id as string).trim() : `editor-${Date.now()}-${index}`,
+    id: isNonEmptyString(item?.id) ? (item.id as string).trim() : (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `editor-${Date.now()}-${index}`),
     word: item?.word ?? '',
     pos: item?.pos ?? '',
     meaning: item?.meaning ?? '',

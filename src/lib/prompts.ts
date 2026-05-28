@@ -19,7 +19,6 @@ const PROMPTS = {
   "difficulty": {{DIFFICULTY_NUM}},
   "items": [
     {
-      "id": "w-001",
       "word": "單字",
       "pos": "詞性",
       "meaning": "中文意思",
