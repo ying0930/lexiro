@@ -20,7 +20,9 @@ export function buildExportFileName(): string {
 }
 
 export async function buildExportZipBlob(selectedSets: VocabSet[]): Promise<Blob> {
-  const payload = buildExportPayload(selectedSets)
+  // Use JSON.parse + JSON.stringify to remove Vue reactive proxies which cannot be cloned to web workers
+  const plainSets = JSON.parse(JSON.stringify(selectedSets))
+  const payload = buildExportPayload(plainSets)
   const buffer = await buildExportZipBuffer(payload)
   return new Blob([buffer], { type: 'application/zip' })
 }
