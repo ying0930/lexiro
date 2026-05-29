@@ -23,7 +23,7 @@ const { showToast } = uiStore
 
 const importTextarea = ref<InstanceType<typeof Textarea> | null>(null)
 
-const difficultyLevels = ['', t('import.difficulty1'), t('import.difficulty2'), t('import.difficulty3'), t('import.difficulty4')] as const
+const difficultyLevels = ['', t('import.difficulty1'), t('import.difficulty2'), t('import.difficulty3')] as const
 const difficultyLabel = computed(() => difficultyLevels[importDifficulty.value])
 
 watch([() => importOpen, () => importStep], () => {
@@ -91,7 +91,7 @@ function copyImportPrompt() {
             v-model.number="importDifficulty"
             type="range"
             min="1"
-            max="4"
+            max="3"
             step="1"
             class="w-full h-2 rounded-full appearance-none cursor-pointer bg-ink-200 dark:bg-ink-700 accent-indigo-500"
           >

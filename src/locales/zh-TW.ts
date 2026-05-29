@@ -105,10 +105,9 @@ export default {
     copyFailed: '複製失敗',
     parseError: '解析錯誤',
     difficulty: '難度',
-    difficulty1: '簡單（國中基礎）',
-    difficulty2: '中等（會考難度）',
-    difficulty3: '困難（學測／指考）',
-    difficulty4: '最難（GRE／TOEFL）',
+    difficulty1: '簡單（基礎）',
+    difficulty2: '中等（段考）',
+    difficulty3: '困難（大考）',
   },
   backup: {
     title: '備份與匯入',

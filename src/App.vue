@@ -26,13 +26,20 @@ let versionCheckInterval: ReturnType<typeof setInterval> | null = null
 async function checkVersion() {
   if (import.meta.env.DEV)
     return
+  if (uiStore.versionUpdateAvailable || uiStore.versionUpdatePending)
+    return
   try {
     const res = await fetch(`/version.json?t=${Date.now()}`)
     if (!res.ok)
       return
     const data = await res.json()
     if (data && data.version && data.version !== __APP_VERSION__) {
-      uiStore.versionUpdateAvailable = true
+      if (router.currentRoute.value.path === '/') {
+        uiStore.versionUpdateAvailable = true
+      }
+      else {
+        uiStore.versionUpdatePending = true
+      }
     }
   }
   catch (e) {
@@ -67,8 +74,13 @@ onMounted(async () => {
   }
 
   if (router) {
-    router.afterEach(() => {
-      checkVersion()
+    router.afterEach((to) => {
+      if (to.path === '/' && uiStore.versionUpdatePending) {
+        uiStore.versionUpdateAvailable = true
+      }
+      else {
+        checkVersion()
+      }
     })
   }
 })
