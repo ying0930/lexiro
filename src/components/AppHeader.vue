@@ -37,33 +37,32 @@ const practiceLabel = computed(() => {
 
 <template>
   <header
-    class="fixed top-0 inset-x-0 z-40 border-b border-white/40 dark:border-white/10"
-    style="background-color: rgba(255,255,255,0.45); backdrop-filter: blur(20px) saturate(140%); -webkit-backdrop-filter: blur(20px) saturate(140%);"
+    class="fixed top-0 inset-x-0 z-40 border-b border-ink-200/40 dark:border-ink-200/5 backdrop-blur-xl bg-white/75 dark:bg-black/75 transition-all duration-200"
   >
-    <div class="mx-auto flex max-w-5xl items-center justify-between gap-4 px-6 py-3">
+    <div class="mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 sm:px-6 py-3">
       <div class="flex items-center gap-3 min-w-0">
         <Button
           v-if="!isHome"
           variant="ghost"
           size="icon"
-          class="h-9 w-9 shrink-0 hover:bg-white/60 dark:hover:bg-white/10"
+          class="h-9 w-9 shrink-0 rounded-xl hover:bg-ink-200 dark:hover:bg-ink-200/60"
           @click="exitCurrentView"
         >
-          <ArrowLeft class="h-4 w-4 text-ink-700 dark:text-ink-300" />
+          <ArrowLeft class="h-4.5 w-4.5 text-accent-primary" />
         </Button>
         <div class="text-left min-w-0">
           <h1 class="text-xl sm:text-2xl font-extrabold tracking-tight text-ink-950 dark:text-ink-50">
             Wordmem
           </h1>
-          <p v-if="isHome" class="text-xs text-ink-500 dark:text-ink-400 mt-0.5">
-            <span v-if="hasSets" class="font-medium">
+          <p v-if="isHome" class="text-xs text-ink-500 dark:text-ink-400 mt-0.5 font-semibold">
+            <span v-if="hasSets">
               {{ $t('appHeader.stats', { setCount: sets.length, wordCount: totalWordCount }) }}
             </span>
-            <span v-else class="font-medium">
+            <span v-else>
               {{ $t('appHeader.emptyHint') }}
             </span>
           </p>
-          <p v-else-if="activeSet" class="text-xs text-ink-500 dark:text-ink-400 mt-0.5 truncate">
+          <p v-else-if="activeSet" class="text-xs text-ink-500 dark:text-ink-400 mt-0.5 truncate font-semibold">
             {{ activeSet.setName }}<span v-if="isPractice">{{ $t('appHeader.practiceStats', { label: practiceLabel, count: totalItems }) }}</span>
           </p>
         </div>
@@ -71,20 +70,20 @@ const practiceLabel = computed(() => {
 
       <div class="flex items-center gap-2 shrink-0">
         <template v-if="isPractice && currentSession">
-          <Progress :model-value="progressPercent" class="w-20 h-1" />
-          <span class="text-sm font-bold tabular-nums text-ink-950 dark:text-ink-50">
-            {{ currentIndex + 1 }}<span class="text-xs text-ink-400">/{{ totalItems }}</span>
+          <Progress :model-value="progressPercent" class="w-16 sm:w-24 h-1.5" />
+          <span class="text-xs sm:text-sm font-bold tabular-nums text-ink-950 dark:text-ink-50">
+            {{ currentIndex + 1 }}<span class="text-[10px] sm:text-xs text-ink-400">/{{ totalItems }}</span>
           </span>
         </template>
 
         <template v-else-if="!isHome && activeSet">
-          <Badge variant="secondary" class="hidden sm:inline-flex rounded-xl px-3 py-1.5 text-xs font-semibold bg-white/60 dark:bg-white/10 border-none">
+          <Badge variant="secondary" class="hidden sm:inline-flex rounded-xl px-3 py-1.5 text-xs font-semibold bg-ink-200 dark:bg-ink-200/40 border-none">
             {{ activeSet.setName }}
           </Badge>
           <Button
             variant="outline"
             size="icon"
-            class="h-9 w-9 text-ink-500 hover:text-ink-950 dark:hover:text-ink-50 border-white/60 dark:border-white/20 hover:bg-white/60 dark:hover:bg-white/10"
+            class="h-9 w-9 text-ink-600 dark:text-ink-400 hover:text-accent-primary dark:hover:text-accent-primary border-ink-200 dark:border-ink-200/40 hover:bg-ink-100 dark:hover:bg-ink-250 rounded-xl"
             aria-label="編輯單字集"
             @click="editActiveSet"
           >
@@ -93,7 +92,7 @@ const practiceLabel = computed(() => {
           <Button
             variant="outline"
             size="icon"
-            class="h-9 w-9 text-red-500 hover:text-red-600 border-white/60 dark:border-white/20 hover:bg-red-50 dark:hover:bg-red-950/20"
+            class="h-9 w-9 text-red-500 hover:text-red-600 border-ink-200 dark:border-ink-200/40 hover:bg-red-50 dark:hover:bg-red-950/15 rounded-xl"
             aria-label="刪除單字集"
             @click="deleteActiveSet"
           >
@@ -101,17 +100,17 @@ const practiceLabel = computed(() => {
           </Button>
         </template>
 
-        <span class="w-px h-5 bg-ink-200/50 dark:bg-white/20 mx-1 hidden sm:inline-block" />
+        <span class="w-px h-5 bg-ink-200/60 dark:bg-ink-200/10 mx-1 hidden sm:inline-block" />
 
         <Button
           variant="ghost"
           size="icon"
-          class="h-9 w-9 rounded-xl hover:bg-white/60 dark:hover:bg-white/10"
+          class="h-9 w-9 rounded-xl hover:bg-ink-200 dark:hover:bg-ink-200/60"
           title="切換主題"
           @click="toggleTheme"
         >
-          <Sun v-if="theme === 'dark'" class="h-4 w-4 text-emerald-400 animate-pulse" />
-          <Moon v-else class="h-4 w-4 text-indigo-600" />
+          <Sun v-if="theme === 'dark'" class="h-4.5 w-4.5 text-accent-primary" />
+          <Moon v-else class="h-4.5 w-4.5 text-accent-primary" />
         </Button>
       </div>
     </div>

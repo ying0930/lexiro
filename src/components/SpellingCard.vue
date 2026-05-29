@@ -70,57 +70,57 @@ function next() {
 </script>
 
 <template>
-  <Card class="p-6 sm:p-8" :glow="false">
+  <Card class="p-6 sm:p-8 border border-ink-200/50 dark:border-ink-200/5 shadow-sm">
     <!-- Word hint: first and last letter -->
     <div class="mb-6 text-left">
-      <p class="font-mono text-2xl sm:text-3xl font-bold tracking-widest text-ink-950 dark:text-ink-50">
+      <p class="font-mono text-2xl sm:text-3xl font-extrabold tracking-widest text-accent-primary">
         {{ wordHint }}
       </p>
     </div>
 
     <!-- Example Block (例句) -->
-    <div class="rounded-2xl bg-ink-100/50 dark:bg-ink-900/40 border border-ink-200/50 dark:border-ink-800/50 p-5 text-left">
-      <p class="text-xs font-bold uppercase tracking-widest text-ink-400 dark:text-ink-500">
+    <div class="rounded-2xl bg-ink-100 dark:bg-ink-100/30 border border-ink-200/40 dark:border-ink-200/5 p-5 text-left">
+      <p class="text-xs font-extrabold uppercase tracking-widest text-ink-400 dark:text-ink-500">
         {{ $t('flashcard.example') }}
       </p>
-      <p class="mt-3 text-[15px] leading-relaxed text-ink-800 dark:text-ink-200 font-medium sm:text-base">
+      <p class="mt-3 text-[15px] leading-relaxed text-ink-950 dark:text-ink-50 font-bold sm:text-base">
         {{ blankedExample }}
       </p>
     </div>
 
     <!-- Answer Input Block -->
     <div v-if="!submitted" class="mt-6 space-y-2 text-left">
-      <label class="text-xs font-bold uppercase tracking-wider text-ink-500 dark:text-ink-400">
+      <label class="text-xs font-extrabold uppercase tracking-wider text-ink-500 dark:text-ink-400">
         {{ $t('spelling.inputLabel') }}
       </label>
       <div class="flex gap-3">
         <Input
           v-model="answer"
           :placeholder="$t('spelling.placeholder')"
-          class="flex-1 font-mono text-base tracking-wide"
+          class="flex-1 font-mono text-base tracking-wide rounded-xl"
           @keydown.enter.prevent="submit"
         />
-        <Button variant="default" class="shrink-0" @click="submit">
+        <Button variant="default" class="shrink-0 rounded-xl" @click="submit">
           {{ $t('result.check') }}
         </Button>
       </div>
-      <p class="text-[11px] text-ink-400 dark:text-ink-500 leading-relaxed font-medium">
+      <p class="text-[11px] text-ink-400 dark:text-ink-500 leading-relaxed font-semibold">
         {{ $t('spelling.inputHint') }}
       </p>
     </div>
 
     <!-- Explanation Block (shown immediately after submitting) -->
-    <div v-if="submitted" class="mt-6 rounded-2xl border border-ink-200 dark:border-ink-800 bg-white dark:bg-ink-900 p-5 text-left transition-all duration-300">
-      <p class="text-sm font-bold text-ink-950 dark:text-ink-50">
+    <div v-if="submitted" class="mt-6 rounded-2xl border border-ink-200/60 dark:border-ink-200/5 bg-ink-100 dark:bg-ink-100/30 p-5 text-left transition-all duration-300">
+      <p class="text-sm font-extrabold" :class="[isCorrect ? 'text-emerald-600 dark:text-emerald-400' : answer.trim() ? 'text-red-500' : 'text-ink-500']">
         {{ isCorrect ? $t('result.correct') : answer.trim() ? $t('result.wrong') : $t('result.skipped') }}
       </p>
       <p class="mt-2 text-sm leading-relaxed text-ink-600 dark:text-ink-400">
         {{ $t('result.correctAnswer') }}：<span class="font-bold text-emerald-600 dark:text-emerald-400"> {{ entry.item.word }}</span>
-        <span v-if="entry.item.pos" class="font-semibold text-emerald-500">（{{ entry.item.pos }}）</span>，
-        <span class="block mt-1 font-medium text-ink-800 dark:text-ink-200">{{ entry.item.meaning }}</span>
+        <span v-if="entry.item.pos" class="font-bold text-accent-primary">（{{ entry.item.pos }}）</span>，
+        <span class="block mt-2 font-semibold text-ink-950 dark:text-ink-50">{{ entry.item.meaning }}</span>
       </p>
 
-      <Button variant="default" class="mt-4 gap-2" @click="next">
+      <Button variant="default" class="mt-4 gap-2 rounded-xl" @click="next">
         <span>{{ index + 1 >= total ? $t('practice.submitAll') : $t('practice.next') }}</span>
         <ArrowRight class="h-4 w-4" />
       </Button>

@@ -82,23 +82,10 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div v-if="dataLoaded" class="min-h-screen bg-ink-50/50 dark:bg-ink-950 text-ink-950 dark:text-ink-50 transition-colors duration-300 pb-20 font-sans relative overflow-x-hidden">
-    <div
-      class="pointer-events-none fixed -top-40 left-1/4 h-[400px] w-[400px] rounded-full bg-emerald-500/20 dark:bg-emerald-500/12 blur-[60px] z-0 animate-glow-1" :class="[{ '!hidden': isAnimationsPaused }]"
-      aria-hidden="true"
-    />
-    <div
-      class="pointer-events-none fixed top-1/4 right-1/4 h-[500px] w-[500px] rounded-full bg-indigo-500/22 dark:bg-indigo-500/16 blur-[70px] z-0 animate-glow-2" :class="[{ '!hidden': isAnimationsPaused }]"
-      aria-hidden="true"
-    />
-    <div
-      class="pointer-events-none fixed -bottom-20 left-1/3 h-[450px] w-[450px] rounded-full bg-purple-500/18 dark:bg-purple-600/12 blur-[60px] z-0 animate-glow-3" :class="[{ '!hidden': isAnimationsPaused }]"
-      aria-hidden="true"
-    />
-
+  <div v-if="dataLoaded" class="min-h-screen bg-ink-50 dark:bg-ink-950 text-ink-950 dark:text-ink-50 transition-colors duration-250 pb-20 relative overflow-x-hidden">
     <AppHeader />
 
-    <main class="mx-auto pt-20 max-w-5xl px-6 relative">
+    <main class="mx-auto pt-20 max-w-5xl px-4 sm:px-6 relative">
       <router-view v-slot="{ Component }">
         <Transition name="page" mode="out-in">
           <component :is="Component" />

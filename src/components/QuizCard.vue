@@ -53,28 +53,28 @@ function optionClass(index: number) {
   const isSelected = index === selectedIndex.value
 
   return cn(
-    'flex w-full items-start gap-3 rounded-xl border px-4 py-3.5 text-left text-sm font-medium transition-all duration-200 outline-none',
-    !answered.value && 'border-ink-200 dark:border-ink-800 bg-white dark:bg-ink-900 text-ink-700 dark:text-ink-300 hover:bg-ink-50 dark:hover:bg-ink-850 active:scale-[98%] focus-visible:ring-2 focus-visible:ring-emerald-500/20',
-    !answered.value && isSelected && 'border-indigo-200 dark:border-indigo-900/50 bg-indigo-500/5 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 ring-2 ring-indigo-500/20',
+    'flex w-full items-start gap-3 rounded-2xl border px-4 py-3.5 text-left text-sm font-semibold transition-all duration-200 outline-none',
+    !answered.value && 'border-ink-200 dark:border-ink-200/40 bg-white dark:bg-ink-100 text-ink-700 dark:text-ink-300 hover:bg-ink-100 dark:hover:bg-ink-200 active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-accent-primary/20',
+    !answered.value && isSelected && 'border-accent-primary bg-accent-primary/5 text-accent-primary ring-1 ring-accent-primary/25',
     answered.value && 'cursor-default',
-    answered.value && isCorrect && 'border-emerald-200 dark:border-emerald-900/50 bg-emerald-500/5 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-400 font-semibold ring-2 ring-emerald-500/10',
-    answered.value && isSelected && !isCorrect && 'border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-950/20 text-red-600 dark:text-red-400 ring-2 ring-red-500/10',
-    answered.value && !isSelected && !isCorrect && 'border-ink-200 dark:border-ink-800 bg-ink-50/50 dark:bg-ink-900 text-ink-400 dark:text-ink-500 opacity-60',
+    answered.value && isCorrect && 'border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 font-bold',
+    answered.value && isSelected && !isCorrect && 'border-red-500/20 bg-red-500/10 text-red-600 dark:text-red-400 font-bold',
+    answered.value && !isSelected && !isCorrect && 'border-ink-200 dark:border-ink-200/20 bg-ink-50/50 dark:bg-ink-100/50 text-ink-400 dark:text-ink-500 opacity-40',
   )
 }
 </script>
 
 <template>
-  <Card class="p-6 sm:p-8" :glow="false">
+  <Card class="p-6 sm:p-8 border border-ink-200/50 dark:border-ink-200/5 shadow-sm">
     <!-- Question Block (題幹) -->
-    <div class="rounded-2xl bg-ink-100/50 dark:bg-ink-900/40 border border-ink-200/50 dark:border-ink-800/50 p-5 text-left">
-      <p class="text-xs font-bold uppercase tracking-widest text-ink-400 dark:text-ink-500">
+    <div class="rounded-2xl bg-ink-100 dark:bg-ink-100/30 border border-ink-200/40 dark:border-ink-200/5 p-5 text-left">
+      <p class="text-xs font-extrabold uppercase tracking-widest text-ink-400 dark:text-ink-500">
         {{ $t('practice.quizPromptLabel') }}
       </p>
-      <p class="mt-3 text-[15px] leading-relaxed text-ink-800 dark:text-ink-200 font-medium sm:text-base">
+      <p class="mt-3 text-[15px] leading-relaxed text-ink-950 dark:text-ink-50 font-bold sm:text-base">
         <template v-if="!answered && hasBlank">
           {{ promptParts[0] }}
-          <span class="mx-1.5 inline-block w-16 border-b-2 border-ink-300 dark:border-ink-700 align-middle" />
+          <span class="mx-1.5 inline-block w-16 border-b-2 border-ink-300 dark:border-ink-500 align-middle" />
           {{ promptParts.slice(1).join('_____') }}
         </template>
         <template v-else-if="answered && hasBlank">
@@ -95,25 +95,25 @@ function optionClass(index: number) {
         :disabled="answered"
         @click="choose(optionIndex)"
       >
-        <span class="shrink-0 text-ink-400 dark:text-ink-500 font-bold">{{ labels[optionIndex] }}.</span>
-        <span class="text-ink-800 dark:text-ink-200">{{ option }}</span>
+        <span class="shrink-0 text-ink-400 dark:text-ink-500 font-extrabold">{{ labels[optionIndex] }}.</span>
+        <span class="text-ink-850 dark:text-ink-200">{{ option }}</span>
       </button>
     </div>
 
     <!-- Explanation Block (shown immediately after answering) -->
-    <div v-if="answered" class="mt-6 rounded-2xl border border-ink-200 dark:border-ink-800 bg-white dark:bg-ink-900 p-5 text-left transition-all duration-300">
-      <p class="text-sm font-bold text-ink-950 dark:text-ink-50">
+    <div v-if="answered" class="mt-6 rounded-2xl border border-ink-200/60 dark:border-ink-200/5 bg-ink-100 dark:bg-ink-100/30 p-5 text-left transition-all duration-300">
+      <p class="text-sm font-extrabold" :class="[selectedIndex === entry.item.question.ans ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500']">
         {{ selectedIndex === entry.item.question.ans ? $t('result.correct') : $t('result.wrong') }}
       </p>
       <p class="mt-2 text-sm leading-relaxed text-ink-600 dark:text-ink-400">
         {{ $t('result.correctAnswer') }}：<span class="font-bold text-emerald-600 dark:text-emerald-400"> {{ answerText }}</span>。
-        <span class="block mt-1 font-medium text-ink-800 dark:text-ink-200">{{ entry.item.meaning }}</span>
+        <span class="block mt-2 font-semibold text-ink-950 dark:text-ink-50">{{ entry.item.meaning }}</span>
       </p>
     </div>
 
     <!-- Skip / Next -->
     <div class="mt-6 flex justify-end">
-      <Button variant="default" class="gap-2" @click="next">
+      <Button variant="default" class="gap-2 rounded-xl" @click="next">
         <span>{{ answered ? (index + 1 >= total ? $t('practice.submitAll') : $t('practice.next')) : $t('practice.skip') }}</span>
         <ArrowRight class="h-4 w-4" />
       </Button>
