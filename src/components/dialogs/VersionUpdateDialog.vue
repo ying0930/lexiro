@@ -1,23 +1,25 @@
 <script setup lang="ts">
 import { RefreshCw } from 'lucide-vue-next'
 import { storeToRefs } from 'pinia'
-import { ref } from 'vue'
 import { useUIStore } from '@/stores/ui'
 import Button from '../ui/button/Button.vue'
 import Dialog from '../ui/dialog/Dialog.vue'
 
 const uiStore = useUIStore()
-const { versionUpdateAvailable } = storeToRefs(uiStore)
-
-const isLoading = ref(false)
+const { versionUpdateAvailable, versionUpdateReady, versionUpdateLoading } = storeToRefs(uiStore)
 
 function handleReload() {
-  isLoading.value = true
-  window.location.reload()
+  if (versionUpdateReady.value) {
+    window.location.reload()
+  }
+  else {
+    versionUpdateLoading.value = true
+  }
 }
 
 function handleClose() {
   versionUpdateAvailable.value = false
+  versionUpdateLoading.value = false
 }
 </script>
 
@@ -39,11 +41,11 @@ function handleClose() {
       </div>
 
       <div class="flex w-full flex-col sm:flex-row justify-end gap-2.5 mt-4 pt-4 border-t border-ink-100 dark:border-ink-800/60">
-        <Button variant="outline" class="w-full sm:w-auto" :disabled="isLoading" @click="handleClose">
+        <Button variant="outline" class="w-full sm:w-auto" @click="handleClose">
           {{ $t('version.laterBtn') }}
         </Button>
-        <Button variant="default" class="w-full sm:w-auto gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-medium shadow-md shadow-emerald-500/10 dark:shadow-emerald-950/20" :disabled="isLoading" @click="handleReload">
-          <RefreshCw v-if="isLoading" class="h-4 w-4 animate-spin" />
+        <Button variant="default" class="w-full sm:w-auto gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-medium shadow-md shadow-emerald-500/10 dark:shadow-emerald-950/20" :disabled="versionUpdateLoading" @click="handleReload">
+          <RefreshCw v-if="versionUpdateLoading" class="h-4 w-4 animate-spin" />
           <RefreshCw v-else class="h-4 w-4" />
           {{ $t('version.updateBtn') }}
         </Button>

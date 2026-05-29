@@ -22,6 +22,7 @@ const dataLoaded = ref(false)
 const isAnimationsPaused = ref(false)
 
 let versionCheckInterval: ReturnType<typeof setInterval> | null = null
+let controllerChangeListener: (() => void) | null = null
 
 async function checkVersion() {
   if (import.meta.env.DEV)
@@ -34,6 +35,12 @@ async function checkVersion() {
       return
     const data = await res.json()
     if (data && data.version && data.version !== __APP_VERSION__) {
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistration().then((reg) => {
+          reg?.update().catch(err => console.error('Failed to trigger SW update:', err))
+        })
+      }
+
       if (router.currentRoute.value.path === '/') {
         uiStore.versionUpdateAvailable = true
       }
@@ -83,12 +90,25 @@ onMounted(async () => {
       }
     })
   }
+
+  if ('serviceWorker' in navigator) {
+    controllerChangeListener = () => {
+      uiStore.versionUpdateReady = true
+      if (uiStore.versionUpdateLoading) {
+        window.location.reload()
+      }
+    }
+    navigator.serviceWorker.addEventListener('controllerchange', controllerChangeListener)
+  }
 })
 
 onUnmounted(() => {
   document.removeEventListener('visibilitychange', handleVisibilityChange)
   if (versionCheckInterval) {
     clearInterval(versionCheckInterval)
+  }
+  if ('serviceWorker' in navigator && controllerChangeListener) {
+    navigator.serviceWorker.removeEventListener('controllerchange', controllerChangeListener)
   }
 })
 </script>

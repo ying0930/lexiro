@@ -12,6 +12,8 @@ export const useUIStore = defineStore('ui', () => {
   const transferOpen = ref(false)
   const versionUpdateAvailable = ref(false)
   const versionUpdatePending = ref(false)
+  const versionUpdateReady = ref(false)
+  const versionUpdateLoading = ref(false)
 
   let confirmResolver: ((value: boolean) => void) | null = null
   let toastTimer: ReturnType<typeof setTimeout> | null = null
@@ -85,6 +87,8 @@ export const useUIStore = defineStore('ui', () => {
     transferOpen,
     versionUpdateAvailable,
     versionUpdatePending,
+    versionUpdateReady,
+    versionUpdateLoading,
     showToast,
     showConfirm,
     resolveConfirm,
