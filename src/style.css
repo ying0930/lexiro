@@ -34,8 +34,8 @@
   --ink-900: #0f172a;
   --ink-950: #020617;
 
-  /* Monochrome iOS Accent - Black in Light Mode */
-  --accent-primary: #000000;
+  /* Monochrome iOS Accent - Slate Black in Light Mode */
+  --accent-primary: #020617;
   
   color-scheme: light;
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "SF Compact", "Noto Sans TC", sans-serif;
@@ -57,8 +57,8 @@
   --ink-900: #0a0908;  /* Very dark input bg */
   --ink-950: #050505;  /* Jet black backdrop */
 
-  /* Monochrome iOS Accent - White in Dark Mode */
-  --accent-primary: #FFFFFF;
+  /* Monochrome iOS Accent - Cream White in Dark Mode */
+  --accent-primary: #fafaf9;
   
   color-scheme: dark;
 }
@@ -118,15 +118,17 @@ body {
 
 /* Primary Button Styling */
 .button-primary {
-  background-color: var(--ink-950);
-  color: #FFFFFF;
-  box-shadow: 0 4px 12px rgba(2, 6, 23, 0.08);
+  background-color: #FFFFFF;
+  color: var(--ink-950);
+  border: 1px solid var(--ink-200);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
 }
 
 .dark .button-primary {
-  background-color: var(--ink-50);
-  color: var(--ink-950);
-  box-shadow: 0 4px 12px rgba(250, 250, 249, 0.1);
+  background-color: var(--ink-900);
+  color: var(--ink-50);
+  border: 1px solid var(--ink-200);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
 }
 
 .button-primary:hover {
@@ -144,11 +146,11 @@ textarea {
 }
 
 ::selection {
-  background: rgba(0, 0, 0, 0.08);
+  background: rgba(2, 6, 23, 0.08);
 }
 
 .dark ::selection {
-  background: rgba(255, 255, 255, 0.12);
+  background: rgba(250, 250, 249, 0.12);
 }
 
 /* Premium Page Transition (iOS buttery slide-fade) */

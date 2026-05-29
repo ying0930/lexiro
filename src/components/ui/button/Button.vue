@@ -23,7 +23,7 @@ const classes = computed(() =>
     'inline-flex items-center justify-center gap-2.5 whitespace-nowrap text-sm font-semibold rounded-2xl transition-all duration-200 active:scale-[0.96] outline-none focus-visible:ring-2 focus-visible:ring-accent-primary/20 focus-visible:border-accent-primary disabled:opacity-40 disabled:pointer-events-none disabled:cursor-not-allowed',
     {
       'button-primary shadow-sm': props.variant === 'default',
-      'border border-ink-200 dark:border-ink-800 bg-white dark:bg-ink-900 text-ink-700 dark:text-ink-300 hover:bg-ink-100 dark:hover:bg-ink-850': props.variant === 'outline' || props.variant === 'secondary',
+      'bg-ink-100 dark:bg-ink-200 text-ink-600 dark:text-ink-400 hover:bg-ink-200 dark:hover:bg-ink-300': props.variant === 'outline' || props.variant === 'secondary',
       'text-accent-primary hover:bg-ink-100 dark:hover:bg-ink-850': props.variant === 'ghost',
       'bg-red-50 dark:bg-red-950/15 text-red-600 dark:text-red-400 border border-red-100/80 dark:border-red-900/30 hover:bg-red-100/80 dark:hover:bg-red-950/30': props.variant === 'destructive',
 
