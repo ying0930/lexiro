@@ -20,25 +20,22 @@
 }
 
 :root {
-  --ink-50: #f7f6f3;
-  --ink-100: #ebe8e1;
-  --ink-200: #d8d3c8;
-  --ink-300: #b8b0a2;
-  --ink-400: #827a6f;
-  --ink-500: #625b52;
-  --ink-600: #4c463f;
-  --ink-700: #37322d;
-  --ink-800: #2a2723;
-  --ink-850: #211f1c;
-  --ink-900: #191714;
-  --ink-950: #0f0e0c;
+  /* Light Mode Palette - Slate & Charcoal Premium Neutrals */
+  --ink-50: #f8fafc;
+  --ink-100: #f1f5f9;
+  --ink-200: #e2e8f0;
+  --ink-300: #cbd5e1;
+  --ink-400: #94a3b8;
+  --ink-500: #64748b;
+  --ink-600: #475569;
+  --ink-700: #334155;
+  --ink-800: #1e293b;
+  --ink-850: #0f172a;
+  --ink-900: #0f172a;
+  --ink-950: #020617;
 
-  --accent-primary: #191714;
-  --surface: #ffffff;
-  --surface-soft: #f7f6f3;
-  --surface-raised: #ffffff;
-  --ring-soft: rgba(25, 23, 20, 0.22);
-  --shadow-panel: 0 18px 42px rgba(25, 23, 20, 0.12);
+  /* Monochrome iOS Accent - Slate Black in Light Mode */
+  --accent-primary: #020617;
   
   color-scheme: light;
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "SF Compact", "Noto Sans TC", sans-serif;
@@ -46,25 +43,22 @@
 }
 
 .dark {
-  --ink-50: #faf9f6;
-  --ink-100: #ede9df;
-  --ink-200: #5a5248;
-  --ink-300: #c9c1b4;
-  --ink-400: #aaa194;
-  --ink-500: #82786c;
-  --ink-600: #645b51;
-  --ink-700: #403a33;
-  --ink-800: #2b2722;
-  --ink-850: #221f1b;
-  --ink-900: #171512;
-  --ink-950: #0d0c0a;
+  /* Dark Mode Palette - Warm Deep Midnight & Elegant Cream White Contrast */
+  --ink-50: #fafaf9;  /* Cream white */
+  --ink-100: #e7e5e4;
+  --ink-200: #292524;  /* Deep stone-800 borders */
+  --ink-300: #d6d3d1;
+  --ink-400: #a8a29e;  /* Warm muted gray */
+  --ink-500: #78716c;  /* Warm stone gray */
+  --ink-600: #57534e;
+  --ink-700: #44403c;
+  --ink-800: #1c1917;  /* Dark stone panels */
+  --ink-850: #12100f;
+  --ink-900: #0a0908;  /* Very dark input bg */
+  --ink-950: #050505;  /* Jet black backdrop */
 
-  --accent-primary: #f7f6f3;
-  --surface: #171512;
-  --surface-soft: #221f1b;
-  --surface-raised: #2b2722;
-  --ring-soft: rgba(250, 249, 246, 0.22);
-  --shadow-panel: 0 20px 52px rgba(0, 0, 0, 0.42);
+  /* Monochrome iOS Accent - Cream White in Dark Mode */
+  --accent-primary: #fafaf9;
   
   color-scheme: dark;
 }
@@ -78,35 +72,31 @@ body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
-  background:
-    radial-gradient(circle at top left, rgba(25, 23, 20, 0.08), transparent 26rem),
-    var(--ink-50);
+  background-color: var(--ink-50);
   color: var(--ink-950);
   transition: background-color 0.25s cubic-bezier(0.25, 1, 0.5, 1), color 0.25s ease;
 }
 
 .dark body {
-  background:
-    radial-gradient(circle at top left, rgba(250, 249, 246, 0.08), transparent 26rem),
-    var(--ink-950);
+  background-color: var(--ink-950);
   color: var(--ink-50);
 }
 
 .panel {
   position: relative;
-  background-color: var(--surface);
-  border: 1px solid color-mix(in srgb, var(--ink-200) 92%, transparent);
-  border-radius: 1rem;
-  box-shadow: 0 1px 2px rgba(25, 23, 20, 0.08), 0 10px 28px rgba(25, 23, 20, 0.06);
+  background-color: #FFFFFF;
+  border: 1px solid var(--ink-200);
+  border-radius: 1.15rem; /* 18px rounded elegant native feel */
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
   transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
   will-change: transform;
   transform: translateZ(0);
 }
 
 .dark .panel {
-  background-color: var(--surface-raised);
-  border-color: color-mix(in srgb, var(--ink-200) 68%, transparent);
-  box-shadow: var(--shadow-panel);
+  background-color: var(--ink-800);
+  border: 1px solid var(--ink-200);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
 }
 
 .panel-pad {
@@ -126,21 +116,21 @@ body {
 }
 
 .button-primary {
-  background-color: var(--accent-primary);
-  color: white;
-  border: 1px solid color-mix(in srgb, var(--accent-primary) 85%, black);
-  box-shadow: 0 10px 22px rgba(55, 53, 47, 0.14);
+  background-color: #FFFFFF;
+  color: var(--ink-950);
+  border: 1px solid var(--ink-200);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
 }
 
 .dark .button-primary {
-  background-color: var(--accent-primary);
-  color: var(--ink-950);
-  border-color: color-mix(in srgb, var(--accent-primary) 80%, white);
-  box-shadow: 0 12px 26px rgba(0, 0, 0, 0.22);
+  background-color: var(--ink-900);
+  color: var(--ink-50);
+  border: 1px solid var(--ink-200);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
 }
 
 .button-primary:hover {
-  filter: brightness(1.04);
+  filter: brightness(1.06);
 }
 
 .button-primary:active {
@@ -151,65 +141,6 @@ button,
 input,
 textarea {
   font: inherit;
-}
-
-.notion-range {
-  height: 1.75rem;
-  appearance: none;
-  background: transparent;
-  cursor: pointer;
-}
-
-.notion-range:focus {
-  outline: none;
-}
-
-.notion-range::-webkit-slider-runnable-track {
-  height: 0.5rem;
-  border-radius: 999px;
-  background: var(--ink-200);
-  box-shadow: inset 0 1px 1px rgba(25, 23, 20, 0.08);
-}
-
-.notion-range::-webkit-slider-thumb {
-  width: 1.55rem;
-  height: 1.55rem;
-  margin-top: -0.525rem;
-  appearance: none;
-  border: 1px solid color-mix(in srgb, var(--ink-300) 70%, transparent);
-  border-radius: 999px;
-  background: var(--surface);
-  box-shadow: 0 2px 5px rgba(25, 23, 20, 0.24), 0 8px 18px rgba(25, 23, 20, 0.10);
-}
-
-.notion-range::-moz-range-track {
-  height: 0.5rem;
-  border: 0;
-  border-radius: 999px;
-  background: var(--ink-200);
-  box-shadow: inset 0 1px 1px rgba(25, 23, 20, 0.08);
-}
-
-.notion-range::-moz-range-thumb {
-  width: 1.55rem;
-  height: 1.55rem;
-  border: 1px solid color-mix(in srgb, var(--ink-300) 70%, transparent);
-  border-radius: 999px;
-  background: var(--surface);
-  box-shadow: 0 2px 5px rgba(25, 23, 20, 0.24), 0 8px 18px rgba(25, 23, 20, 0.10);
-}
-
-.dark .notion-range::-webkit-slider-runnable-track,
-.dark .notion-range::-moz-range-track {
-  background: var(--ink-700);
-  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.42);
-}
-
-.dark .notion-range::-webkit-slider-thumb,
-.dark .notion-range::-moz-range-thumb {
-  border-color: color-mix(in srgb, var(--ink-200) 75%, transparent);
-  background: var(--ink-50);
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.45), 0 8px 18px rgba(0, 0, 0, 0.32);
 }
 
 ::selection {

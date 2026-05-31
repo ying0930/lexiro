@@ -20,17 +20,18 @@ const props = withDefaults(defineProps<{
 
 const classes = computed(() =>
   cn(
-    'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-bold transition-all duration-200 active:scale-[0.97] outline-none focus-visible:ring-2 focus-visible:ring-accent-primary/25 focus-visible:border-accent-primary disabled:opacity-45 disabled:pointer-events-none disabled:cursor-not-allowed',
+    'inline-flex items-center justify-center gap-2.5 whitespace-nowrap text-sm font-semibold rounded-2xl transition-all duration-200 active:scale-[0.96] outline-none focus-visible:ring-2 focus-visible:ring-accent-primary/20 focus-visible:border-accent-primary disabled:opacity-40 disabled:pointer-events-none disabled:cursor-not-allowed',
     {
-      'border border-ink-200 bg-white text-ink-850 shadow-[0_1px_2px_rgba(25,23,20,0.10),0_6px_18px_rgba(25,23,20,0.06)] hover:bg-ink-50 hover:shadow-[0_1px_2px_rgba(25,23,20,0.14),0_10px_24px_rgba(25,23,20,0.08)] dark:border-ink-700 dark:bg-ink-800 dark:text-ink-50 dark:shadow-[0_1px_2px_rgba(0,0,0,0.35),0_8px_20px_rgba(0,0,0,0.28)] dark:hover:bg-ink-700': props.variant === 'default' || props.variant === 'outline' || props.variant === 'secondary',
-      'text-ink-600 dark:text-ink-300 hover:text-accent-primary hover:bg-ink-100 dark:hover:bg-ink-800': props.variant === 'ghost',
+      'button-primary shadow-sm': props.variant === 'default',
+      'bg-ink-100 dark:bg-ink-200 text-ink-600 dark:text-ink-400 hover:bg-ink-200 dark:hover:bg-ink-300': props.variant === 'outline' || props.variant === 'secondary',
+      'text-accent-primary hover:bg-ink-100 dark:hover:bg-ink-850': props.variant === 'ghost',
       'text-accent-primary underline-offset-4 hover:underline active:scale-100': props.variant === 'link',
       'bg-red-50 dark:bg-red-950/15 text-red-600 dark:text-red-400 border border-red-100/80 dark:border-red-900/30 hover:bg-red-100/80 dark:hover:bg-red-950/30': props.variant === 'destructive',
 
-      'px-5 py-2.5': props.size === 'default',
+      'px-6 py-2.5': props.size === 'default',
       'px-4 py-1.5 text-xs rounded-xl': props.size === 'sm',
       'h-9 w-9 p-0 rounded-xl': props.size === 'icon',
-      'px-7 py-3.5 text-base rounded-2xl': props.size === 'lg',
+      'px-8 py-3.5 text-base': props.size === 'lg',
     },
     props.class,
   ),
