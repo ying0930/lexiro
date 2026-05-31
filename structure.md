@@ -1,93 +1,105 @@
 # Wordmem Project Structure
 
+Wordmem is a Vue 3 + Pinia vocabulary practice app with local persistence, ZIP backup, and optional Google Drive backup.
+
 ```
+├── public/
+│   └── icons/
+│       └── wordmem.svg
 ├── src/
 │   ├── components/
 │   │   ├── dialogs/
-│   │   │   ├── ConfirmDialog.vue       # Confirmation modal (delete etc.)
-│   │   │   ├── DriveBackupSelector.vue # Custom Google Drive backup selector
-│   │   │   ├── ImportDialog.vue        # Import/merge dialog
-│   │   │   ├── ImportSettings.vue      # Shared import configuration & diff selector
-│   │   │   ├── PracticeDialog.vue      # Mode selection dialog
-│   │   │   ├── SetEditorDialog.vue     # Add/edit set dialog
-│   │   │   ├── TransferDialog.vue      # Google Drive transfer dialog
-│   │   │   └── VersionUpdateDialog.vue # Version update reminder dialog
+│   │   │   ├── ConfirmDialog.vue
+│   │   │   ├── DriveBackupSelector.vue
+│   │   │   ├── EditorItemCard.vue
+│   │   │   ├── ImportDialog.vue
+│   │   │   ├── ImportSettings.vue
+│   │   │   ├── PracticeDialog.vue
+│   │   │   ├── SetEditorDialog.vue
+│   │   │   ├── TransferDialog.vue
+│   │   │   └── VersionUpdateDialog.vue
 │   │   ├── ui/
 │   │   │   ├── badge/Badge.vue
 │   │   │   ├── button/Button.vue
 │   │   │   ├── card/Card.vue
-│   │   │   ├── dialog/Dialog.vue        # Generic modal wrapper
+│   │   │   ├── dialog/Dialog.vue
+│   │   │   ├── dialog-footer/DialogFooter.vue
+│   │   │   ├── empty-state/EmptyState.vue
 │   │   │   ├── input/Input.vue
+│   │   │   ├── metric-pill/MetricPill.vue
 │   │   │   ├── progress/Progress.vue
+│   │   │   ├── section-panel/SectionPanel.vue
+│   │   │   ├── status-message/StatusMessage.vue
 │   │   │   ├── textarea/Textarea.vue
 │   │   │   └── toast/Toast.vue
-│   │   ├── AppHeader.vue               # Top nav bar
-│   │   ├── FlashcardView.vue           # Single flashcard display
-│   │   ├── FlashcardsView.vue          # Practice mode: flashcard
-│   │   ├── HomeView.vue                # Main list of sets
-│   │   ├── PracticeView.vue            # Practice mode: quiz
-│   │   ├── QuizCard.vue                # Single quiz card
-│   │   ├── ResultView.vue              # Session result summary
-│   │   ├── SetCard.vue                 # Set card in home list
-│   │   └── SpellingCard.vue            # Practice mode: spelling
+│   │   ├── AppHeader.vue
+│   │   ├── FlashcardView.vue
+│   │   ├── FlashcardsView.vue
+│   │   ├── HomeView.vue
+│   │   ├── PracticeView.vue
+│   │   ├── QuizCard.vue
+│   │   ├── ResultView.vue
+│   │   ├── SetCard.vue
+│   │   └── SpellingCard.vue
 │   ├── constants/
-│   │   ├── backup.ts                   # Export version, ZIP filename, save delay
+│   │   ├── backup.ts
 │   │   ├── index.ts
-│   │   └── storage.ts                  # Storage keys, theme key
+│   │   └── storage.ts
 │   ├── lib/
-│   │   ├── clipboard.ts                # Shared clipboard copy utility
-│   │   ├── cn.ts                       # clsx + twMerge utility
-│   │   ├── difficulty-prompts.ts       # Per-level AI prompt chunks (Lv1–4)
-│   │   ├── file.ts                     # ZIP build/parse, download
-│   │   ├── googleDrive.ts              # OAuth + Drive API v3
-│   │   ├── i18n.ts                     # vue-i18n instance + plugin
-│   │   ├── import.ts                   # Import parsing, diffing, merge
-│   │   ├── persist.ts                  # Async IndexedDB + debounce persistence
-│   │   ├── prompts.ts                  # AI prompt templates
-│   │   ├── useVirtualList.ts           # Sliding window virtual list composable
-│   │   ├── validation.ts              # Normalize/validate helpers
-│   │   └── worker.ts                   # Web Worker wrapper (ZIP ops)
-│   ├── workers/
-│   │   └── backup.worker.ts            # ZIP build/parse off the main thread
+│   │   ├── clipboard.ts
+│   │   ├── cn.ts
+│   │   ├── difficulty-prompts.ts
+│   │   ├── file.ts
+│   │   ├── googleDrive.ts
+│   │   ├── i18n.ts
+│   │   ├── import.ts
+│   │   ├── persist.ts
+│   │   ├── prompts.ts
+│   │   ├── resultPrompts.ts
+│   │   ├── useVirtualList.ts
+│   │   ├── validation.ts
+│   │   └── worker.ts
 │   ├── locales/
-│   │   └── zh-TW.ts                    # ~180 i18n keys (Traditional Chinese)
+│   │   └── zh-TW.ts
 │   ├── router/
-│   │   └── index.ts                    # 5 routes
+│   │   └── index.ts
 │   ├── stores/
-│   │   ├── backup.ts                   # Google Drive backup/restore
-│   │   ├── session.ts                  # Practice session lifecycle
-│   │   ├── sets.ts                     # Card CRUD, import, export
-│   │   └── ui.ts                       # Theme, toast, confirm, transfer
+│   │   ├── backup.ts
+│   │   ├── session.ts
+│   │   ├── sets.ts
+│   │   └── ui.ts
 │   ├── types/
-│   │   ├── backup.ts                   # Drive file metadata
+│   │   ├── backup.ts
 │   │   ├── index.ts
-│   │   ├── session.ts                  # Session, Entry, Draft
-│   │   └── set.ts                      # VocabSet, VocabItem
-│   ├── App.vue                         # Root layout + router-view
-│   ├── main.ts                         # App bootstrap
-│   └── style.css                       # Tailwind v4 CSS
+│   │   ├── session.ts
+│   │   └── set.ts
+│   ├── workers/
+│   │   └── backup.worker.ts
+│   ├── App.vue
+│   ├── main.ts
+│   └── style.css
 ├── tests/
 │   ├── lib/
-│   │   ├── import.test.ts              # 43 tests
-│   │   └── validation.test.ts          # 77 tests
+│   │   ├── import.test.ts
+│   │   └── validation.test.ts
 │   └── stores/
-│       ├── session.test.ts             # 20 tests
-│       └── sets.test.ts                # 34 tests
-├── env.d.ts                            # Vue SFC type shim
-├── eslint.config.js                    # @antfu/eslint-config
+│       ├── session.test.ts
+│       └── sets.test.ts
+├── AGENTS.md
+├── env.d.ts
+├── eslint.config.js
 ├── index.html
 ├── package.json
-├── tsconfig.json                       # TS 6 strict, vue-tsc
-├── vite.config.ts                      # Vite + Vue + PWA
+├── tsconfig.json
+├── vite.config.ts
 └── vitest.config.ts
 ```
 
 ## Architecture
 
-- **State**: 4 Pinia setup stores (`sets`, `session`, `backup`, `ui`)
-- **UI**: Vue 3.5 `<script setup lang="ts">` + Tailwind v4 + lucide-vue-next
-- **Routing**: vue-router 4 (5 routes)
-- **i18n**: vue-i18n 11 (traditional Chinese, ~150 keys)
-- **Storage**: IndexedDB via `idb-keyval` + localStorage fallback (debounced writes)
-- **Export**: ZIP via fflate in Web Worker (sets); Google Drive via GIS + Drive API v3
-- **Testing**: Vitest (174 tests, 4 files)
+- **Frontend**: Vue 3 `<script setup lang="ts">`, Vue Router, Tailwind CSS v4, lucide-vue-next.
+- **State**: Pinia setup stores split by domain: sets, session, backup, and UI.
+- **Persistence**: IndexedDB through `idb-keyval`, with localStorage used for theme and related browser state.
+- **Import/export**: ZIP backup parsing/building in a Web Worker; Google Drive integration through GIS and Drive API.
+- **i18n**: Traditional Chinese strings live in `src/locales/zh-TW.ts`.
+- **Testing**: Vitest covers library logic and Pinia store behavior.

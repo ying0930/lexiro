@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Cloud, Download, LogIn, LogOut, RefreshCw, Upload } from 'lucide-vue-next'
+import { Cloud, Download, LogOut, RefreshCw, Upload } from 'lucide-vue-next'
 import { storeToRefs } from 'pinia'
 import { useBackupStore } from '@/stores/backup'
 import { useSetsStore } from '@/stores/sets'
@@ -39,7 +39,7 @@ const {
   driveImportPreview,
   driveImportSets,
 } = storeToRefs(backupStore)
-const { signInDrive, signOutDrive, backupToDrive, refreshDriveBackups, applyDriveImport, resetZipImportState, handleZipImportChange, applyZipImport } = backupStore
+const { signOutDrive, backupToDrive, refreshDriveBackups, applyDriveImport, resetZipImportState, handleZipImportChange, applyZipImport } = backupStore
 </script>
 
 <template>
@@ -66,11 +66,7 @@ const { signInDrive, signOutDrive, backupToDrive, refreshDriveBackups, applyDriv
             </p>
           </div>
           <div class="flex flex-wrap gap-2">
-            <Button v-if="!driveSignedIn" variant="outline" size="sm" class="bg-white dark:bg-ink-900" :disabled="!driveConfigured" @click="signInDrive">
-              <LogIn class="h-4 w-4" />
-              <span>{{ $t('backup.signIn') }}</span>
-            </Button>
-            <Button v-else variant="outline" size="sm" class="bg-white dark:bg-ink-900" @click="signOutDrive">
+            <Button v-if="driveSignedIn" variant="outline" size="sm" class="bg-white dark:bg-ink-900" @click="signOutDrive">
               <LogOut class="h-4 w-4" />
               <span>{{ $t('backup.signOut') }}</span>
             </Button>

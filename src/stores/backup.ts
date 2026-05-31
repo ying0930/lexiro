@@ -51,9 +51,7 @@ export const useBackupStore = defineStore('backup', () => {
       prompt ?? (hasDriveToken() ? '' : 'consent'),
     ) as { accessToken: string, expiresAt: number }
     driveSignedIn.value = hasDriveToken()
-    driveAccountLabel.value = token.expiresAt
-      ? t('backup.driveAuthorized', { time: new Date(token.expiresAt).toLocaleTimeString() })
-      : t('backup.signedIn')
+    driveAccountLabel.value = t('backup.signedIn')
     return token
   }
 
