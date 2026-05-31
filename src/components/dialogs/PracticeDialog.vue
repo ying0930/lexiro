@@ -20,7 +20,7 @@ const { sets } = storeToRefs(setsStore)
     @close="closePracticeDialog"
   >
     <div v-if="practiceDialogSetId && sets.find((set) => set.id === practiceDialogSetId)" class="space-y-6">
-      <div class="rounded-2xl border border-ink-200/60 dark:border-ink-200/5 bg-ink-100 dark:bg-ink-100/50 p-5 text-left relative overflow-hidden">
+      <div class="relative overflow-hidden rounded-2xl border border-ink-200 bg-white p-5 text-left shadow-[0_1px_2px_rgba(25,23,20,0.08)] dark:border-ink-700 dark:bg-ink-800">
         <div class="flex items-center justify-between gap-3 relative z-10">
           <div class="space-y-1">
             <p class="text-xs font-extrabold uppercase tracking-widest text-accent-primary">
@@ -34,7 +34,7 @@ const { sets } = storeToRefs(setsStore)
 
         <input
           v-model="practiceDialogCount"
-          class="mt-5 h-1.5 w-full cursor-pointer appearance-none rounded-full bg-ink-200 dark:bg-ink-200/40 accent-accent-primary focus:outline-none relative z-10"
+          class="notion-range relative z-10 mt-5 w-full"
           type="range"
           min="1"
           :max="sets.find((set) => set.id === practiceDialogSetId)?.items.length ?? 1"

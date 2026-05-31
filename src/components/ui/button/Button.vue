@@ -22,7 +22,7 @@ const classes = computed(() =>
   cn(
     'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-bold transition-all duration-200 active:scale-[0.97] outline-none focus-visible:ring-2 focus-visible:ring-accent-primary/25 focus-visible:border-accent-primary disabled:opacity-45 disabled:pointer-events-none disabled:cursor-not-allowed',
     {
-      'border border-ink-900 bg-ink-900 text-white shadow-sm hover:bg-ink-800 dark:border-ink-50 dark:bg-ink-50 dark:text-ink-950 dark:hover:bg-ink-100': props.variant === 'default' || props.variant === 'outline' || props.variant === 'secondary',
+      'border border-ink-200 bg-white text-ink-850 shadow-[0_1px_2px_rgba(25,23,20,0.10),0_6px_18px_rgba(25,23,20,0.06)] hover:bg-ink-50 hover:shadow-[0_1px_2px_rgba(25,23,20,0.14),0_10px_24px_rgba(25,23,20,0.08)] dark:border-ink-700 dark:bg-ink-800 dark:text-ink-50 dark:shadow-[0_1px_2px_rgba(0,0,0,0.35),0_8px_20px_rgba(0,0,0,0.28)] dark:hover:bg-ink-700': props.variant === 'default' || props.variant === 'outline' || props.variant === 'secondary',
       'text-ink-600 dark:text-ink-300 hover:text-accent-primary hover:bg-ink-100 dark:hover:bg-ink-800': props.variant === 'ghost',
       'text-accent-primary underline-offset-4 hover:underline active:scale-100': props.variant === 'link',
       'bg-red-50 dark:bg-red-950/15 text-red-600 dark:text-red-400 border border-red-100/80 dark:border-red-900/30 hover:bg-red-100/80 dark:hover:bg-red-950/30': props.variant === 'destructive',
