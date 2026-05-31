@@ -92,10 +92,10 @@ const { signOutDrive, backupToDrive, refreshDriveBackups, applyDriveImport, rese
             <span>{{ $t('backup.backupToDrive') }}</span>
           </Button>
           <Button
-            variant="outline"
+            variant="default"
             :disabled="!driveConfigured"
             :loading="driveListLoading"
-            class="gap-2 bg-white dark:bg-ink-900"
+            class="gap-2"
             @click="refreshDriveBackups"
           >
             <RefreshCw class="h-4 w-4" />
