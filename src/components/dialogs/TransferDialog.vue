@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Cloud, Download, LogOut, RefreshCw, Upload } from 'lucide-vue-next'
+import { Cloud, LogOut, RefreshCw, Upload } from 'lucide-vue-next'
 import { storeToRefs } from 'pinia'
 import { useBackupStore } from '@/stores/backup'
 import { useSetsStore } from '@/stores/sets'
@@ -9,6 +9,7 @@ import Dialog from '../ui/dialog/Dialog.vue'
 import SectionPanel from '../ui/section-panel/SectionPanel.vue'
 import StatusMessage from '../ui/status-message/StatusMessage.vue'
 import DriveBackupSelector from './DriveBackupSelector.vue'
+import ExportSettings from './ExportSettings.vue'
 import ImportSettings from './ImportSettings.vue'
 
 const uiStore = useUIStore()
@@ -17,8 +18,7 @@ const backupStore = useBackupStore()
 const { transferOpen } = storeToRefs(uiStore)
 const { closeTransfer } = uiStore
 
-const { sets, exportSelectedIds, exportAllSelected, exportSelectedCount, exportSelectedWordCount, exportError } = storeToRefs(setsStore)
-const { toggleExportAll, exportSelectedSetsToZip } = setsStore
+const { sets } = storeToRefs(setsStore)
 
 const {
   zipImportInputKey,
@@ -66,7 +66,7 @@ const { signOutDrive, backupToDrive, refreshDriveBackups, applyDriveImport, rese
             </p>
           </div>
           <div class="flex flex-wrap gap-2">
-            <Button v-if="driveSignedIn" variant="outline" size="sm" class="bg-white dark:bg-ink-900" @click="signOutDrive">
+            <Button v-if="driveSignedIn" variant="default" class="gap-2" @click="signOutDrive">
               <LogOut class="h-4 w-4" />
               <span>{{ $t('backup.signOut') }}</span>
             </Button>
@@ -191,47 +191,9 @@ const { signOutDrive, backupToDrive, refreshDriveBackups, applyDriveImport, rese
               {{ $t('backup.exportDescription') }}
             </p>
           </div>
-          <Button variant="outline" size="sm" class="h-8 px-3 text-xs bg-white dark:bg-ink-900" :disabled="!sets.length" @click="toggleExportAll">
-            {{ exportAllSelected ? $t('backup.deselectAll') : $t('backup.selectAll') }}
-          </Button>
         </div>
 
-        <div v-if="sets.length" class="mt-4 grid gap-2.5 max-h-48 overflow-y-auto pr-1">
-          <label
-            v-for="set in sets"
-            :key="set.id"
-            class="flex items-center gap-3 rounded-xl border border-ink-200 dark:border-ink-800 bg-white dark:bg-ink-900 px-4 py-2.5 cursor-pointer hover:bg-ink-50 dark:hover:bg-ink-850"
-          >
-            <input
-              v-model="exportSelectedIds"
-              type="checkbox"
-              :value="set.id"
-              class="h-4 w-4 accent-emerald-500 rounded border-ink-300"
-            >
-            <div class="text-left">
-              <p class="text-sm font-bold text-ink-900 dark:text-ink-100">{{ set.setName }}</p>
-              <p class="text-[11px] text-ink-400 dark:text-ink-500 font-semibold">{{ $t('home.wordsCount', { count: set.items.length }) }}</p>
-            </div>
-          </label>
-        </div>
-        <p v-else class="mt-4 text-xs text-ink-400 dark:text-ink-500 font-semibold">
-          {{ $t('home.emptyState') }}
-        </p>
-
-        <div class="mt-4 pt-4 border-t border-ink-200/50 dark:border-ink-800/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <p v-if="sets.length" class="text-xs text-ink-500 dark:text-ink-400 font-medium text-left">
-            {{ $t('backup.exported', { count: exportSelectedCount }) }}（{{ $t('home.wordsCount', { count: exportSelectedWordCount }) }}）
-          </p>
-          <p v-else />
-          <Button variant="default" :disabled="!exportSelectedCount" class="gap-2" @click="exportSelectedSetsToZip">
-            <Download class="h-4 w-4" />
-            <span>{{ $t('backup.downloadZip') }}</span>
-          </Button>
-        </div>
-
-        <StatusMessage v-if="exportError" tone="error" class="mt-3">
-          {{ exportError }}
-        </StatusMessage>
+        <ExportSettings />
       </SectionPanel>
     </div>
   </Dialog>
