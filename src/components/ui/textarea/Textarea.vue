@@ -35,7 +35,7 @@ defineExpose({
     :disabled="disabled"
     :class="
       cn(
-        'w-full px-4 py-3 rounded-2xl border border-ink-200 dark:border-ink-800 bg-white dark:bg-ink-900 text-ink-950 dark:text-ink-50 text-sm placeholder-ink-400 dark:placeholder-ink-600 focus:outline-none focus:ring-2 focus:ring-accent-primary/20 focus:border-accent-primary disabled:cursor-not-allowed disabled:opacity-40 transition-all duration-200 resize-y',
+        'w-full rounded-xl border border-ink-200/80 dark:border-ink-200/30 bg-white dark:bg-ink-900 px-4 py-3 text-sm text-ink-950 dark:text-ink-50 placeholder-ink-400 dark:placeholder-ink-500 focus:outline-none focus:ring-2 focus:ring-accent-primary/20 focus:border-accent-primary disabled:cursor-not-allowed disabled:opacity-45 transition-all duration-200 resize-y',
         $props.class,
       )
     "

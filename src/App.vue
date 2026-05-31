@@ -114,10 +114,10 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div v-if="dataLoaded" class="min-h-screen bg-ink-50 dark:bg-ink-950 text-ink-950 dark:text-ink-50 transition-colors duration-250 pb-20 relative overflow-x-hidden">
+  <div v-if="dataLoaded" class="min-h-screen text-ink-950 dark:text-ink-50 transition-colors duration-250 pb-20 relative overflow-x-hidden">
     <AppHeader />
 
-    <main class="mx-auto pt-20 max-w-5xl px-4 sm:px-6 relative">
+    <main class="mx-auto max-w-5xl px-4 pt-20 sm:px-6 sm:pt-24 relative">
       <router-view v-slot="{ Component }">
         <Transition name="page" mode="out-in">
           <component :is="Component" />

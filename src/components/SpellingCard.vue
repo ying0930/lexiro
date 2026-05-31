@@ -70,16 +70,14 @@ function next() {
 </script>
 
 <template>
-  <Card class="p-6 sm:p-8 border border-ink-200/50 dark:border-ink-200/5 shadow-sm">
-    <!-- Word hint: first and last letter -->
+  <Card class="p-5 sm:p-8">
     <div class="mb-6 text-left">
       <p class="font-mono text-2xl sm:text-3xl font-extrabold tracking-widest text-accent-primary">
         {{ wordHint }}
       </p>
     </div>
 
-    <!-- Example Block (例句) -->
-    <div class="rounded-2xl bg-ink-100 dark:bg-ink-100/30 border border-ink-200/40 dark:border-ink-200/5 p-5 text-left">
+    <div class="rounded-2xl bg-ink-100/80 dark:bg-ink-900 border border-ink-200/70 dark:border-ink-200/25 p-5 text-left">
       <p class="text-xs font-extrabold uppercase tracking-widest text-ink-400 dark:text-ink-500">
         {{ $t('flashcard.example') }}
       </p>
@@ -100,7 +98,7 @@ function next() {
           class="flex-1 font-mono text-base tracking-wide rounded-xl"
           @keydown.enter.prevent="submit"
         />
-        <Button variant="default" class="shrink-0 rounded-xl" @click="submit">
+        <Button variant="default" class="shrink-0" @click="submit">
           {{ $t('result.check') }}
         </Button>
       </div>
@@ -109,8 +107,7 @@ function next() {
       </p>
     </div>
 
-    <!-- Explanation Block (shown immediately after submitting) -->
-    <div v-if="submitted" class="mt-6 rounded-2xl border border-ink-200/60 dark:border-ink-200/5 bg-ink-100 dark:bg-ink-100/30 p-5 text-left transition-all duration-300">
+    <div v-if="submitted" class="mt-6 rounded-2xl border border-ink-200/70 bg-white/80 p-5 text-left transition-all duration-300 dark:border-ink-200/25 dark:bg-ink-900">
       <p class="text-sm font-extrabold" :class="[isCorrect ? 'text-emerald-600 dark:text-emerald-400' : answer.trim() ? 'text-red-500' : 'text-ink-500']">
         {{ isCorrect ? $t('result.correct') : answer.trim() ? $t('result.wrong') : $t('result.skipped') }}
       </p>
@@ -120,7 +117,7 @@ function next() {
         <span class="block mt-2 font-semibold text-ink-950 dark:text-ink-50">{{ entry.item.meaning }}</span>
       </p>
 
-      <Button variant="default" class="mt-4 gap-2 rounded-xl" @click="next">
+      <Button variant="default" class="mt-4 w-full gap-2 sm:w-auto" @click="next">
         <span>{{ index + 1 >= total ? $t('practice.submitAll') : $t('practice.next') }}</span>
         <ArrowRight class="h-4 w-4" />
       </Button>

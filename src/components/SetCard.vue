@@ -2,8 +2,10 @@
 import type { VocabItem } from '@/types'
 import { BookOpenText, PencilLine, Play, SpellCheck2, Trash2 } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
+import Badge from './ui/badge/Badge.vue'
 import Button from './ui/button/Button.vue'
 import Card from './ui/card/Card.vue'
+import MetricPill from './ui/metric-pill/MetricPill.vue'
 
 defineProps<{
   set: { id: string, setName: string, difficulty: number, items: VocabItem[] }
@@ -22,37 +24,30 @@ const { t } = useI18n()
 </script>
 
 <template>
-  <Card
-    class="p-5 sm:p-6 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md border border-ink-200/50 dark:border-ink-200/5"
-  >
+  <Card class="p-5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg sm:p-6">
     <div class="flex items-start justify-between gap-4">
       <div class="space-y-1 text-left">
-        <h3 class="text-base sm:text-[17px] font-bold tracking-tight text-ink-950 dark:text-ink-50">
-          {{ set.setName }}
-        </h3>
-        <p class="text-xs text-ink-500 dark:text-ink-400 font-semibold">
+        <div class="flex flex-wrap items-center gap-2">
+          <h3 class="text-lg font-extrabold tracking-tight text-ink-950 dark:text-ink-50">
+            {{ set.setName }}
+          </h3>
+          <Badge v-if="active" variant="success">
+            {{ $t('home.inProgress') }}
+          </Badge>
+        </div>
+        <p class="text-xs font-semibold text-ink-500 dark:text-ink-400">
           {{ $t('home.wordsCount', { count: set.items.length }) }}
         </p>
       </div>
 
-      <div class="flex items-center gap-2 shrink-0">
-        <span class="text-[10px] sm:text-xs font-bold px-2 py-0.5 rounded-lg bg-accent-primary/10 text-accent-primary border border-accent-primary/15 leading-none">
-          難度 {{ set.difficulty }}
-        </span>
-        <Button
-          variant="ghost"
-          size="icon"
-          class="h-8 w-8 text-ink-500 hover:text-accent-primary dark:hover:text-accent-primary hover:bg-ink-200 dark:hover:bg-ink-200/50 rounded-xl"
-          :aria-label="t('setCard.edit')"
-          @click="$emit('edit', set.id)"
-        >
+      <div class="flex shrink-0 items-center gap-1.5">
+        <Button variant="ghost" size="icon" class="h-8 w-8" :aria-label="t('setCard.edit')" @click="$emit('edit', set.id)">
           <PencilLine class="h-3.5 w-3.5" />
         </Button>
-
         <Button
           variant="ghost"
           size="icon"
-          class="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/15 rounded-xl"
+          class="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/15"
           :aria-label="t('setCard.delete')"
           @click="$emit('delete', set.id)"
         >
@@ -61,21 +56,26 @@ const { t } = useI18n()
       </div>
     </div>
 
-    <div class="mt-6 grid gap-2.5 sm:grid-cols-3">
-      <Button variant="default" class="w-full justify-center gap-2 rounded-xl" @click="$emit('flashcards', set.id)">
+    <div class="mt-5 flex flex-wrap gap-2">
+      <MetricPill :label="$t('setCard.difficulty')" :value="set.difficulty" />
+      <MetricPill :value="$t('practice.questions', { count: set.items.length })" />
+    </div>
+
+    <div class="mt-5 grid gap-2.5">
+      <Button variant="default" class="w-full justify-center gap-2" @click="$emit('flashcards', set.id)">
         <BookOpenText class="h-4 w-4" />
         <span>{{ $t('setCard.flashcards') }}</span>
       </Button>
-
-      <Button variant="default" class="w-full justify-center gap-2 rounded-xl" @click="$emit('quiz', set.id)">
-        <Play class="h-4 w-4" />
-        <span>{{ $t('setCard.quiz') }}</span>
-      </Button>
-
-      <Button variant="default" class="w-full justify-center gap-2 rounded-xl" @click="$emit('spelling', set.id)">
-        <SpellCheck2 class="h-4 w-4" />
-        <span>{{ $t('setCard.spelling') }}</span>
-      </Button>
+      <div class="grid grid-cols-2 gap-2.5">
+        <Button variant="secondary" class="w-full justify-center gap-2" @click="$emit('quiz', set.id)">
+          <Play class="h-4 w-4" />
+          <span>{{ $t('setCard.quiz') }}</span>
+        </Button>
+        <Button variant="secondary" class="w-full justify-center gap-2" @click="$emit('spelling', set.id)">
+          <SpellCheck2 class="h-4 w-4" />
+          <span>{{ $t('setCard.spelling') }}</span>
+        </Button>
+      </div>
     </div>
   </Card>
 </template>

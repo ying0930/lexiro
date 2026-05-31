@@ -54,20 +54,19 @@ function optionClass(index: number) {
 
   return cn(
     'flex w-full items-start gap-3 rounded-2xl border px-4 py-3.5 text-left text-sm font-semibold transition-all duration-200 outline-none',
-    !answered.value && 'border-ink-200 dark:border-ink-200/40 bg-white dark:bg-ink-100 text-ink-700 dark:text-ink-300 hover:bg-ink-100 dark:hover:bg-ink-200 active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-accent-primary/20',
+    !answered.value && 'border-ink-200/80 dark:border-ink-200/30 bg-white dark:bg-ink-850 text-ink-700 dark:text-ink-300 hover:bg-ink-100 dark:hover:bg-ink-800 active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-accent-primary/20',
     !answered.value && isSelected && 'border-accent-primary bg-accent-primary/5 text-accent-primary ring-1 ring-accent-primary/25',
     answered.value && 'cursor-default',
     answered.value && isCorrect && 'border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 font-bold',
     answered.value && isSelected && !isCorrect && 'border-red-500/20 bg-red-500/10 text-red-600 dark:text-red-400 font-bold',
-    answered.value && !isSelected && !isCorrect && 'border-ink-200 dark:border-ink-200/20 bg-ink-50/50 dark:bg-ink-100/50 text-ink-400 dark:text-ink-500 opacity-40',
+    answered.value && !isSelected && !isCorrect && 'border-ink-200/60 dark:border-ink-200/20 bg-ink-50/50 dark:bg-ink-900 text-ink-400 dark:text-ink-500 opacity-45',
   )
 }
 </script>
 
 <template>
-  <Card class="p-6 sm:p-8 border border-ink-200/50 dark:border-ink-200/5 shadow-sm">
-    <!-- Question Block (題幹) -->
-    <div class="rounded-2xl bg-ink-100 dark:bg-ink-100/30 border border-ink-200/40 dark:border-ink-200/5 p-5 text-left">
+  <Card class="p-5 sm:p-8">
+    <div class="rounded-2xl bg-ink-100/80 dark:bg-ink-900 border border-ink-200/70 dark:border-ink-200/25 p-5 text-left">
       <p class="text-xs font-extrabold uppercase tracking-widest text-ink-400 dark:text-ink-500">
         {{ $t('practice.quizPromptLabel') }}
       </p>
@@ -86,7 +85,6 @@ function optionClass(index: number) {
       </p>
     </div>
 
-    <!-- Options Grid -->
     <div class="mt-6 grid gap-3 sm:grid-cols-2">
       <button
         v-for="(option, optionIndex) in entry.item.question.opts"
@@ -100,8 +98,7 @@ function optionClass(index: number) {
       </button>
     </div>
 
-    <!-- Explanation Block (shown immediately after answering) -->
-    <div v-if="answered" class="mt-6 rounded-2xl border border-ink-200/60 dark:border-ink-200/5 bg-ink-100 dark:bg-ink-100/30 p-5 text-left transition-all duration-300">
+    <div v-if="answered" class="mt-6 rounded-2xl border border-ink-200/70 bg-white/80 p-5 text-left transition-all duration-300 dark:border-ink-200/25 dark:bg-ink-900">
       <p class="text-sm font-extrabold" :class="[selectedIndex === entry.item.question.ans ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500']">
         {{ selectedIndex === entry.item.question.ans ? $t('result.correct') : $t('result.wrong') }}
       </p>
@@ -111,9 +108,8 @@ function optionClass(index: number) {
       </p>
     </div>
 
-    <!-- Skip / Next -->
     <div class="mt-6 flex justify-end">
-      <Button variant="default" class="gap-2 rounded-xl" @click="next">
+      <Button variant="default" class="w-full gap-2 sm:w-auto" @click="next">
         <span>{{ answered ? (index + 1 >= total ? $t('practice.submitAll') : $t('practice.next')) : $t('practice.skip') }}</span>
         <ArrowRight class="h-4 w-4" />
       </Button>

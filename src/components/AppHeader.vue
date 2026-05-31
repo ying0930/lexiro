@@ -37,15 +37,16 @@ const practiceLabel = computed(() => {
 
 <template>
   <header
-    class="fixed top-0 inset-x-0 z-40 border-b border-ink-200/40 dark:border-ink-200/5 backdrop-blur-xl bg-white/75 dark:bg-black/75 transition-all duration-200"
+    class="fixed inset-x-0 top-0 z-40 border-b border-ink-200/70 bg-white/80 backdrop-blur-xl transition-all duration-200 dark:border-ink-200/15 dark:bg-ink-950/80"
   >
-    <div class="mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 sm:px-6 py-3">
+    <div class="mx-auto flex max-w-5xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
       <div class="flex items-center gap-3 min-w-0">
         <Button
           v-if="!isHome"
           variant="ghost"
           size="icon"
-          class="h-9 w-9 shrink-0 rounded-xl hover:bg-ink-200 dark:hover:bg-ink-200/60"
+          class="h-9 w-9 shrink-0"
+          :aria-label="t('appHeader.back')"
           @click="exitCurrentView"
         >
           <ArrowLeft class="h-4.5 w-4.5 text-accent-primary" />
@@ -70,7 +71,7 @@ const practiceLabel = computed(() => {
 
       <div class="flex items-center gap-2 shrink-0">
         <template v-if="isPractice && currentSession">
-          <Progress :model-value="progressPercent" class="w-16 sm:w-24 h-1.5" />
+          <Progress :model-value="progressPercent" class="hidden h-1.5 w-16 sm:block sm:w-24" />
           <span class="text-xs sm:text-sm font-bold tabular-nums text-ink-950 dark:text-ink-50">
             {{ currentIndex + 1 }}<span class="text-[10px] sm:text-xs text-ink-400">/{{ totalItems }}</span>
           </span>
@@ -83,8 +84,8 @@ const practiceLabel = computed(() => {
           <Button
             variant="outline"
             size="icon"
-            class="h-9 w-9 text-ink-600 dark:text-ink-400 hover:text-accent-primary dark:hover:text-accent-primary border-ink-200 dark:border-ink-200/40 hover:bg-ink-100 dark:hover:bg-ink-250 rounded-xl"
-            aria-label="編輯單字集"
+            class="h-9 w-9 text-ink-600 dark:text-ink-400 hover:text-accent-primary dark:hover:text-accent-primary"
+            :aria-label="t('appHeader.editSet')"
             @click="editActiveSet"
           >
             <PencilLine class="h-4 w-4" />
@@ -92,8 +93,8 @@ const practiceLabel = computed(() => {
           <Button
             variant="outline"
             size="icon"
-            class="h-9 w-9 text-red-500 hover:text-red-600 border-ink-200 dark:border-ink-200/40 hover:bg-red-50 dark:hover:bg-red-950/15 rounded-xl"
-            aria-label="刪除單字集"
+            class="h-9 w-9 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/15"
+            :aria-label="t('appHeader.deleteSet')"
             @click="deleteActiveSet"
           >
             <Trash2 class="h-4 w-4" />
@@ -105,8 +106,9 @@ const practiceLabel = computed(() => {
         <Button
           variant="ghost"
           size="icon"
-          class="h-9 w-9 rounded-xl hover:bg-ink-200 dark:hover:bg-ink-200/60"
-          title="切換主題"
+          class="h-9 w-9"
+          :title="t('appHeader.toggleTheme')"
+          :aria-label="t('appHeader.toggleTheme')"
           @click="toggleTheme"
         >
           <Sun v-if="theme === 'dark'" class="h-4.5 w-4.5 text-accent-primary" />

@@ -1,15 +1,26 @@
 <script setup lang="ts">
+import type { VocabSet } from '@/types'
 import { storeToRefs } from 'pinia'
+import { useI18n } from 'vue-i18n'
 import { useSetsStore } from '@/stores/sets'
+import StatusMessage from '../ui/status-message/StatusMessage.vue'
 
 defineProps<{
-  sets: any[] | null
+  sets: VocabSet[] | null
   prefix: string
 }>()
 
 const setsStore = useSetsStore()
 const { importMode, importVersionDiffs, importVersionChoices, duplicateSummary } = storeToRefs(setsStore)
 const { setImportVersionChoice } = setsStore
+const { t } = useI18n()
+
+function previewNames(names: string[]) {
+  if (!names.length)
+    return t('backup.none')
+  const preview = names.slice(0, 5).join('、')
+  return names.length > 5 ? `${preview} ${t('backup.moreItems', { count: names.length })}` : preview
+}
 </script>
 
 <template>
@@ -75,25 +86,25 @@ const { setImportVersionChoice } = setsStore
         <div class="mt-3 grid gap-2 text-xs text-ink-500 dark:text-ink-400 sm:grid-cols-3">
           <p>
             <strong class="text-emerald-700 dark:text-emerald-400">{{ $t('backup.added') }}</strong>
-            {{ diff.added.length ? diff.added.slice(0, 5).join('、') : $t('backup.none') }}<span v-if="diff.added.length > 5"> 等 {{ diff.added.length }} 個</span>
+            {{ previewNames(diff.added) }}
           </p>
           <p>
             <strong class="text-red-600 dark:text-red-400">{{ $t('backup.removed') }}</strong>
-            {{ diff.removed.length ? diff.removed.slice(0, 5).join('、') : $t('backup.none') }}<span v-if="diff.removed.length > 5"> 等 {{ diff.removed.length }} 個</span>
+            {{ previewNames(diff.removed) }}
           </p>
           <p>
             <strong class="text-amber-700 dark:text-amber-300">{{ $t('backup.modified') }}</strong>
-            {{ diff.changed.length ? diff.changed.slice(0, 5).join('、') : $t('backup.none') }}<span v-if="diff.changed.length > 5"> 等 {{ diff.changed.length }} 個</span>
+            {{ previewNames(diff.changed) }}
           </p>
         </div>
       </div>
     </div>
 
-    <p v-if="duplicateSummary && (duplicateSummary.skippedByName.length || duplicateSummary.skippedByContent.length || duplicateSummary.renamedIds.length || duplicateSummary.replacedVersions.length)" class="mt-4 rounded-xl bg-amber-50 dark:bg-amber-950/20 border border-amber-100 dark:border-amber-900/50 px-4 py-2.5 text-xs text-amber-700 dark:text-amber-300 font-semibold">
-      <span v-if="duplicateSummary.skippedByName.length">保留本機版本：{{ duplicateSummary.skippedByName.join('、') }}。</span>
-      <span v-if="duplicateSummary.replacedVersions.length">使用匯入版本更新：{{ duplicateSummary.replacedVersions.join('、') }}。</span>
-      <span v-if="duplicateSummary.skippedByContent.length">偵測到重複內容：{{ duplicateSummary.skippedByContent.join('、') }}。</span>
-      <span v-if="duplicateSummary.renamedIds.length">id 衝突已產生新 id：{{ duplicateSummary.renamedIds.map((item) => item.setName).join('、') }}。</span>
-    </p>
+    <StatusMessage v-if="duplicateSummary && (duplicateSummary.skippedByName.length || duplicateSummary.skippedByContent.length || duplicateSummary.renamedIds.length || duplicateSummary.replacedVersions.length)" tone="warning" class="mt-4">
+      <span v-if="duplicateSummary.skippedByName.length">{{ $t('backup.summaryKeepLocal', { names: duplicateSummary.skippedByName.join('、') }) }}</span>
+      <span v-if="duplicateSummary.replacedVersions.length">{{ $t('backup.summaryUseImported', { names: duplicateSummary.replacedVersions.join('、') }) }}</span>
+      <span v-if="duplicateSummary.skippedByContent.length">{{ $t('backup.summaryDuplicateContent', { names: duplicateSummary.skippedByContent.join('、') }) }}</span>
+      <span v-if="duplicateSummary.renamedIds.length">{{ $t('backup.summaryRenamedIds', { names: duplicateSummary.renamedIds.map((item) => item.setName).join('、') }) }}</span>
+    </StatusMessage>
   </div>
 </template>

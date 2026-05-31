@@ -1,9 +1,10 @@
 <script setup lang="ts">
+import type { ResultRow } from '@/types'
 import { BookOpenText, ClipboardCopy, RotateCcw, SpellCheck2 } from 'lucide-vue-next'
 import { computed, nextTick, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { copyToClipboard } from '@/lib/clipboard'
-import prompts from '@/lib/prompts'
+import { buildAllWrongQuestionsPrompt, buildQuestionExplainPrompt } from '@/lib/resultPrompts'
 import { useSessionStore } from '@/stores/session'
 import { useSetsStore } from '@/stores/sets'
 import { useUIStore } from '@/stores/ui'
@@ -24,34 +25,13 @@ const { showToast } = useUIStore()
 
 const wrongRows = computed(() => resultRows.filter(row => !row.record?.isCorrect))
 
-function formatQuestionOptions(question: { opts: string[] }) {
-  return question.opts.map((option, index) => `- (${String.fromCharCode(65 + index)}) ${option}`).join('\n')
-}
-
-async function copyQuestionExplainPrompt(entry: any, record: any = null, mode = 'quiz') {
-  let promptText = ''
-
-  if (mode === 'quiz') {
-    const question = entry.item.question
-    promptText = prompts.explainQuestion
-      .replace('{{QUESTION}}', question.prompt)
-      .replace('{{OPTIONS}}', formatQuestionOptions(question))
-      .replace('{{USER_ANSWER}}', record?.userAnswer ?? t('result.notAnswered'))
-      .replace('{{CORRECT_ANSWER}}', question.opts[question.ans])
-      .replace('{{MEANING}}', entry.item.meaning)
-      .replace('{{EXAMPLE}}', entry.item.example)
-  }
-  else {
-    promptText = prompts.explainSpellingQuestion
-      .replace('{{MEANING}}', entry.item.meaning)
-      .replace('{{EXAMPLE}}', entry.item.example)
-      .replace('{{USER_ANSWER}}', record?.userAnswer ?? t('result.notAnswered'))
-      .replace('{{CORRECT_ANSWER}}', entry.item.word)
-  }
-
+async function copyQuestionExplainPrompt(row: ResultRow) {
+  if (!resultSummary)
+    return
+  const promptText = buildQuestionExplainPrompt(row.entry, row.record, resultSummary.mode, t('result.notAnswered'))
   try {
     await copyToClipboard(promptText)
-    showToast(t('result.copiedAiPromptSingle', { word: entry.item.word }))
+    showToast(t('result.copiedAiPromptSingle', { word: row.entry.item.word }))
   }
   catch {
     showToast(t('toast.copyFailed'))
@@ -66,30 +46,7 @@ async function copyAllWrongQuestionsPrompt() {
   if (rows.length === 0)
     return
 
-  // AI prompt template – intentional zh-TW
-  const wrongQuestionsText = rows.map((row, idx) => {
-    const mode = resultSummary.mode
-    const entry = row.entry
-    const record = row.record
-    let text = `【第 ${idx + 1} 題】 單字：${entry.item.word}\n`
-
-    if (mode === 'quiz') {
-      const q = entry.item.question
-      text += `題目：${q.prompt}\n`
-      text += `選項：\n${formatQuestionOptions(q)}\n`
-      text += `我的答案：${record?.userAnswer ?? '未作答'}\n`
-      text += `正確答案：${q.opts[q.ans]}\n`
-    }
-    else {
-      text += `單字字義：${entry.item.meaning}\n`
-      text += `例句：${entry.item.example}\n`
-      text += `我的答案：${record?.userAnswer ?? '未作答'}\n`
-      text += `正確答案：${entry.item.word}\n`
-    }
-    return text
-  }).join('\n-------------------\n\n')
-
-  const promptText = prompts.explainAllWrongQuestions.replace('{{WRONG_QUESTIONS}}', wrongQuestionsText)
+  const promptText = buildAllWrongQuestionsPrompt(rows, resultSummary.mode)
 
   try {
     await copyToClipboard(promptText)
@@ -109,8 +66,7 @@ onMounted(() => {
 
 <template>
   <section v-if="activeSet && resultSummary" class="space-y-6">
-    <!-- Result Summary Dashboard Card -->
-    <Card id="completion-panel" class="p-6 sm:p-8 text-left border border-ink-200/50 dark:border-ink-200/5 shadow-sm">
+    <Card id="completion-panel" class="p-5 sm:p-8 text-left">
       <div class="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-6 border-b border-ink-200/50 dark:border-ink-200/10">
         <div class="flex items-start gap-4">
           <span class="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-accent-primary/10 text-accent-primary border border-accent-primary/15 shadow-sm" aria-hidden="true">
@@ -121,13 +77,13 @@ onMounted(() => {
               {{ resultSummary.review ? $t('result.reviewCompleted') : $t('result.completed') }}
             </h2>
             <p class="text-xs font-bold text-ink-400 dark:text-ink-500 uppercase tracking-widest">
-              模式：{{ resultSummary.mode === 'quiz' ? $t('result.modeQuiz') : $t('result.modeSpelling') }}
+              {{ $t('result.modeLabel') }}{{ resultSummary.mode === 'quiz' ? $t('result.modeQuiz') : $t('result.modeSpelling') }}
             </p>
           </div>
         </div>
 
         <!-- Circular Score Visual Indicator equivalent -->
-        <div class="flex items-center gap-4 self-start md:self-auto shrink-0 bg-ink-100 dark:bg-ink-100/50 border border-ink-200/40 dark:border-ink-200/5 rounded-2xl p-4">
+        <div class="flex items-center gap-4 self-start md:self-auto shrink-0 bg-ink-100/80 dark:bg-ink-900 border border-ink-200/70 dark:border-ink-200/25 rounded-2xl p-4">
           <div class="text-left">
             <div class="flex items-baseline gap-0.5">
               <span class="text-4xl font-extrabold tracking-tight text-ink-950 dark:text-ink-50">{{ $t('result.score', { score: resultSummary.score }) }}</span>
@@ -141,14 +97,14 @@ onMounted(() => {
 
       <!-- Bottom toolbar actions -->
       <div class="mt-6 flex flex-wrap items-center justify-start gap-3">
-        <Button variant="default" class="gap-2 px-6 py-2.5 rounded-xl" @click="restartCurrentMode">
+        <Button variant="default" class="gap-2" @click="restartCurrentMode">
           <RotateCcw class="h-4 w-4" />
           <span>{{ $t('result.retry') }}</span>
         </Button>
         <Button
           v-if="resultSummary.wrongCount"
           variant="outline"
-          class="gap-2 px-5 py-2.5 rounded-xl border-ink-200 dark:border-ink-200/40 text-ink-700 dark:text-ink-300"
+          class="gap-2"
           @click="reviewWrongAnswers"
         >
           <BookOpenText class="h-4 w-4 text-accent-primary" />
@@ -157,13 +113,13 @@ onMounted(() => {
         <Button
           v-if="resultSummary.wrongCount"
           variant="outline"
-          class="gap-2 px-5 py-2.5 rounded-xl border-ink-200 dark:border-ink-200/40 text-ink-700 dark:text-ink-300"
+          class="gap-2"
           @click="copyAllWrongQuestionsPrompt"
         >
           <ClipboardCopy class="h-4 w-4 text-accent-primary" />
           <span>{{ $t('result.aiExplainAll') }}</span>
         </Button>
-        <Button variant="outline" class="gap-2 px-5 py-2.5 rounded-xl border-ink-200 dark:border-ink-200/40 text-ink-700 dark:text-ink-300" @click="switchModeAfterResult">
+        <Button variant="outline" class="gap-2" @click="switchModeAfterResult">
           <SpellCheck2 class="h-4 w-4 text-accent-primary" />
           <span>{{ resultSummary.mode === 'quiz' ? $t('result.switchMode', { next: $t('result.switchSpelling') }) : $t('result.switchMode', { next: $t('result.switchQuiz') }) }}</span>
         </Button>
@@ -180,7 +136,7 @@ onMounted(() => {
       <Card
         v-for="row in wrongRows"
         :key="`${row.entry.item.id}-${row.index}`"
-        class="p-5 text-left border border-ink-200/50 dark:border-ink-200/5 shadow-sm"
+        class="p-5 text-left"
       >
         <div class="flex flex-wrap items-start justify-between gap-4 pb-4 border-b border-ink-200/40 dark:border-ink-200/10">
           <div class="space-y-1">
@@ -196,7 +152,7 @@ onMounted(() => {
               variant="outline"
               size="sm"
               class="h-8 px-3 text-xs text-ink-600 dark:text-ink-400 border-ink-200 dark:border-ink-200/40 hover:bg-ink-100 dark:hover:bg-ink-200 rounded-xl"
-              @click="copyQuestionExplainPrompt(row.entry, row.record, resultSummary.mode)"
+              @click="copyQuestionExplainPrompt(row)"
             >
               <ClipboardCopy class="h-3.5 w-3.5 mr-1 text-accent-primary" />
               <span>{{ $t('result.aiExplain') }}</span>

@@ -6,6 +6,8 @@ import { useSetsStore } from '@/stores/sets'
 import { useUIStore } from '@/stores/ui'
 import Button from '../ui/button/Button.vue'
 import Dialog from '../ui/dialog/Dialog.vue'
+import SectionPanel from '../ui/section-panel/SectionPanel.vue'
+import StatusMessage from '../ui/status-message/StatusMessage.vue'
 import DriveBackupSelector from './DriveBackupSelector.vue'
 import ImportSettings from './ImportSettings.vue'
 
@@ -50,7 +52,7 @@ const { signInDrive, signOutDrive, backupToDrive, refreshDriveBackups, applyDriv
   >
     <div class="space-y-6">
       <!-- 1. Google Drive Section -->
-      <div class="rounded-2xl border border-ink-200 dark:border-ink-800 bg-ink-100/50 dark:bg-ink-900/40 p-5 text-left">
+      <SectionPanel>
         <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
           <div>
             <p class="text-sm font-bold text-ink-950 dark:text-ink-50">
@@ -75,12 +77,12 @@ const { signInDrive, signOutDrive, backupToDrive, refreshDriveBackups, applyDriv
           </div>
         </div>
 
-        <p v-if="!driveConfigured" class="mt-4 rounded-xl bg-amber-50 dark:bg-amber-950/20 border border-amber-100 dark:border-amber-900/50 px-4 py-2.5 text-xs text-amber-700 dark:text-amber-300 font-semibold">
+        <StatusMessage v-if="!driveConfigured" tone="warning" class="mt-4">
           {{ $t('backup.driveNotConfigured') }}
-        </p>
-        <p v-if="driveError" class="mt-4 rounded-xl bg-red-50 dark:bg-red-950/20 border border-red-100 dark:border-red-900/50 px-4 py-2.5 text-xs text-red-600 dark:text-red-400 font-semibold">
+        </StatusMessage>
+        <StatusMessage v-if="driveError" tone="error" class="mt-4">
           {{ driveError }}
-        </p>
+        </StatusMessage>
 
         <div class="mt-4 grid gap-3 sm:grid-cols-2">
           <Button
@@ -108,9 +110,9 @@ const { signInDrive, signOutDrive, backupToDrive, refreshDriveBackups, applyDriv
         <!-- Custom Dropdown Selector -->
         <DriveBackupSelector />
 
-        <p v-if="driveImportPreview" class="mt-3 rounded-xl bg-emerald-500/10 border border-emerald-100 dark:border-emerald-900/40 px-4 py-2.5 text-xs text-emerald-700 dark:text-emerald-400 font-semibold">
+        <StatusMessage v-if="driveImportPreview" tone="success" class="mt-3">
           {{ driveImportPreview }}
-        </p>
+        </StatusMessage>
 
         <!-- Google Drive Import Settings -->
         <ImportSettings :sets="driveImportSets" prefix="drive" />
@@ -127,10 +129,10 @@ const { signInDrive, signOutDrive, backupToDrive, refreshDriveBackups, applyDriv
             <span>{{ $t('backup.applyDriveImport') }}</span>
           </Button>
         </div>
-      </div>
+      </SectionPanel>
 
       <!-- 2. Import ZIP Section -->
-      <div class="rounded-2xl border border-ink-200 dark:border-ink-800 bg-ink-100/50 dark:bg-ink-900/40 p-5 text-left">
+      <SectionPanel>
         <div class="flex items-start justify-between gap-4">
           <div>
             <p class="text-sm font-bold text-ink-950 dark:text-ink-50">
@@ -164,12 +166,12 @@ const { signInDrive, signOutDrive, backupToDrive, refreshDriveBackups, applyDriv
           </p>
         </div>
 
-        <p v-if="zipImportPreview" class="mt-3 rounded-xl bg-emerald-500/10 border border-emerald-100 dark:border-emerald-900/40 px-4 py-2.5 text-xs text-emerald-700 dark:text-emerald-400 font-semibold">
+        <StatusMessage v-if="zipImportPreview" tone="success" class="mt-3">
           {{ zipImportPreview }}
-        </p>
-        <p v-if="zipImportError" class="mt-3 rounded-xl bg-red-50 dark:bg-red-950/20 border border-red-100 dark:border-red-900/50 px-4 py-2.5 text-xs text-red-600 dark:text-red-400 font-semibold">
+        </StatusMessage>
+        <StatusMessage v-if="zipImportError" tone="error" class="mt-3">
           {{ zipImportError }}
-        </p>
+        </StatusMessage>
 
         <!-- ZIP Import Settings -->
         <ImportSettings :sets="zipImportSets" prefix="zip" />
@@ -180,10 +182,10 @@ const { signInDrive, signOutDrive, backupToDrive, refreshDriveBackups, applyDriv
             <span>{{ $t('backup.applyImport') }}</span>
           </Button>
         </div>
-      </div>
+      </SectionPanel>
 
       <!-- 3. Export Section -->
-      <div class="rounded-2xl border border-ink-200 dark:border-ink-800 bg-ink-100/50 dark:bg-ink-900/40 p-5 text-left">
+      <SectionPanel>
         <div class="flex items-start justify-between gap-4">
           <div>
             <p class="text-sm font-bold text-ink-950 dark:text-ink-50">
@@ -231,10 +233,10 @@ const { signInDrive, signOutDrive, backupToDrive, refreshDriveBackups, applyDriv
           </Button>
         </div>
 
-        <p v-if="exportError" class="mt-3 rounded-xl bg-red-50 dark:bg-red-950/20 border border-red-100 dark:border-red-900/50 px-4 py-2 text-xs text-red-600 dark:text-red-400 font-semibold">
+        <StatusMessage v-if="exportError" tone="error" class="mt-3">
           {{ exportError }}
-        </p>
-      </div>
+        </StatusMessage>
+      </SectionPanel>
     </div>
   </Dialog>
 </template>
