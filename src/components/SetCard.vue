@@ -2,7 +2,6 @@
 import type { VocabItem } from '@/types'
 import { BookOpenText, PencilLine, Play, SpellCheck2, Trash2 } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
-import Badge from './ui/badge/Badge.vue'
 import Button from './ui/button/Button.vue'
 import Card from './ui/card/Card.vue'
 import MetricPill from './ui/metric-pill/MetricPill.vue'
@@ -31,9 +30,6 @@ const { t } = useI18n()
           <h3 class="text-lg font-extrabold tracking-tight text-ink-950 dark:text-ink-50">
             {{ set.setName }}
           </h3>
-          <Badge v-if="active" variant="success">
-            {{ $t('home.inProgress') }}
-          </Badge>
         </div>
         <p class="text-xs font-semibold text-ink-500 dark:text-ink-400">
           {{ $t('home.wordsCount', { count: set.items.length }) }}

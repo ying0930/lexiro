@@ -22,9 +22,7 @@ const classes = computed(() =>
   cn(
     'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-bold transition-all duration-200 active:scale-[0.97] outline-none focus-visible:ring-2 focus-visible:ring-accent-primary/25 focus-visible:border-accent-primary disabled:opacity-45 disabled:pointer-events-none disabled:cursor-not-allowed',
     {
-      'button-primary shadow-sm': props.variant === 'default',
-      'border border-ink-200/80 dark:border-ink-200/30 bg-white/85 dark:bg-ink-850 text-ink-700 dark:text-ink-200 hover:bg-ink-100 dark:hover:bg-ink-800': props.variant === 'outline',
-      'bg-ink-100 dark:bg-ink-800 text-ink-700 dark:text-ink-200 hover:bg-ink-200 dark:hover:bg-ink-700': props.variant === 'secondary',
+      'border border-ink-200/80 bg-ink-100/90 text-ink-800 shadow-sm hover:bg-ink-200 dark:border-ink-200/30 dark:bg-ink-800 dark:text-ink-100 dark:hover:bg-ink-700': props.variant === 'default' || props.variant === 'outline' || props.variant === 'secondary',
       'text-ink-600 dark:text-ink-300 hover:text-accent-primary hover:bg-ink-100 dark:hover:bg-ink-800': props.variant === 'ghost',
       'text-accent-primary underline-offset-4 hover:underline active:scale-100': props.variant === 'link',
       'bg-red-50 dark:bg-red-950/15 text-red-600 dark:text-red-400 border border-red-100/80 dark:border-red-900/30 hover:bg-red-100/80 dark:hover:bg-red-950/30': props.variant === 'destructive',

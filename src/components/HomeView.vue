@@ -21,10 +21,7 @@ const { openTransfer } = uiStore
   <section class="space-y-6">
     <div v-if="hasSets" class="flex flex-col gap-3 rounded-3xl border border-ink-200/70 bg-white/70 p-4 shadow-sm backdrop-blur dark:border-ink-200/15 dark:bg-ink-900/55 sm:flex-row sm:items-center sm:justify-between">
       <div class="text-left">
-        <p class="text-xs font-bold uppercase tracking-widest text-accent-primary">
-          {{ $t('home.library') }}
-        </p>
-        <h2 class="mt-1 text-xl font-extrabold tracking-tight text-ink-950 dark:text-ink-50">
+        <h2 class="text-xl font-extrabold tracking-tight text-ink-950 dark:text-ink-50">
           {{ $t('home.readyTitle') }}
         </h2>
       </div>
