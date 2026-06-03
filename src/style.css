@@ -3,6 +3,38 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
+  --color-primary: var(--theme-primary);
+  --color-on-primary: var(--theme-on-primary);
+  --color-primary-container: var(--theme-primary-container);
+  --color-on-primary-container: var(--theme-on-primary-container);
+  --color-secondary: var(--theme-secondary);
+  --color-on-secondary: var(--theme-on-secondary);
+  --color-secondary-container: var(--theme-secondary-container);
+  --color-on-secondary-container: var(--theme-on-secondary-container);
+  --color-tertiary: var(--theme-tertiary);
+  --color-on-tertiary: var(--theme-on-tertiary);
+  --color-tertiary-container: var(--theme-tertiary-container);
+  --color-on-tertiary-container: var(--theme-on-tertiary-container);
+  --color-error: var(--theme-error);
+  --color-on-error: var(--theme-on-error);
+  --color-error-container: var(--theme-error-container);
+  --color-on-error-container: var(--theme-on-error-container);
+  --color-warning: var(--theme-warning);
+  --color-warning-container: var(--theme-warning-container);
+  --color-background: var(--theme-background);
+  --color-on-background: var(--theme-on-background);
+  --color-surface: var(--theme-surface);
+  --color-on-surface: var(--theme-on-surface);
+  --color-surface-variant: var(--theme-surface-variant);
+  --color-on-surface-variant: var(--theme-on-surface-variant);
+  --color-surface-container-lowest: var(--theme-surface-container-lowest);
+  --color-surface-container-low: var(--theme-surface-container-low);
+  --color-surface-container: var(--theme-surface-container);
+  --color-surface-container-high: var(--theme-surface-container-high);
+  --color-surface-container-highest: var(--theme-surface-container-highest);
+  --color-outline: var(--theme-outline);
+  --color-outline-variant: var(--theme-outline-variant);
+
   --color-ink-50: var(--ink-50);
   --color-ink-100: var(--ink-100);
   --color-ink-200: var(--ink-200);
@@ -17,48 +49,143 @@
   --color-ink-950: var(--ink-950);
   
   --color-accent-primary: var(--accent-primary);
+
+  --shadow-soft: var(--theme-shadow-soft);
+  --shadow-elevated: var(--theme-shadow-elevated);
+  --shadow-popover: var(--theme-shadow-popover);
+  --shadow-modal: var(--theme-shadow-modal);
+  --shadow-cta: var(--theme-shadow-cta);
 }
 
 :root {
-  /* Light Mode Palette - Slate & Charcoal Premium Neutrals */
-  --ink-50: #f8fafc;
-  --ink-100: #f1f5f9;
-  --ink-200: #e2e8f0;
-  --ink-300: #cbd5e1;
-  --ink-400: #94a3b8;
-  --ink-500: #64748b;
-  --ink-600: #475569;
-  --ink-700: #334155;
-  --ink-800: #1e293b;
-  --ink-850: #0f172a;
-  --ink-900: #0f172a;
-  --ink-950: #020617;
+  --theme-primary: #000000;
+  --theme-on-primary: #ffffff;
+  --theme-primary-container: #f2f2f2;
+  --theme-on-primary-container: #000000;
 
-  /* Monochrome iOS Accent - Slate Black in Light Mode */
-  --accent-primary: #020617;
+  --theme-secondary: #666666;
+  --theme-on-secondary: #ffffff;
+  --theme-secondary-container: #f5f5f5;
+  --theme-on-secondary-container: #333333;
+
+  --theme-tertiary: #444444;
+  --theme-on-tertiary: #ffffff;
+  --theme-tertiary-container: #ededed;
+  --theme-on-tertiary-container: #111111;
+
+  --theme-error: #e5484d;
+  --theme-on-error: #ffffff;
+  --theme-error-container: #fff1f1;
+  --theme-on-error-container: #b42318;
+
+  --theme-warning: #b45309;
+  --theme-warning-container: #fffbeb;
+
+  --theme-background: #fafafa;
+  --theme-on-background: #111111;
+
+  --theme-surface: #ffffff;
+  --theme-on-surface: #111111;
+  --theme-surface-variant: #f5f5f5;
+  --theme-on-surface-variant: #666666;
+
+  --theme-surface-container-lowest: #ffffff;
+  --theme-surface-container-low: #fafafa;
+  --theme-surface-container: #f5f5f5;
+  --theme-surface-container-high: #ededed;
+  --theme-surface-container-highest: #e5e5e5;
+
+  --theme-outline: #a3a3a3;
+  --theme-outline-variant: #e5e5e5;
+
+  --theme-shadow-soft: 0 2px 16px rgb(0 0 0 / 0.04);
+  --theme-shadow-elevated: 0 8px 32px rgb(0 0 0 / 0.10);
+  --theme-shadow-popover: 0 12px 32px rgb(0 0 0 / 0.12);
+  --theme-shadow-modal: 0 16px 48px rgb(0 0 0 / 0.14);
+  --theme-shadow-cta: 0 4px 16px rgb(0 0 0 / 0.12);
+
+  --ink-50: var(--color-background);
+  --ink-100: var(--color-surface-container);
+  --ink-200: var(--color-outline-variant);
+  --ink-300: var(--color-outline);
+  --ink-400: var(--color-on-surface-variant);
+  --ink-500: var(--color-secondary);
+  --ink-600: #525252;
+  --ink-700: var(--color-tertiary);
+  --ink-800: #262626;
+  --ink-850: #171717;
+  --ink-900: var(--color-on-primary-container);
+  --ink-950: var(--color-on-background);
+
+  --accent-primary: var(--color-primary);
   
   color-scheme: light;
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "SF Compact", "Noto Sans TC", sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 
+:root[data-theme="dark"],
 .dark {
-  /* Dark Mode Palette - Warm Deep Midnight & Elegant Cream White Contrast */
-  --ink-50: #fafaf9;  /* Cream white */
-  --ink-100: #e7e5e4;
-  --ink-200: #292524;  /* Deep stone-800 borders */
-  --ink-300: #d6d3d1;
-  --ink-400: #a8a29e;  /* Warm muted gray */
-  --ink-500: #78716c;  /* Warm stone gray */
-  --ink-600: #57534e;
-  --ink-700: #44403c;
-  --ink-800: #1c1917;  /* Dark stone panels */
-  --ink-850: #12100f;
-  --ink-900: #0a0908;  /* Very dark input bg */
-  --ink-950: #050505;  /* Jet black backdrop */
+  --theme-primary: #ffffff;
+  --theme-on-primary: #000000;
+  --theme-primary-container: #1f1f1f;
+  --theme-on-primary-container: #ffffff;
 
-  /* Monochrome iOS Accent - Cream White in Dark Mode */
-  --accent-primary: #fafaf9;
+  --theme-secondary: #a3a3a3;
+  --theme-on-secondary: #000000;
+  --theme-secondary-container: #171717;
+  --theme-on-secondary-container: #d4d4d4;
+
+  --theme-tertiary: #d4d4d4;
+  --theme-on-tertiary: #000000;
+  --theme-tertiary-container: #262626;
+  --theme-on-tertiary-container: #fafafa;
+
+  --theme-error: #ff6369;
+  --theme-on-error: #ffffff;
+  --theme-error-container: #2a1214;
+  --theme-on-error-container: #ffb3b8;
+
+  --theme-warning: #f59e0b;
+  --theme-warning-container: #1f1605;
+
+  --theme-background: #000000;
+  --theme-on-background: #ededed;
+
+  --theme-surface: #0a0a0a;
+  --theme-on-surface: #ededed;
+  --theme-surface-variant: #171717;
+  --theme-on-surface-variant: #a3a3a3;
+
+  --theme-surface-container-lowest: #050505;
+  --theme-surface-container-low: #0a0a0a;
+  --theme-surface-container: #111111;
+  --theme-surface-container-high: #1f1f1f;
+  --theme-surface-container-highest: #2a2a2a;
+
+  --theme-outline: #737373;
+  --theme-outline-variant: #2a2a2a;
+
+  --theme-shadow-soft: 0 2px 16px rgb(0 0 0 / 0.35);
+  --theme-shadow-elevated: 0 8px 32px rgb(0 0 0 / 0.45);
+  --theme-shadow-popover: 0 12px 32px rgb(0 0 0 / 0.48);
+  --theme-shadow-modal: 0 16px 48px rgb(0 0 0 / 0.55);
+  --theme-shadow-cta: 0 4px 16px rgb(255 255 255 / 0.10);
+
+  --ink-50: var(--color-on-background);
+  --ink-100: #d4d4d4;
+  --ink-200: var(--color-outline-variant);
+  --ink-300: #bdbdbd;
+  --ink-400: var(--color-on-surface-variant);
+  --ink-500: var(--color-outline);
+  --ink-600: #525252;
+  --ink-700: #404040;
+  --ink-800: var(--color-surface-container-high);
+  --ink-850: var(--color-surface-variant);
+  --ink-900: var(--color-surface);
+  --ink-950: var(--color-background);
+
+  --accent-primary: var(--color-primary);
   
   color-scheme: dark;
 }
@@ -72,31 +199,31 @@ body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
-  background-color: var(--ink-50);
-  color: var(--ink-950);
+  background-color: var(--color-background);
+  color: var(--color-on-background);
   transition: background-color 0.25s cubic-bezier(0.25, 1, 0.5, 1), color 0.25s ease;
 }
 
 .dark body {
-  background-color: var(--ink-950);
-  color: var(--ink-50);
+  background-color: var(--color-background);
+  color: var(--color-on-background);
 }
 
 .panel {
   position: relative;
-  background-color: #FFFFFF;
-  border: 1px solid var(--ink-200);
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-outline-variant);
   border-radius: 1.15rem; /* 18px rounded elegant native feel */
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+  box-shadow: var(--shadow-soft);
   transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
   will-change: transform;
   transform: translateZ(0);
 }
 
 .dark .panel {
-  background-color: var(--ink-800);
-  border: 1px solid var(--ink-200);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-outline-variant);
+  box-shadow: var(--shadow-soft);
 }
 
 .panel-pad {
@@ -116,17 +243,17 @@ body {
 }
 
 .button-primary {
-  background-color: #FFFFFF;
-  color: var(--ink-950);
-  border: 1px solid var(--ink-200);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+  background-color: var(--color-primary);
+  color: var(--color-on-primary);
+  border: 1px solid var(--color-primary);
+  box-shadow: var(--shadow-cta);
 }
 
 .dark .button-primary {
-  background-color: var(--ink-900);
-  color: var(--ink-50);
-  border: 1px solid var(--ink-200);
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+  background-color: var(--color-primary);
+  color: var(--color-on-primary);
+  border: 1px solid var(--color-primary);
+  box-shadow: var(--shadow-cta);
 }
 
 .button-primary:hover {
@@ -144,11 +271,11 @@ textarea {
 }
 
 ::selection {
-  background: rgba(2, 6, 23, 0.08);
+  background: rgb(0 0 0 / 0.08);
 }
 
 .dark ::selection {
-  background: rgba(250, 250, 249, 0.12);
+  background: rgb(255 255 255 / 0.12);
 }
 
 /* Premium Page Transition (iOS buttery slide-fade) */

@@ -48,11 +48,13 @@ export const useUIStore = defineStore('ui', () => {
     if (theme.value === 'light') {
       theme.value = 'dark'
       document.documentElement.classList.add('dark')
+      document.documentElement.dataset.theme = 'dark'
       localStorage.setItem(THEME_KEY, 'dark')
     }
     else {
       theme.value = 'light'
       document.documentElement.classList.remove('dark')
+      document.documentElement.dataset.theme = 'light'
       localStorage.setItem(THEME_KEY, 'light')
     }
   }
@@ -62,10 +64,12 @@ export const useUIStore = defineStore('ui', () => {
     if (saved === 'dark' || (!saved && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
       theme.value = 'dark'
       document.documentElement.classList.add('dark')
+      document.documentElement.dataset.theme = 'dark'
     }
     else {
       theme.value = 'light'
       document.documentElement.classList.remove('dark')
+      document.documentElement.dataset.theme = 'light'
     }
   }
 
