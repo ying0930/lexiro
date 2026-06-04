@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ArrowLeft, Moon, PencilLine, Sun, Trash2 } from 'lucide-vue-next'
+import { ArrowLeft, Moon, PencilLine, Plus, Sun, Trash2, Upload } from 'lucide-vue-next'
 import { storeToRefs } from 'pinia'
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -19,9 +19,9 @@ const { t } = useI18n()
 const { exitCurrentView } = sessionStore
 const { currentSession, currentIndex, totalItems, progressPercent } = storeToRefs(sessionStore)
 const { hasSets, sets, totalWordCount, activeSet } = storeToRefs(setsStore)
-const { editActiveSet, deleteActiveSet } = setsStore
+const { editActiveSet, deleteActiveSet, openImport } = setsStore
 const { theme } = storeToRefs(uiStore)
-const { toggleTheme } = uiStore
+const { openTransfer, toggleTheme } = uiStore
 
 const isHome = computed(() => route.name === 'home')
 const isPractice = computed(() => route.name === 'quiz' || route.name === 'spelling')
@@ -98,6 +98,29 @@ const practiceLabel = computed(() => {
             @click="deleteActiveSet"
           >
             <Trash2 class="h-4 w-4" />
+          </Button>
+        </template>
+
+        <template v-else-if="isHome && hasSets">
+          <Button
+            variant="outline"
+            size="icon"
+            class="h-9 w-9"
+            :title="t('home.backupAndImport')"
+            :aria-label="t('home.backupAndImport')"
+            @click="openTransfer"
+          >
+            <Upload class="h-4.5 w-4.5" />
+          </Button>
+          <Button
+            variant="default"
+            size="icon"
+            class="h-9 w-9"
+            :title="t('home.addSet')"
+            :aria-label="t('home.addSet')"
+            @click="openImport"
+          >
+            <Plus class="h-4.5 w-4.5" />
           </Button>
         </template>
 

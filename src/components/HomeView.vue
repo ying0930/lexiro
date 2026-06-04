@@ -19,24 +19,6 @@ const { openTransfer } = uiStore
 
 <template>
   <section class="space-y-6">
-    <div v-if="hasSets" class="flex flex-col gap-3 rounded-3xl border border-ink-200/70 bg-white/70 p-4 shadow-sm backdrop-blur dark:border-ink-200/15 dark:bg-ink-900/55 sm:flex-row sm:items-center sm:justify-between">
-      <div class="text-left">
-        <h2 class="text-xl font-extrabold tracking-tight text-ink-950 dark:text-ink-50">
-          {{ $t('home.readyTitle') }}
-        </h2>
-      </div>
-      <div class="grid grid-cols-2 gap-2 sm:flex">
-        <Button variant="outline" class="gap-2" @click="openTransfer">
-          <Upload class="h-4 w-4 text-accent-primary" />
-          <span>{{ $t('home.backupAndImport') }}</span>
-        </Button>
-        <Button variant="default" class="gap-2" @click="openImport">
-          <Plus class="h-4 w-4" />
-          <span>{{ $t('home.addSet') }}</span>
-        </Button>
-      </div>
-    </div>
-
     <div v-if="!hasSets" class="py-8">
       <EmptyState :title="$t('home.title')" :description="$t('home.description')">
         <template #icon>
