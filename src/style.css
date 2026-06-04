@@ -1,8 +1,16 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+@import url('https://cdn.jsdelivr.net/npm/harmonyos-sans-webfont-splitted@1.2.1/dist/HarmonyOS_Sans_TC/index.css');
+@import url('https://cdn.jsdelivr.net/npm/harmonyos-sans-webfont-splitted@1.2.1/dist/HarmonyOS_Sans_SC/index.css');
 @import "tailwindcss";
 
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
+  --font-display: var(--vp-font-family-base);
+  --font-body: var(--vp-font-family-base);
+  --font-sans: var(--vp-font-family-base);
+  --font-mono: var(--vp-font-family-mono);
+
   --color-primary: var(--theme-primary);
   --color-on-primary: var(--theme-on-primary);
   --color-primary-container: var(--theme-primary-container);
@@ -58,6 +66,9 @@
 }
 
 :root {
+  --vp-font-family-base: "Inter", "HarmonyOS Sans TC", "HarmonyOS Sans SC", system-ui, sans-serif;
+  --vp-font-family-mono: "JetBrains Mono", monospace;
+
   --theme-primary: #000000;
   --theme-on-primary: #ffffff;
   --theme-primary-container: #f2f2f2;
@@ -120,7 +131,7 @@
   --accent-primary: var(--color-primary);
   
   color-scheme: light;
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "SF Compact", "Noto Sans TC", sans-serif;
+  font-family: var(--vp-font-family-base);
   -webkit-font-smoothing: antialiased;
 }
 
