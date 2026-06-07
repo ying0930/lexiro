@@ -53,7 +53,7 @@ const practiceLabel = computed(() => {
         </Button>
         <div class="text-left min-w-0">
           <h1 class="text-xl sm:text-2xl font-extrabold tracking-tight text-ink-950 dark:text-ink-50">
-            Wordmem
+            {{ t('app.name') }}
           </h1>
           <p v-if="isHome" class="text-xs text-ink-500 dark:text-ink-400 mt-0.5 font-semibold">
             <span v-if="hasSets">

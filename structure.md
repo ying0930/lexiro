@@ -1,11 +1,11 @@
-# Wordmem Project Structure
+# lexiro Project Structure
 
-Wordmem is a Vue 3 + Pinia vocabulary practice app with local persistence, ZIP backup, and optional Google Drive backup.
+lexiro is a Vue 3 + Pinia vocabulary practice app with local persistence, ZIP backup, and optional Google Drive backup.
 
 ```
 ├── public/
 │   └── icons/
-│       └── wordmem.svg
+│       └── lexiro.svg
 ├── src/
 │   ├── components/
 │   │   ├── dialogs/

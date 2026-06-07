@@ -1,5 +1,5 @@
 import type { BackupPayload, VocabSet } from '@/types'
-import { APP_NAME, EXPORT_VERSION } from '@/constants'
+import { APP_NAME, BACKUP_FILE_PREFIX, EXPORT_VERSION } from '@/constants'
 import { buildExportZipBuffer, parseBackupZipBufferInWorker } from '@/lib/worker'
 import { normalizeExportPayload } from './validation'
 
@@ -16,7 +16,7 @@ export function buildExportFileName(): string {
   const now = new Date()
   const datePart = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`
   const timePart = `${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}`
-  return `wordmem-backup-${datePart}-${timePart}.zip`
+  return `${BACKUP_FILE_PREFIX}${datePart}-${timePart}.zip`
 }
 
 export async function buildExportZipBlob(selectedSets: VocabSet[]): Promise<Blob> {

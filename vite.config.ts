@@ -32,11 +32,11 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       injectRegister: 'auto',
-      includeAssets: ['icons/wordmem.svg'],
+      includeAssets: ['icons/lexiro.svg'],
       manifest: {
-        name: 'Wordmem',
-        short_name: 'Wordmem',
-        description: 'Wordmem vocabulary practice and backup app.',
+        name: 'lexiro',
+        short_name: 'lexiro',
+        description: 'lexiro vocabulary practice and backup app.',
         start_url: '/',
         scope: '/',
         display: 'standalone',
@@ -45,7 +45,7 @@ export default defineConfig({
         orientation: 'portrait-primary',
         icons: [
           {
-            src: '/icons/wordmem.svg',
+            src: '/icons/lexiro.svg',
             sizes: 'any',
             type: 'image/svg+xml',
             purpose: 'any maskable',
@@ -64,7 +64,7 @@ export default defineConfig({
             ),
             handler: 'StaleWhileRevalidate',
             options: {
-              cacheName: 'wordmem-scripts',
+              cacheName: 'lexiro-scripts',
               expiration: {
                 maxEntries: 60,
                 maxAgeSeconds: 60 * 60 * 24 * 30,
@@ -77,7 +77,7 @@ export default defineConfig({
             ),
             handler: 'CacheFirst',
             options: {
-              cacheName: 'wordmem-assets',
+              cacheName: 'lexiro-assets',
               expiration: {
                 maxEntries: 80,
                 maxAgeSeconds: 60 * 60 * 24 * 30,

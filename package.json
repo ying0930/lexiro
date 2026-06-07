@@ -1,4 +1,5 @@
 {
+  "name": "lexiro",
   "type": "module",
   "scripts": {
     "dev": "vite",

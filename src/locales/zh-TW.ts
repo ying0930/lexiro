@@ -1,9 +1,9 @@
 export default {
   app: {
-    name: 'Wordmem',
+    name: 'lexiro',
   },
   home: {
-    title: 'Wordmem 尚未載入單字集',
+    title: 'lexiro 尚未載入單字集',
     description: '您可以點擊「新增單字集」按鈕，或匯入之前生成過的單字集。',
     addSet: '新增單字集',
     backupAndImport: '備份與匯入',
@@ -119,7 +119,7 @@ export default {
   },
   backup: {
     title: '備份與匯入',
-    description: '下載 ZIP 離線備份 Wordmem 單字集，或手動備份到 Google Drive。',
+    description: '下載 ZIP 離線備份 lexiro 單字集，或手動備份到 Google Drive。',
     driveSection: 'Google Drive',
     driveDescription: '手動備份到 Google Drive，或從既有備份導入。',
     driveNotConfigured: '尚未設定 VITE_GOOGLE_CLIENT_ID。設定 Google OAuth Client ID 後才能使用 Drive 備份。',
@@ -131,10 +131,10 @@ export default {
     selectDriveBackup: '選擇 Drive 備份',
     selectBackupPlaceholder: '請選擇備份檔',
     importZip: '匯入 ZIP',
-    importZipDescription: '選擇由 Wordmem 生成的 ZIP 備份檔案。',
+    importZipDescription: '選擇由 lexiro 生成的 ZIP 備份檔案。',
     clear: '清除',
     selectedFile: '已選擇檔案：{name}',
-    exportSection: '匯出 Wordmem 備份',
+    exportSection: '匯出 lexiro 備份',
     exportDescription: '勾選想要存檔的單字集，下載 ZIP 來離線備份。',
     exportSelection: '匯出內容',
     exportSelectedSummary: '已選 {count} 個單字集，共 {words} 個單字',
@@ -161,7 +161,7 @@ export default {
     overwrite: '覆蓋本機',
     overwriteDescription: '取代本機資料並重設目前進度。',
     overwritePlainDescription: '用備份內容完整取代目前本機資料。適合換裝置或要完全還原某份備份時使用。',
-    overwriteWarning: '覆蓋會清除目前本機單字集與練習進度，匯入後無法從 Wordmem 內復原。',
+    overwriteWarning: '覆蓋會清除目前本機單字集與練習進度，匯入後無法從 lexiro 內復原。',
     versionDiff: '同名單字集版本差異',
     versionConflictTitle: '同名單字集要使用哪個版本？',
     conflictCounts: '本機 {local} 個單字，匯入版本 {imported} 個單字',
@@ -216,7 +216,7 @@ export default {
   },
   version: {
     title: '發現新版本',
-    description: 'Wordmem 有可用的新版本。為了確保資料同步與取得最新功能，建議重新整理網頁。',
+    description: 'lexiro 有可用的新版本。為了確保資料同步與取得最新功能，建議重新整理網頁。',
     updateBtn: '立即重新整理',
     laterBtn: '稍後再說',
   },

@@ -1,6 +1,6 @@
-# Wordmem Codebase Guidelines for AI Agents
+# lexiro Codebase Guidelines for AI Agents
 
-Welcome, Agent! To keep the Wordmem application maintainable, scalable, and beautifully designed, you MUST strictly adhere to the rules and architectural standards detailed in this document.
+Welcome, Agent! To keep the lexiro application maintainable, scalable, and beautifully designed, you MUST strictly adhere to the rules and architectural standards detailed in this document.
 
 ---
 
@@ -68,4 +68,4 @@ Before finalizing any changes, you must ensure that all test suites pass perfect
 - **Run Linter**: `npm run lint` to check for style violations.
 - **Run Unit Tests**: `npm run test` (uses Vitest) to check for regressions.
 
-Thank you for keeping the Wordmem codebase clean and elegant! ✨
+Thank you for keeping the lexiro codebase clean and elegant! ✨

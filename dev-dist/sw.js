@@ -91,7 +91,7 @@ define(['./workbox-f1065c73'], (function (workbox) { 'use strict';
     request,
     sameOrigin
   }) => sameOrigin && ["script", "style"].includes(request.destination), new workbox.StaleWhileRevalidate({
-    "cacheName": "wordmem-scripts",
+    "cacheName": "lexiro-scripts",
     plugins: [new workbox.ExpirationPlugin({
       maxEntries: 60,
       maxAgeSeconds: 2592000
@@ -101,7 +101,7 @@ define(['./workbox-f1065c73'], (function (workbox) { 'use strict';
     request,
     sameOrigin
   }) => sameOrigin && ["image", "font"].includes(request.destination), new workbox.CacheFirst({
-    "cacheName": "wordmem-assets",
+    "cacheName": "lexiro-assets",
     plugins: [new workbox.ExpirationPlugin({
       maxEntries: 80,
       maxAgeSeconds: 2592000

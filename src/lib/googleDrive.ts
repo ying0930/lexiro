@@ -1,15 +1,15 @@
-import { MAX_BACKUP_FILES } from '@/constants'
+import { BACKUP_FILE_PREFIX, DRIVE_ACCESS_TOKEN_KEY, DRIVE_TOKEN_EXPIRES_AT_KEY, MAX_BACKUP_FILES } from '@/constants'
 
 const GIS_SCRIPT_URL = 'https://accounts.google.com/gsi/client'
 const DRIVE_API_BASE = 'https://www.googleapis.com/drive/v3'
 const DRIVE_UPLOAD_BASE = 'https://www.googleapis.com/upload/drive/v3'
 const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.file'
-const WORDMEM_FOLDER_NAME = 'Wordmem'
+const LEXIRO_FOLDER_NAME = 'lexiro'
 
 let gisScriptPromise: Promise<void> | null = null
 let tokenClient: any = null
-let accessToken = localStorage.getItem('wordmem_drive_access_token') || ''
-let tokenExpiresAt = Number(localStorage.getItem('wordmem_drive_token_expires_at') || '0')
+let accessToken = localStorage.getItem(DRIVE_ACCESS_TOKEN_KEY) || ''
+let tokenExpiresAt = Number(localStorage.getItem(DRIVE_TOKEN_EXPIRES_AT_KEY) || '0')
 
 function loadGoogleIdentityServices(): Promise<void> {
   if ((window as any).google?.accounts?.oauth2)
@@ -97,8 +97,8 @@ export async function requestDriveAccess(clientId: string, prompt = ''): Promise
       }
       accessToken = response.access_token
       tokenExpiresAt = Date.now() + Math.max(Number(response.expires_in ?? 0) - 60, 0) * 1000
-      localStorage.setItem('wordmem_drive_access_token', accessToken)
-      localStorage.setItem('wordmem_drive_token_expires_at', String(tokenExpiresAt))
+      localStorage.setItem(DRIVE_ACCESS_TOKEN_KEY, accessToken)
+      localStorage.setItem(DRIVE_TOKEN_EXPIRES_AT_KEY, String(tokenExpiresAt))
       resolve({
         accessToken,
         expiresAt: tokenExpiresAt,
@@ -110,8 +110,8 @@ export async function requestDriveAccess(clientId: string, prompt = ''): Promise
 }
 
 export function revokeDriveAccess(): void {
-  localStorage.removeItem('wordmem_drive_access_token')
-  localStorage.removeItem('wordmem_drive_token_expires_at')
+  localStorage.removeItem(DRIVE_ACCESS_TOKEN_KEY)
+  localStorage.removeItem(DRIVE_TOKEN_EXPIRES_AT_KEY)
   if (!accessToken || !(window as any).google?.accounts?.oauth2?.revoke) {
     accessToken = ''
     tokenExpiresAt = 0
@@ -160,8 +160,8 @@ function escapeDriveQueryValue(value: string): string {
   return value.replace(/\\/g, '\\\\').replace(/'/g, '\\\'')
 }
 
-export async function ensureWordmemFolder(): Promise<{ id: string, name: string }> {
-  const folderName = escapeDriveQueryValue(WORDMEM_FOLDER_NAME)
+export async function ensureLexiroFolder(): Promise<{ id: string, name: string }> {
+  const folderName = escapeDriveQueryValue(LEXIRO_FOLDER_NAME)
   const params = new URLSearchParams({
     q: `name = '${folderName}' and mimeType = 'application/vnd.google-apps.folder' and trashed = false`,
     fields: 'files(id,name)',
@@ -177,7 +177,7 @@ export async function ensureWordmemFolder(): Promise<{ id: string, name: string 
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      name: WORDMEM_FOLDER_NAME,
+      name: LEXIRO_FOLDER_NAME,
       mimeType: 'application/vnd.google-apps.folder',
     }),
   })
@@ -186,8 +186,8 @@ export async function ensureWordmemFolder(): Promise<{ id: string, name: string 
 }
 
 export async function uploadBackupZip(blob: Blob, filename: string): Promise<any> {
-  const folder = await ensureWordmemFolder()
-  const boundary = `wordmem-${Date.now()}`
+  const folder = await ensureLexiroFolder()
+  const boundary = `lexiro-${Date.now()}`
   const metadata = {
     name: filename,
     mimeType: 'application/zip',
@@ -217,7 +217,7 @@ export async function uploadBackupZip(blob: Blob, filename: string): Promise<any
 }
 
 export async function listBackupFiles(): Promise<{ id: string, name: string, size: string, createdTime: string, modifiedTime: string }[]> {
-  const folder = await ensureWordmemFolder()
+  const folder = await ensureLexiroFolder()
   const folderId = escapeDriveQueryValue(folder.id)
   const params = new URLSearchParams({
     q: `'${folderId}' in parents and mimeType = 'application/zip' and trashed = false`,
@@ -228,7 +228,7 @@ export async function listBackupFiles(): Promise<{ id: string, name: string, siz
 
   const response = await driveFetch(`${DRIVE_API_BASE}/files?${params.toString()}`)
   const data = await response.json()
-  return (data.files ?? []).filter((file: any) => /^wordmem-backup-\d{8}-\d{4}\.zip$/i.test(file.name))
+  return (data.files ?? []).filter((file: any) => new RegExp(`^${BACKUP_FILE_PREFIX}\\d{8}-\\d{4}\\.zip$`, 'i').test(file.name))
 }
 
 export async function deleteBackupFile(fileId: string): Promise<void> {
