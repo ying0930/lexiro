@@ -89,6 +89,7 @@ function optionClass(index: number) {
       <button
         v-for="(option, optionIndex) in entry.item.question.opts"
         :key="`${optionIndex}`"
+        type="button"
         :class="optionClass(optionIndex)"
         :disabled="answered"
         @click="choose(optionIndex)"

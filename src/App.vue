@@ -61,6 +61,13 @@ function handleVisibilityChange() {
   }
 }
 
+function handleKeydown(event: KeyboardEvent) {
+  if (event.key === 'Escape' && uiStore.transferOpen)
+    uiStore.closeTransfer()
+  if (event.key === 'Escape' && uiStore.confirmOpen)
+    uiStore.resolveConfirm(false)
+}
+
 onMounted(async () => {
   await setsStore.loadState()
   await sessionStore.loadState()
@@ -68,12 +75,7 @@ onMounted(async () => {
   dataLoaded.value = true
 
   document.addEventListener('visibilitychange', handleVisibilityChange)
-  window.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape' && uiStore.transferOpen)
-      uiStore.closeTransfer()
-    if (event.key === 'Escape' && uiStore.confirmOpen)
-      uiStore.resolveConfirm(false)
-  })
+  window.addEventListener('keydown', handleKeydown)
 
   if (!import.meta.env.DEV) {
     setTimeout(checkVersion, 2000)
@@ -104,6 +106,7 @@ onMounted(async () => {
 
 onUnmounted(() => {
   document.removeEventListener('visibilitychange', handleVisibilityChange)
+  window.removeEventListener('keydown', handleKeydown)
   if (versionCheckInterval) {
     clearInterval(versionCheckInterval)
   }

@@ -29,8 +29,8 @@ const importTextarea = ref<InstanceType<typeof Textarea> | null>(null)
 const difficultyLevels = ['', t('import.difficulty1'), t('import.difficulty2'), t('import.difficulty3')] as const
 const difficultyLabel = computed(() => difficultyLevels[importDifficulty.value])
 
-watch([() => importOpen, () => importStep], () => {
-  if (importOpen) {
+watch([importOpen, importStep], ([open]) => {
+  if (open) {
     nextTick(() => {
       importTextarea.value?.focus()
     })

@@ -104,7 +104,7 @@ export default {
     wordPlaceholder: 'abandon, accomplish, acknowledge ...',
     copyPrompt: '複製匯入指令',
     importJson: '或者直接貼上 JSON',
-    jsonPlaceholder: '{"items":[{"word":"abandon","meaning":"放棄；遺棄","example":"He decided to abandon the plan after the cost doubled.","question":{"prompt":"The captain had to _____ the ship during the storm.","opts":["abandon","delay","gather","repair"],"ans":0}}]}',
+    jsonPlaceholder: '{\'{"items":[{"word":"abandon","meaning":"放棄；遺棄","example":"He decided to abandon the plan after the cost doubled.","question":{"prompt":"The captain had to _____ the ship during the storm.","opts":["abandon","delay","gather","repair"],"ans":0}}]}\'}',
     import: '匯入',
     nextStep: '下一步',
     jsonValid: '格式正常，偵測到 {count} 個單字',
